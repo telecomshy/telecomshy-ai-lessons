@@ -74,9 +74,13 @@ python exercises/agent/0004-real-model-agent.py
 | ---- | ----------------------------------------------------------------------------------- |
 | 0000 | [模型是怎么学出来的](lessons/llm/0000-how-models-learn.html) —— **先导课，先读这个**                 |
 | 0001 | [从「token」到「下一个 token」](lessons/llm/0001-from-token-to-next-token.html) —— **基石课**   |
+| 0001 进阶 | [九个追问](lessons/llm/0001-from-token-to-next-token-deep.html) —— 基础课没讲的那部分理由              |
 | 0002 | [一次请求的两段：prefill 与 decode](lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢 |
+| 0002 进阶 | [十一个追问](lessons/llm/0002-prefill-vs-decode-deep.html)                              |
 | 0003 | [KV Cache 与「缓存命中」是两回事](lessons/llm/0003-kv-cache-and-prompt-caching.html)           |
+| 0003 进阶 | [五个绕人的细节](lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)                     |
 | 0004 | [一趟装满的卡车](lessons/llm/0004-batching.html) —— 批处理怎么救 decode                          |
+| 0004 进阶 | [拐点与工业界的招](lessons/llm/0004-batching-deep.html)                                   |
 
 ### Agent 原理篇
 
@@ -107,9 +111,12 @@ python exercises/agent/0004-real-model-agent.py
 | 课    | 标题                                                                   |
 | ---- | -------------------------------------------------------------------- |
 | 0001 | [为什么得「先查资料再回答」](lessons/rag/0001-why-retrieval.html)                 |
+| 0001 进阶 | [稀疏和稠密各自在哪翻车](lessons/rag/0001-why-retrieval-deep.html)                |
 | 0002 | [一条 RAG 链长什么样](lessons/rag/0002-rag-pipeline.html) —— 六步里只有最后一步是模型   |
+| 0002 进阶 | [切块到底切多大](lessons/rag/0002-rag-pipeline-deep.html)                      |
 | 0003 | [什么时候不该上 RAG](lessons/rag/0003-when-not-to-use-rag.html)             |
 | 0004 | [两种典型翻车](lessons/rag/0004-two-failure-modes.html) —— 该来的没来 vs 来了但没用上 |
+| 0004 进阶 | [RAG 到底怎么评](lessons/rag/0004-two-failure-modes-deep.html)                |
 
 ### 速查 · 课很少回看，速查会
 
