@@ -23,6 +23,7 @@
 
   <h2>LLM 底层</h2>
   <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲影响 agent 成本 / 延迟 / 设计的机制，<b>以及能力与失效的来源</b>。教材放在 <code>lessons/llm/</code>。<b>基础课给初学者和业务人员，进阶版给技术读者。</b></p>
+  <p style="margin-top:1.4rem;color:var(--muted);font-size:0.95rem"><b>基础课</b> —— 给初学者和业务人员。给结论和直觉，<b>不给推导和算式</b>。</p>
   <div class="pillars">
     <div class="pillar completed">
       <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a><span class="badge">completed</span></h3>
@@ -32,26 +33,42 @@
     <div class="pillar completed">
       <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a><span class="badge">completed</span></h3>
       <p><b>基石课</b>：文字 → token → 向量 → 注意力 → FFN → 采样，看懂全貌。</p>
-      <p><b>进阶</b>：<a href="llm/0001-from-token-to-next-token-deep.html">九个追问</a></p>
       <p>动手：<code>exercises/llm/0001-tiny-attention.py</code>　·　<code>exercises/llm/0001-sampling-params.py</code></p>
     </div>
     <div class="pillar">
       <h3><a href="llm/0002-prefill-vs-decode.html">0002 · 一次请求的两段：prefill 与 decode</a></h3>
       <p>为什么「读长文」快、「写长文」慢。顺带钉死<b>一次任务 / 一次请求 / 一轮 decode</b>。</p>
-      <p><b>进阶</b>：<a href="llm/0002-prefill-vs-decode-deep.html">十一个追问</a></p>
       <p>动手：<code>exercises/llm/0002-prefill-vs-decode.py</code>　·　<code>exercises/llm/0002-why-all-positions.py</code></p>
     </div>
     <div class="pillar">
       <h3><a href="llm/0003-kv-cache-and-prompt-caching.html">0003 · KV Cache 与「缓存命中」是两回事</a></h3>
       <p>请求内算过的别重算，跨请求捡现成。本课实测：<b>只改开头一处，成本差 3.7 倍</b>。</p>
-      <p><b>进阶</b>：<a href="llm/0003-kv-cache-and-prompt-caching-deep.html">五个绕人的细节</a></p>
       <p>动手：<code>exercises/llm/0003-cache-hit-simulator.py</code></p>
     </div>
     <div class="pillar">
       <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a></h3>
       <p>批处理怎么救 decode：用一点点延迟，换几十倍吞吐。</p>
-      <p><b>进阶</b>：<a href="llm/0004-batching-deep.html">拐点与工业界的招</a></p>
       <p>动手：<code>exercises/llm/0004-batching.py</code></p>
+    </div>
+  </div>
+
+  <p style="margin-top:1.6rem;color:var(--muted);font-size:0.95rem"><b>进阶版</b> —— 给想动手验算的技术读者。装的是<b>基础课没讲的那部分理由</b>，不是加强版；按需跳读，读基础课遇到括号链接就能直达。</p>
+  <div class="pillars">
+    <div class="pillar completed">
+      <h3><a href="llm/0001-from-token-to-next-token-deep.html">0001 进阶 · 十个追问</a><span class="badge">completed</span></h3>
+      <p>初学版讲「是什么」，这篇答「为什么 / 还有什么坑」。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0002-prefill-vs-decode-deep.html">0002 进阶 · 里面到底在转什么</a></h3>
+      <p>初学版讲「是什么」，这篇答「里面具体在转什么」。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0003-kv-cache-and-prompt-caching-deep.html">0003 进阶 · 五个绕人的细节</a></h3>
+      <p>初学版讲「两回事」，这篇答「具体到多轮、到工具、到断点，又是怎样」。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0004-batching-deep.html">0004 进阶 · 拐点、工业界的招</a></h3>
+      <p>初学版讲「为什么能提吞吐」，这篇答「什么时候到头、工业界怎么绕过去」。</p>
     </div>
   </div>
 
@@ -114,18 +131,17 @@
   </div>
   <h2>RAG</h2>
   <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲<b>机制与取舍</b>：为什么要检索、一条链六步各在干什么、什么时候不该上。<b>不讲向量库选型 / 产品对比</b>（会烂，也超出这份教程的使命）。教材放在 <code>lessons/rag/</code>。</p>
+  <p style="margin-top:1.4rem;color:var(--muted);font-size:0.95rem"><b>基础课</b> —— 给初学者和业务人员。给结论和直觉，<b>不给推导和算式</b>。</p>
   <div class="pillars">
     <div class="pillar">
       <h3><a href="rag/0001-why-retrieval.html">0001 · 为什么得「先查资料再回答」</a></h3>
       <p>模型不知道你的数据，是因为<b>信息不在它手边</b>，不是因为它笨。RAG ＝ 先替它翻书。</p>
-      <p><b>进阶</b>：<a href="rag/0001-why-retrieval-deep.html">稀疏和稠密各自在哪翻车</a></p>
-      <p>动手：动手：<code>exercises/rag/0001-why-retrieval.py</code> · <code>0001-sparse-vs-dense.py</code></p>
+      <p>动手：<code>exercises/rag/0001-why-retrieval.py</code>　·　<code>0001-sparse-vs-dense.py</code></p>
     </div>
     <div class="pillar">
       <h3><a href="rag/0002-rag-pipeline.html">0002 · 一条 RAG 链长什么样</a></h3>
       <p>切块 → 变向量 → 存 → 查 → 塞进提示词 → 生成。<b>六步里只有最后一步是模型</b>。</p>
-      <p><b>进阶</b>：<a href="rag/0002-rag-pipeline-deep.html">切块到底切多大</a></p>
-      <p>动手：动手：<code>exercises/rag/0002-rag-pipeline.py</code> · <code>0002-chunking.py</code></p>
+      <p>动手：<code>exercises/rag/0002-rag-pipeline.py</code>　·　<code>0002-chunking.py</code></p>
     </div>
     <div class="pillar">
       <h3><a href="rag/0003-when-not-to-use-rag.html">0003 · 什么时候不该上 RAG</a></h3>
@@ -135,8 +151,23 @@
     <div class="pillar">
       <h3><a href="rag/0004-two-failure-modes.html">0004 · 两种典型翻车</a></h3>
       <p><b>该来的没来</b> vs <b>来了但没用上</b>——解法正好相反，先分清再动手。</p>
-      <p><b>进阶</b>：<a href="rag/0004-two-failure-modes-deep.html">RAG 到底怎么评</a></p>
-      <p>动手：动手：<code>exercises/rag/0004-two-failure-modes.py</code> · <code>0004-rag-eval.py</code></p>
+      <p>动手：<code>exercises/rag/0004-two-failure-modes.py</code>　·　<code>0004-rag-eval.py</code></p>
+    </div>
+  </div>
+
+  <p style="margin-top:1.6rem;color:var(--muted);font-size:0.95rem"><b>进阶版</b> —— 给想动手验算的技术读者。装的是<b>基础课没讲的那部分理由</b>，不是加强版；按需跳读，读基础课遇到括号链接就能直达。</p>
+  <div class="pillars">
+    <div class="pillar">
+      <h3><a href="rag/0001-why-retrieval-deep.html">0001 进阶 · 稀疏和稠密各自在哪翻车</a></h3>
+      <p>初学版只点了一句「稀疏看字面、稠密看意思」，这里用两道题让两种方法各翻一次车。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="rag/0002-rag-pipeline-deep.html">0002 进阶 · 切块到底切多大</a></h3>
+      <p>初学版只说「切太大 / 切得不是地方都有坑」，这里给该切多大，以及为什么这个数不用太纠结。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="rag/0004-two-failure-modes-deep.html">0004 进阶 · RAG 到底怎么评</a></h3>
+      <p>初学版给了「两类翻车」的诊断办法，这里给能分开量它们的尺子。</p>
     </div>
   </div>
 
