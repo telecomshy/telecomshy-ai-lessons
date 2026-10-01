@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 3 课（进阶版）· 缓存那些绕人的细节</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 3 课 · 进阶版</div>
+  <h1>KV Cache：五个绕人的细节</h1>
+  <p class="subtitle">初学版讲「两回事」，这篇答「那具体到多轮、到工具、到断点，又是怎样」。<b>按需跳读。</b></p>
+
+  <div class="note">
+    <span class="label">怎么用这篇</span>
+    <p>只收<b>读完初学版仍会冒出来</b>的疑问。有些还带真实的坑——踩过的人不少。</p>
+    <p style="color:var(--muted)">总链：<code>一次任务 → 很多次请求 → 每次请求里几百轮 decode</code>。三条："请求内复用"总是发生；"跨请求命中"要条件；缓存不打折输出。</p>
+  </div>
+
+  <h2 id="q1-multiturn">Q1 · 多轮对话里，上一轮模型的回答会不会命中？</h2>
+  <p><b>对应初学版第 4 节「输出的字，有缓存吗？」</b>初学版说"下一轮它变成输入，才能被复用"——这里给你看它具体怎么发生。</p>
+  <p><b>会命中。</b>而且这正是多轮对话越聊越省的原因。官方文档给了张很清楚的表：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">第几次请求</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">送进去的内容</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">缓存怎么动</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">第 1 次</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">系统 + 问1 + <b>答1</b> + 问2</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">整段写进缓存</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">第 2 次</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">… + <b>答2</b> + 问3</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">前面读缓存；<b>答2 + 问3 写进缓存</b></td></tr>
+      <tr><td style="padding:0.5rem">第 3 次</td>
+          <td style="padding:0.5rem">… + <b>答3</b> + 问4</td>
+          <td style="padding:0.5rem">前面读缓存；<b>答3 + 问4 写进缓存</b></td></tr>
+    </tbody>
+  </table>
+  <p>看第 2 次那行的粗体：<b>"答2"是上一次模型的输出，这一次它被写进了缓存</b>。第 3 次它就变成"读缓存"的一部分了。</p>
+  <div class="note">
+    <span class="label">所以那条铁律要再强调一次</span>
+    <p><b>只追加，不修改。</b>官方文档明确列了三种打断缓存的做法：<b>改早期消息、删消息、调换顺序</b>——全都会让从改动处往后的缓存作废。</p>
+  </div>
+
+  <h2 id="q2-tool">Q2 · 工具结果为什么算「输入」？为什么必须追加在末尾？</h2>
+  <p><b>对应初学版第 4 节。</b>初学版说它"算输入"——依据是：</p>
+  <blockquote style="border-left:3px solid var(--ink);margin:1rem 0;padding:0.2rem 0 0.2rem 1rem;font-size:0.95rem">
+    官方的说法是：送去匹配缓存的那段前缀，是<b>整个序列化后的请求</b>——系统消息、对话历史、<b>工具定义</b>、助手消息、<b>工具调用</b>、<b>工具结果</b>，全都算在里面。
+  </blockquote>
+  <p>所以：<b>工具结果 = 输入前缀的一部分</b>。它按输入计价，也能命中，而且会一直留在前缀里。</p>
+  <p>那为什么必须是<b>末尾追加</b>？因为缓存认的是"从头开始、一字不差"。<b>你只有往末尾加东西，前面那截才原封不动</b>——一旦插到中间去，后面每一格都得重算，等于把前面攒的便宜全吐回去。</p>
+  <div class="note">
+    <span class="label">顺带一个真实的坑</span>
+    <p>用推理模型（会输出"思考过程"的那种）时，<b>上一轮的思考内容如果不原样带回去，缓存就断了</b>。这被列成多轮缓存失效的<b>头号原因</b>。</p>
+  </div>
+
+  <h2 id="q3-write">Q3 · 既然便宜 10 倍，那"缓存写入"为什么还要加钱？</h2>
+  <p><b>对应初学版第 3 节的「cache write / cache read」。</b></p>
+  <p>因为<b>写入和读取是两笔账</b>：</p>
+  <ul>
+    <li><b>写入（cache write）</b>：第一次把这段前缀算好、存起来。有的服务商收得比普通输入还贵一点（因为多干了存储的活）；</li>
+    <li><b>读取（cache read）</b>：后面命中时捡现成，约 <b>0.1×</b>。</li>
+  </ul>
+  <p>所以"便宜 10 倍"的前提是<b>这段前缀会被反复用</b>。如果每次都变，你只付了更贵的写入、一次都没读到——<b>反而亏</b>。</p>
+  <div class="note">
+    <span class="label">什么时候不适用</span>
+    <p><b>一次性请求</b>（这段前缀这辈子只用一次）——别开缓存，写入的钱白花。</p>
+    <p>这也是为什么现在很多服务商提供"<b>只在静态内容结尾打断点</b>"的做法：动态的那截干脆不写，省下写入费。</p>
+  </div>
+
+  <h2 id="q4-lookback">Q4 · 前缀越长越好吗？有个真实的坑</h2>
+  <p><b>对应初学版第 3 节末尾那句"前缀越长越好吗？"。</b>直觉是"历史越长、能命中的越多"，但有个反例，而且很坑。</p>
+  <p>机制是这样的（以 Claude 为例）：<b>缓存写入只发生在你打的"断点"处</b>；读取时，系统从断点往回<b>逐个找已经写过的条目</b>，但<b>最多只往回找 20 个位置</b>。</p>
+  <p>所以：</p>
+  <ul>
+    <li>只要每轮新增的内容<b>少于 20 块</b>——前一轮的写入还在窗口里，<b>能命中</b>；</li>
+    <li>某一轮一口气加了一大堆（比如一次塞了 30 块）——<b>上一轮的条目被挤出窗口，命中不了</b>。</li>
+  </ul>
+  <div class="note">
+    <span class="label">怎么救</span>
+    <p><b>多打几个断点。</b>比如在"稳定内容"和"对话历史"交界处再放一个，等于开了第二个查找窗口。</p>
+    <p>或者用一个更稳的做法：<b>把断点放在"最后一段不变的内容"结尾</b>，而不是放在每轮都在变的那块上。</p>
+  </div>
+  <p style="color:var(--muted)">（各家实现不同：有的用"块数"算窗口，有的按 token 增量、有的有断点数量上限。原则一样——<b>写入要有人打点，读取只认打过的点，窗口有限</b>。）</p>
+  <div class="note">
+    <span class="label">好消息：这个坑 agent 基本碰不到</span>
+    <p>官方文档专门写了一条例外：<b>连续的一串"工具调用"算一格，连续的一串"工具结果"也算一格。</b></p>
+    <p>翻译成人话：<b>哪怕你一轮里并行调了 20 个工具，官方也只当 1 格算</b>——<b>不会把上一轮的条目挤出窗口。</b></p>
+    <p>所以上面那个"塞 30 块就失效"的坑，<b>对多轮聊天是条真警告，对并行调工具的 agent 基本不成立</b>。别为它改坏了自己的架构。</p>
+  </div>
+
+  <h2 id="q5-not-free">Q5 · 那"命中"到底能省多少？为什么不是免费？</h2>
+  <p><b>对应初学版第 3 节的「命中（cache hit）」和第 5 节那三条铁律。</b>"白捡"听着很美，但实际有三道折扣。</p>
+  <p>因为省的是<b>算 K/V 那部分工作</b>，而不是"不用送"。命中之后：</p>
+  <ul>
+    <li>那段前缀<b>还是要塞进上下文、照样占位置</b>（它在窗口里）；</li>
+    <li>只是不用重新<b>算</b>——所以又快又便宜，但<b>不是零</b>；</li>
+    <li>缓存还有 <b>TTL</b>（几分钟到一小时），过期就没了；</li>
+    <li>而且<b>缓存不保证一定有</b>：可能被淘汰、可能路由到别的机器。</li>
+  </ul>
+  <p>一句话：<b>命中是"打折"，不是"免费"；是"尽量"，不是"保证"。</b></p>
+  <div class="note">
+    <span class="label">最常踩的一种"为什么不命中"：前缀太短</span>
+    <p>各家都设了<b>最小可缓存长度</b>（按模型不同，512 / 1024 / 2048 / 4096 token 都有）。<b>不到这个长度，请求照常处理，但一点缓存都不建</b>——<b>而且不报错、不提示</b>。</p>
+    <p>所以"我怎么一次都没命中过"，先别急着查代码，<b>先去量一下你的稳定前缀到底多长</b>。它够长吗？</p>
+    <p style="color:var(--muted)">（反直觉的一笔账：如果你的稳定前缀刚好卡在门槛下面一点，<b>把它补长到门槛以上反而更便宜</b>——因为跨过门槛之后，后面每一次都在打折。补的内容要是稳定且有用的，别拿废话凑。）</p>
+  </div>
+  <div class="note">
+    <span class="label">所以监控要盯两个数</span>
+    <p><b>缓存读取量</b>（省了多少）和 <b>缓存写入量</b>（花了多少）。只盯一个会误判。</p>
+  </div>
+
+  <h2 id="q-misconceptions">附 · 两个别误会</h2>
+  <div class="note">
+    <p><b>① 缓存不改变"怎么生成"，但不保证每次生成出同一个字。</b>官方原话是：缓存只省掉"重新处理前缀"这一步，<b>模型生成输出的方式一点没变</b>。至于同一个问题会不会每次答得一样——那是另一回事：<b>采样本来就是按百分比抽的，本来就有随机性</b>，跟缓存没关系。</p>
+    <p><b>② 缓存不等于"存了你的数据"。</b>存的是 K/V 张量（中间计算结果），不是可读的原文；而且会过期。</p>
+  </div>
+
+  <h2>再来三个更难的</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 上一轮模型的回答，什么时候会被缓存命中？</p>
+    <button class="quiz-option" data-correct="true">它变成下一轮前缀的一部分时</button>
+    <button class="quiz-option">它被生成出来的那一刻立刻</button>
+    <button class="quiz-option">它从来没有被命中过一回</button>
+    <button class="quiz-option">只有在用户重新发送它的时候</button>
+    <p class="feedback"
+       data-ok="对。输出在下一轮里就是前缀，所以会被复用、被命中。"
+       data-no="跨请求复用的前提是「它成了前缀」。上一轮的回答正是下一轮前缀的一部分。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 为什么"每次前缀都在变"的请求，开缓存反而亏？</p>
+    <button class="quiz-option" data-correct="true">付了更贵的写入却一次没读到</button>
+    <button class="quiz-option">因为会触发服务商的限流机制</button>
+    <button class="quiz-option">因为写入会覆盖掉别人的缓存</button>
+    <button class="quiz-option">因为变了以后模型会答得更差</button>
+    <p class="feedback"
+       data-ok="对。缓存写入本身要钱，读不到就白花了。"
+       data-no="写入和读取是两笔账：只写不读，等于赔了。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 某一轮一口气加了很多新内容，可能发生什么？</p>
+    <button class="quiz-option" data-correct="true">旧条目被挤出查找窗口，全不命中</button>
+    <button class="quiz-option">缓存会自动扩容并保持全部命中</button>
+    <button class="quiz-option">模型会把新内容自动压缩掉</button>
+    <button class="quiz-option">服务商那边会拒绝这次请求</button>
+    <p class="feedback"
+       data-ok="对。查找窗口有限（如 20 个位置），挤出去就找不到了。多打断点可以救。"
+       data-no="读取只往回找有限个位置，超出窗口的旧条目就找不到了。"></p>
+  </div>
+
+  <div class="source">
+    <b>这篇的一手资料</b>：<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching（官方文档）</a>：那张多轮缓存表、断点机制、20 个位置的查找窗口，都出自这里。<br>
+    <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a>：前缀匹配、只追加不改写、工具结果算在前缀里、"缓存不改变输出"。<br>
+    <a href="https://docs.x.ai/developers/advanced-api-usage/prompt-caching/multi-turn">xAI — 多轮场景的缓存</a>：三种打断缓存的真实例子（改、删、换顺序）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"我怎么看自己有没有命中？""多打几个断点有代价吗？""为什么是 0.1 倍而不是 0.01 倍？""本地跑的模型也能缓存吗？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>回初学版</b>：<a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a><br>
+    <b>前置</b>：<a href="0002-prefill-vs-decode.html">第 2 课 · 一次请求的两段</a>——本课讲的重算，就发生在后一段。<br>
+    <b>Agent 侧</b>：<a href="../practice/0001-context-engineering.html">Agent 技巧篇 · 0001 · 上下文工程</a> · <a href="../agent/0003-mini-agent.html">第 3 课 · 把零件装起来</a><br>
+    术语表：<a href="../../reference/glossary.html#kv-cache">KV Cache</a> · <a href="../../reference/glossary.html#prefix-cache">前缀缓存</a> · <a href="../../reference/glossary.html#request">一次任务 / 一次请求 / 一轮 decode</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 3 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

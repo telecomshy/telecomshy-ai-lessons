@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>图 · 一次请求，从头到尾</title>
+<link rel="stylesheet" href="../assets/base.css">
+<style>
+  .stage {
+    border: 1px solid var(--rule);
+    background: #fff;
+    border-radius: 6px;
+    padding: 1rem 1.1rem;
+    margin: 1.4rem 0;
+  }
+  .stage-head {
+    font-family: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", sans-serif;
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 0.35rem; min-height: 2.1rem; align-items: center; }
+  .chip {
+    font-family: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", sans-serif;
+    font-size: 0.76rem;
+    padding: 0.28rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--ink);
+    background: #fff;
+    line-height: 1.25;
+    white-space: nowrap;
+  }
+  .chip.in  { background: var(--accent-soft); border-color: #c9a68f; color: #5c2a12; }
+  .chip.out { background: var(--ok-soft); border-color: #8fbca0; color: #17512c; }
+  .chip.new { box-shadow: 0 0 0 3px rgba(31,107,58,.18); }
+  .chip.empty { border: 1px dashed var(--rule); color: var(--muted); background: none; }
+
+  .rows { display: grid; gap: 0.45rem; }
+  .row { display: grid; grid-template-columns: 5.6rem 1fr; gap: 0.1rem 0.65rem; align-items: center; font-size: 0.83rem; }
+  .row .who {
+    font-family: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", sans-serif;
+    color: var(--muted); text-align: right; white-space: nowrap;
+  }
+  .row .track { display: block; background: var(--code-bg); border-radius: 3px; height: 0.78rem; overflow: hidden; }
+  .row .bar { display: block; height: 100%; border-radius: 3px; }
+  .row .bar.calc { background: var(--accent); }
+  .row .bar.read { background: var(--ink); }
+  .row .what { grid-column: 2; color: var(--muted); font-size: 0.78rem; }
+
+  .rail { border-left: 2px solid var(--rule); margin: 1.4rem 0 0.6rem; padding-left: 0; }
+  .step {
+    position: relative;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--paper);
+    padding: 0.8rem 1rem 0.85rem;
+    margin: 0 0 0.7rem 1.4rem;
+    transition: opacity .18s, border-color .18s, background .18s;
+    opacity: .42;
+  }
+  .step::before {
+    content: "";
+    position: absolute; left: -1.4rem; top: 1.15rem;
+    width: 0.62rem; height: 0.62rem; border-radius: 50%;
+    background: var(--rule); transform: translateX(-0.32rem);
+  }
+  .step.on { opacity: 1; border-color: var(--accent); background: #fff; }
+  .step.on::before { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+  .step.done::before { background: var(--ok); }
+  .step h3 {
+    margin: 0 0 0.35rem; font-size: 1rem;
+    display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
+  }
+  .step h3 .tag {
+    font-family: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", sans-serif;
+    font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 0.12rem 0.4rem; border-radius: 3px; background: var(--accent-soft); color: var(--accent);
+    font-weight: 400;
+  }
+  .step h3 .tag.ok { background: var(--ok-soft); color: var(--ok); }
+  .step p { margin: 0.35rem 0; font-size: 0.93rem; }
+  .step ul { margin: 0.35rem 0; font-size: 0.93rem; }
+  .step .side { color: var(--muted); font-size: 0.85rem; }
+
+  .controls {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    margin: 1.1rem 0 2rem;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", sans-serif;
+    font-size: 0.85rem;
+  }
+  .controls button {
+    font: inherit; cursor: pointer;
+    border: 1px solid var(--ink); background: #fff; color: var(--ink);
+    padding: 0.35rem 0.75rem; border-radius: 5px;
+  }
+  .controls button:hover { background: var(--accent-soft); }
+  .controls button:disabled { opacity: .35; cursor: default; background: #fff; }
+  .controls .pos { color: var(--muted); margin-left: auto; }
+  .kbd { color: var(--muted); font-size: 0.78rem; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">图 / Diagram</div>
+  <h1>一次请求，从头到尾</h1>
+  <p class="subtitle">prefill ＋ decode 的完整过程。<b>点「下一步」一步步走</b>——重点看上面货架（KV cache）怎么一点点变满。</p>
+
+  <div class="stage">
+    <div class="stage-head">先解一个最容易卡住的：同一套流水线，为什么算的量不一样？</div>
+    <p style="margin:0.2rem 0 0.85rem;font-size:0.95rem"><b>计算方法一模一样</b>——变的只是「一次喂几行」。流水线每一步都是矩阵乘法 <code>输出 = 输入的表 × 权重矩阵</code>：</p>
+    <div class="rows">
+      <div class="row">
+        <span class="who">prefill</span>
+        <span class="track"><span class="bar calc" style="width:100%"></span></span>
+        <span class="what">输入 20000 行 → 一次算 20000 份</span>
+      </div>
+      <div class="row">
+        <span class="who">decode</span>
+        <span class="track"><span class="bar calc" style="width:2%"></span></span>
+        <span class="what">输入 1 行 → 一次只算 1 份</span>
+      </div>
+      <div class="row">
+        <span class="who">读权重</span>
+        <span class="track"><span class="bar read" style="width:100%"></span></span>
+        <span class="what">同一张权重矩阵 —— 两段都得整张读一遍</span>
+      </div>
+    </div>
+    <p style="margin:0.9rem 0 0;font-size:0.93rem"><b>读权重是固定开销，计算量随行数变。</b>prefill 把这份开销摊到 2 万行上，decode 只摊到 1 行上——<b>这就是"一段卡算力、一段卡带宽"的根。</b></p>
+  </div>
+
+  <div class="stage">
+    <div class="stage-head">货架 · KV cache（存在显存里）</div>
+    <div class="chips" id="cache"></div>
+  </div>
+
+  <div class="rail" id="rail">
+
+    <div class="step" data-step="0">
+      <h3><span>①</span> 你的输入 <span class="tag">已知</span></h3>
+      <p>你按下回车。发过去的是一整段：<b>系统提示 ＋ 历史对话 ＋ 这一句</b>。</p>
+      <p>特点：<b>全是已知的</b>——不需要等谁生成出来。这决定了它下一步能"一起算"。</p>
+      <div class="side">货架：还是空的。</div>
+    </div>
+
+    <div class="step" data-step="1">
+      <h3><span>②</span> prefill（预填充） <span class="tag">算力受限</span></h3>
+      <p>把整段输入<b>一起</b>送进模型，<b>一次走完所有层</b>。每层都是：<code>注意力 → 残差 → FFN → 残差</code>。</p>
+      <ul>
+        <li><b>副产品</b> → 每层<b>注意力</b>算出的 K/V，存进货架（KV cache）</li>
+        <li><b>主产出</b> → 最后一个位置的输出，采样出<b>第 1 个 token</b></li>
+      </ul>
+      <div class="side">瓶颈是<b>算力</b>：一大堆乘法一起做，显卡算不过来才是问题。</div>
+    </div>
+
+    <div class="step" data-step="2">
+      <h3><span>③</span> decode 第 1 步 <span class="tag">带宽受限</span></h3>
+      <p>只喂<b>第 1 个 token</b>（刚蹦出来的那个）。走的是<b>同一套</b>流水线，只是这次只喂 1 个。</p>
+      <ul>
+        <li><b>读</b>货架里所有历史的 K/V，才能算出注意力</li>
+        <li>把自己新算出的 K/V <b>放</b>到货架末尾</li>
+        <li>产出 → <b>第 2 个 token</b></li>
+      </ul>
+      <div class="side">瓶颈是<b>显存带宽</b>：算的量很小，但每步都要把整份货架搬一遍。</div>
+    </div>
+
+    <div class="step" data-step="3">
+      <h3><span>④</span> decode 第 2 步 <span class="tag">带宽受限</span></h3>
+      <p>同样的动作，只是货架<b>又长了一截</b>——所以这一步比上一步略慢。</p>
+      <ul>
+        <li>读货架（更长了）＋ 追加自己那张 → 产出 <b>第 3 个 token</b></li>
+      </ul>
+      <div class="side">注意：第 2 个字是<b>上一步</b>（decode 第 1 步）产出的，不是 prefill。</div>
+    </div>
+
+    <div class="step" data-step="4">
+      <h3><span>⑤</span> ……一直循环到结束 <span class="tag ok">收束</span></h3>
+      <ul>
+        <li><b>prefill 只在最开头一次</b>；后面每"吐一个字"都是一步 decode。</li>
+        <li>货架<b>只增不减</b> → 每扫一次越来越久 → 这就是"<b>写长文慢</b>"的原因。</li>
+        <li>停止条件：遇到结束符，或到长度上限。</li>
+      </ul>
+      <div class="side">换个说法：<b>输入＝造货（算力），输出＝扫货（带宽）</b>。</div>
+    </div>
+
+  </div>
+
+  <div class="controls">
+    <button id="prev">◀ 上一步</button>
+    <button id="next">下一步 ▶</button>
+    <button id="reset">重播</button>
+    <span class="kbd">（键盘 ← → 也行）</span>
+    <span class="pos" id="pos"></span>
+  </div>
+
+  <div class="note">
+    <span class="label">这张图最容易看错的三处</span>
+    <p><b>① 两段走的是同一套流水线。</b>decode 也做注意力、也做 FFN——<b>别用"走没走完整流水线"来分</b>。</p>
+    <p><b>② 分界线是"被处理的那个 token 是谁的"。</b>你发过去的 → prefill；模型自己蹦的 → decode。</p>
+    <p><b>③ 第 1 个字是 prefill 产出的。</b>decode 第 1 步产出的是第 <b>2</b> 个字——这里错位一格。</p>
+  </div>
+
+  <p class="next">
+    <b>讲这过程的课</b>：<a href="../lessons/llm/0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · 为什么「读长文」快、「写长文」慢？</a><br>
+    <b>想再深挖</b>：<a href="../lessons/llm/0002-prefill-vs-decode-deep.html">第 2 课（进阶版）· 十一个追问</a>（hidden 向量 / 搬算交替 / 算术强度 / 增量 prefill / 层与轮 …）<br>
+    <b>缓存那一层</b>：<a href="../lessons/llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache 与「缓存命中」</a><br>
+    <b>目录</b>：<a href="../lessons/index.html">全部课程</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · 图 · 一次请求，从头到尾</footer>
+</div>
+
+<script>
+(function () {
+  var IN = ['系统提示', '历史对话', '这一句'];
+  // 每一步的货架内容：in = 输入那批，out = 模型自己蹦出来的
+  var CACHE = [
+    [],                                   // ① 输入
+    [{ t: '系统提示', k: 'in' }, { t: '历史对话', k: 'in' }, { t: '这一句', k: 'in' }],
+    [{ t: '系统提示', k: 'in' }, { t: '历史对话', k: 'in' }, { t: '这一句', k: 'in' }, { t: '第1个 token', k: 'out', fresh: true }],
+    [{ t: '系统提示', k: 'in' }, { t: '历史对话', k: 'in' }, { t: '这一句', k: 'in' },
+     { t: '第1个 token', k: 'out' }, { t: '第2个 token', k: 'out', fresh: true }],
+    [{ t: '系统提示', k: 'in' }, { t: '历史对话', k: 'in' }, { t: '这一句', k: 'in' },
+     { t: '第1个 token', k: 'out' }, { t: '第2个 token', k: 'out' }, { t: '第3个 token', k: 'out', fresh: true }]
+  ];
+
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+  var cacheEl = document.getElementById('cache');
+  var posEl = document.getElementById('pos');
+  var prevBtn = document.getElementById('prev');
+  var nextBtn = document.getElementById('next');
+  var resetBtn = document.getElementById('reset');
+  var cur = 0;
+
+  function render() {
+    steps.forEach(function (el, i) {
+      el.classList.toggle('on', i === cur);
+      el.classList.toggle('done', i < cur);
+    });
+
+    var items = CACHE[cur];
+    if (!items.length) {
+      cacheEl.innerHTML = '<span class="chip empty">（还没有东西）</span>';
+    } else {
+      cacheEl.innerHTML = items.map(function (it) {
+        return '<span class="chip ' + it.k + (it.fresh ? ' new' : '') + '">' + it.t + '</span>';
+      }).join('');
+    }
+
+    posEl.textContent = '第 ' + (cur + 1) + ' / ' + steps.length + ' 步';
+    prevBtn.disabled = cur === 0;
+    nextBtn.disabled = cur === steps.length - 1;
+  }
+
+  prevBtn.addEventListener('click', function () { if (cur > 0) { cur--; render(); } });
+  nextBtn.addEventListener('click', function () { if (cur < steps.length - 1) { cur++; render(); } });
+  resetBtn.addEventListener('click', function () { cur = 0; render(); });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') { nextBtn.click(); }
+    if (e.key === 'ArrowLeft') { prevBtn.click(); }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

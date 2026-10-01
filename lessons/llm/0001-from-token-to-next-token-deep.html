@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 1 课（进阶版）· 十个问题</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 1 课 · 进阶版</div>
+  <h1>从 token 到下一个 token：十个问题</h1>
+  <p class="subtitle">初学版讲「是什么」，这篇答「<b>为什么</b> / <b>还有什么坑</b>」。<b>按需跳读</b>——<a href="0001-from-token-to-next-token.html">初学版</a>讲到相关处用括号指过来，剩下的收在它的文末清单里。</p>
+
+  <div class="note">
+    <span class="label">怎么用这篇</span>
+    <p style="color:var(--muted)">只收<b>读完初学版仍会冒出来</b>的疑问。初学版已经讲清楚的（比如"token 不是向量""是 n 行不是一根"），这里不再重复。<br>想把<b>整条链</b>（文字 → 下一个字 → 下一轮）一次看完，去 <a href="0002-prefill-vs-decode-deep.html#chain">第 2 课进阶 · 总图</a>；本篇每一问都挂在那一环上。</p>
+    <p style="color:var(--muted)">总链先放这儿，方便对照：<code>文字 → token → 编号 → 向量 → [注意力 → 残差 → FFN → 残差] × N → 打分 → 百分比 → 采样</code></p>
+  </div>
+
+  <h2 id="q1-vocab">Q1 · 词表是什么？有多大？遇到生词怎么办？</h2>
+  <p><b>对应初学版第 1 节</b>的"查词表"那一步。这一句里"词表"是直接拿来用的，展开说：</p>
+  <p>它<b>不是</b>解释意思的词典，就是一张<b>清单</b>：模型认识的每一个 token 都列上，每条配一个编号。所谓"对号"，查的就是这张表。</p>
+  <ul>
+    <li><b>有多大？</b>各家分词器的实测数字：GPT-2 ＝ <b>50,257</b>；GPT-4（<code>cl100k_base</code>）＝ <b>100,256</b>；GPT-4o（<code>o200k_base</code>）＝ <b>199,997</b>；Llama 3 ＝ <b>128,000</b>。</li>
+    <li><b>它跟分词器是一套的、绑死的。</b>分词器学出来的"合并规则"决定了哪些片段算 token，词表就是这些片段的名单。换掉分词器，同一段文字切出来的编号完全不同，模型也就认不出来（所以分词器是原配，不能随便换）。</li>
+    <li><b>遇到生词怎么办？</b>词表外的东西没有编号，只能切成词表里有的小块拼出来。所以"模型的词汇量"＝词表大小——它只能输出词表里存在的 token。</li>
+    <li><b>它跟最后一步的关系</b>：打分时逐个对分的对象就是这张表。<b>词表多大，logits 就有多少个数</b>（十几万到二十万个分）。</li>
+  </ul>
+
+  <figure class="figure">
+    <img src="../../assets/vocab-table.svg" alt="词表长什么样：一张只有两列的清单，左边是编号，右边是对应的 token，没有第三列也没有解释。编号 0 对应「!」、312 对应「天」、1092 对应「气」、55 对应「很」、4021 对应「好」、7 对应「 the」、50256 对应省略号。右边三句注解：编号只是第几行没有含义；不解释意思，天和气挨着纯粹因为语料里常这么写；拿它查 ID、跟它对分就这两件事。">
+    <figcaption><b>词表实物</b>：就这两列，<b>没有第三列</b>。它不解释 token 是什么意思——「天」「气」「很」挨在一起，纯粹因为语料里常这么写。<b>编号只是「第几行」</b>，而且换不掉。<b>这张表在训练之前就定好了</b>（由分词器数频次产出），跟训练无关。<span style="color:var(--muted)">（编号是示意：GPT-2 的中文「天」并不是单个 token，真实情况见 <a href="#q1-vocab">本页 Q1</a> 的"生词"那条。）</span></figcaption>
+  </figure>
+
+  <h2 id="q2-embedding">Q2 · 嵌入表是什么？查表怎么就查出向量了？</h2>
+  <p><b>对应初学版第 1 节</b>的"查嵌入表"那一步（初学版只写了"拿编号去查第 N 行"，没细说这张表本身）。这里补四件它没讲的。<span style="color:var(--muted)">（"这串数字会被反复改写"这件事，文末<a href="#q-misconceptions">附 · 四个别误会</a>已经讲过，这里不重复。）</span></p>
+  <ul>
+    <li><b>它有多大：词表行数 × d。</b>GPT-2 小模型 ＝ 50,257 × 768 ≈ <b>3,860 万</b>个数字，而整个模型 <b>1.24 亿</b>——<b>三分之一的模型是这张表</b>。GPT-3（1750 亿）＝ 50,257 × 12,288 ≈ <b>6.2 亿</b>，却只占整个模型的 <b>0.35%</b>。<b>规律：模型越小，词表这块占得越重</b>；到今天这个量级，权重基本都在后面那几十层里——<a href="0000-how-models-learn.html">第 0 课</a>说的"骨架"才是主体。</li>
+    <li><b>它就是第 0 课那堆权重里最大的一块。</b>训练刚开始时它是一堆<b>很小的随机数</b>，之后每一轮都被梯度更新一点点——<b>具体怎么从随机数长成有意义的向量，见下一问。</b></li>
+    <li><b>坑一：向量不能跨模型比。</b>d 是每个模型自己定的（小模型 256 / 768，大模型 4096 / 8192），跟词表是两回事。<b>「天」在 A 模型的向量和在 B 模型的向量毫无可比性</b>——只有同一个模型的同一张表里，两串数字才能比。所以"越接近说明关系越近"这句话，<b>只在同一个模型内部成立</b>。</li>
+    <li><b>坑二：它常常兼任输出那层。</b>不少模型（比如 GPT-2）让<b>嵌入表和最后打分用的那张表是同一张</b>——同一个 token，"进来时的向量"和"出去时打分的权重"是同一行数字。也有的模型分开训练，见 <a href="../../reference/glossary.html#lm-head">LM Head</a>。</li>
+  </ul>
+
+  <figure class="figure">
+    <img src="../../assets/embedding-table.svg" alt="嵌入表长什么样：一张纯数字矩阵，行数等于词表大小 V（GPT-2 是 50,257 行，这里画 6 行），每行 d 列（GPT-2 是 768 列，这里画 5 列）。左边行号就是词表里的编号：第 312 行被高亮，被取出来的是 1.0、0.0、0.0、0.5、-0.2 开头那一行。三点说明：行与 token 的对应关系是词表定的、训练前就定死永不改；表里的数字才是训练填的，一开始是 0 附近的小随机数；表的大小跟着模型走，GPT-2 小模型 50,257 乘 768 约 3,860 万个数，占整个模型的三分之一。">
+    <figcaption><b>嵌入表实物</b>：<b>一行 = 一个 token 的向量</b>，行号直接就是词表里的那个编号——所以"查第 N 行"只是<b>照抄那一行的数字</b>，没有任何计算。<b>但要分清两件事</b>：<b>「哪一行对应哪个字」是词表定的、训练前就定死</b>；<b>「那一行里填什么数」才是训练填的</b>（怎么学出来的见下一问）。<span style="color:var(--muted)">（数字是示意：只画了 5 列。）</span></figcaption>
+  </figure>
+
+  <h2 id="q3-training">Q3 · 嵌入表是怎么训练出来的？它一开始不就是一堆随机数吗？</h2>
+  <p><b>对应 <a href="0000-how-models-learn.html">第 0 课</a>那套「出题 → 扣分 → 拧」。</b>第 0 课的玩具只有一张表、答案直接写在表上；真实模型多了一层<b>编号</b>，就得多交代一句。这里分开答三个问题：<b>表什么时候定下来 · 一开始里面是什么 · 每一步在拧什么。</b></p>
+
+  <h3>① 表的尺寸和对应关系，训练前就定死了</h3>
+  <p>训练开始的那一刻，V × d 的矩阵<b>已经分配好了</b>：V ＝ 词表大小（GPT-2 是 50,257），d 是这个模型自己选的（GPT-2 是 768）。<b>哪一行对应哪个 token，也在这时定死</b>——因为词表早就冻结了。</p>
+  <p>所以准确的说法不是"一开始没有嵌入表"，而是：<b>一开始有一张形状已定、内容全随机的表。</b></p>
+
+  <h3>② 一开始里面是随机数，所以它一开始在胡说</h3>
+  <p>初始化用的是<b>0 附近的小随机数</b>（GPT-2 取的是标准差 0.02 的正态分布）。此时模型给每个字的打分基本随机，<b>平均扣分约 <code>ln(50257) ≈ 10.8</code></b>——<b>训练刚开始的模型是在均匀地乱说。</b></p>
+
+  <h3>③ 那"正确答案是哪个字"从哪来？——从词表来，跟嵌入表无关</h3>
+  <p>这是最容易卡住的一处。用「天气很好」走一遍：</p>
+  <pre><code>输入侧   「天气很」→ 查词表 → 312, 1092, 55 → 拿这三个编号去嵌入表取第 312/1092/55 行
+         ＝ 三根向量，进模型
+
+目标侧   「好」    → 查词表 → 4021
+         ＝ 训练信号：第 4021 个分数该最高
+
+输出侧   最后一根向量 → 跟词表每一行都算一遍相似度 → 得到 50257 个分数
+         其中第 4021 个，就是「好」的分数</code></pre>
+  <p><b>目标字的编号来自词表，而词表在训练之前就冻结了。</b>它跟嵌入表第 4021 行此刻写着什么数字<b>毫无关系</b>——所以"一开始全是随机数"一点不妨碍我们定义这道题。</p>
+  <p>换个说法：<b>训练要填的是「第 4021 行里填什么数」，不是「第几行对应哪个字」。</b>后者早就定死了，<b>前者才是训练干的活</b>——这两件事混在一起，就会觉得"没有表怎么训练"。</p>
+
+  <h3>④ 每一步具体在拧这张表的什么</h3>
+  <p>还是第 0 课那四步，落到嵌入表上就是：</p>
+  <ul>
+    <li><b>出题</b>：抓一句现成的话，往后挪一格，标准答案自带。</li>
+    <li><b>对答案</b>：答案「好」查词表得 4021。训练信号就是一个 one-hot——<b>50257 个位置里第 4021 个是 1，其余全是 0</b>。</li>
+    <li><b>算扣分</b>：模型在第 4021 个位置上给了多少分，跟 1 差多少。</li>
+    <li><b>往回拧</b>：从出口追责一路追到入口，<b>落在刚才读进来的那几行上</b>——被读进来的每个 token，它那一行都被拧一点点。<b>「这一行是训练出来的」说的就是这个。</b>打分那头也一样被拧：<b>"「好」该得高分的那个权重"</b>也是训练拧出来的（权重共享时，它就是第 4021 行本身）。</li>
+  </ul>
+  <p><b>所以那 3860 万个数字，没有一个是人填的，也没有一个是事先安排好的</b>——每一轮都被扣分推一小步，跑完整个语料之后，才长出"「好」跟「很」关系近"这类规律。</p>
+  <p style="color:var(--muted)">（顺带解释「<b>权重共享</b>」为什么能成立：共享时「好」那一行同时出现在两处——进来时当上下文、出去时当打分依据，而训练本来就同时在这两个方向上拧它，所以它们能长在同一行。坑二见 <a href="#q2-embedding">Q2</a>。）</p>
+
+  <h2 id="q4-boundary">Q4 · 分词、查词表这两步，算不算「模型」的一部分？</h2>
+  <p><b>对应初学版第 1 节</b>的三步链。链上第一步第二步看着像"模型在干活"，其实不是：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">步骤</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">算不算模型</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">说明</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">分词 tokenizer</td><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">❌ 不算</td><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">配套的小程序，把文字切成 token</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">查词表 vocabulary</td><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">❌ 不算</td><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">同一个小程序，把 token 变成编号</td></tr>
+      <tr><td style="padding:0.4rem">查嵌入表 embedding</td><td style="padding:0.4rem">✅ <b>算</b></td><td style="padding:0.4rem">就是<b>模型的第一层</b>，参数是训练学出来的</td></tr>
+    </tbody>
+  </table>
+
+  <h3>那「输入模型的」到底是什么？</h3>
+  <p>两种口径都对，看你把边界划到哪：</p>
+  <ul>
+    <li><b>宽口径</b>：模型吃的是<b>张量</b>（n 行 × d 列）。</li>
+    <li><b>严口径</b>：模型吃的是<b>编号</b>（一串整数）；<b>第一层（词嵌入表）</b>把编号变成张量，张量才进 N 个 Block。</li>
+  </ul>
+  <p>差别只在"词嵌入算不算模型的开头"。因为它是<b>训练学出来的参数</b>（会被梯度更新），<b>算</b>。所以严口径更准：<b>模型 ＝ 词嵌入表 ＋ N 个 Block ＋ LM Head</b>，分词器站在门外。</p>
+
+  <h3>每一轮都要重做吗？</h3>
+  <p><b>都要做，但便宜的那几步每次都重来，贵的那几步靠缓存避开。</b></p>
+  <ul>
+    <li><b>分词 / 查词表 / 查嵌入</b>：每轮都要走一遍（至少对新增的部分）。这几步是<b>纯查表</b>，几乎不花时间。</li>
+    <li><b>N 个 Block 的计算</b>才是贵的。而这部分，前面 token 走过的路会被 <b>KV Cache</b> 省掉，<b>只算新蹦出来的那一个</b>——这就是<b>第 3 课</b>的主角。</li>
+  </ul>
+  <p>"每轮都查嵌入"确实是重复，但那就是一次表查找，成本可忽略；真正被缓存省掉的是后面几十层的计算。</p>
+
+  <h2 id="q5-shape">Q5 · 为什么是「n 行 × d 列」的表，而不是把 n 串拼成一根大向量？</h2>
+  <p><b>对应初学版第 1 节末的「送进模型、开始被计算的就是这整张表」，和第 2 节的「进进出出都是同样形状」。</b>（初学版的流程图左边那一列标着每一步的形状，第 ④→⑤ 站都是 <code>3 行 × d 列</code>。）初学版说"是表，不是一根"，这里答<b>为什么非得这样</b>。</p>
+  <p>核心在<b>权重共享（weight sharing）</b>：表里的 n 行用的是<b>同一套换算规则</b>，不是 n 套。更像"<b>一个老师同时批改 n 份卷子，用同一把尺子</b>"。</p>
+  <ul>
+    <li><b>为什么不能拼？</b>一旦拼起来，3 个字和 4 个字拼出来的<b>长度就不一样</b>了——同一把尺子就没法用在每个位置上。只有每一串都同样长（<code>d</code>），同一套规则才能通吃所有位置、所有长度。</li>
+    <li><b>所以是"表"不是"一根"</b>：<b>d 固定、n 可变</b>。再多一个 token，表就多一行，别的什么都不用改。</li>
+    <li><b>那 n 行是 n 个各干各的小单元吗？</b>画面可以这么想，两处要修正：① 用的是<b>同一套规则</b>，不是 n 套；② <b>不是每一步都互相看</b>——只有注意力那一步互相看，FFN 那一步各走各的。</li>
+    <li><b>真在显卡上跑时</b>并没有真的摆 n 个小零件——是把 n 行数字排成一张表、一次算完。但逻辑上按"n 个位置各走各的"想没问题。</li>
+  </ul>
+
+  <h2 id="q6-mask">Q6 · 表里的 n 行，互相能看到对方吗？（因果掩码）</h2>
+  <p><b>对应初学版第 3 节①「注意力」</b>里那句"看不到后面"。初学版只给了结论，这里答<b>为什么</b>。</p>
+  <p><b>不能随便看。</b>每个位置只能看<b>自己和它之前</b>的那些行，<b>看不到后面</b>——后面还没写出来。这个硬规定叫<b>因果掩码（causal mask）</b>。</p>
+  <p>为什么必须这样？模型的任务是"猜下一个字"，要是能看到后面的字，就成了<b>抄答案</b>。</p>
+  <figure class="figure">
+    <img src="../../assets/causal-mask.svg" alt="因果掩码：位置 1 只能看自己，位置 2 能看 1、2，位置 3 能看 1、2、3，谁也看不到右边">
+    <figcaption>越往后的位置，能看的范围越大；但<b>谁也看不到右边</b>。</figcaption>
+  </figure>
+
+  <h2 id="q7-ffn">Q7 · FFN 那一步到底在改什么？为什么说它不是「检查」？</h2>
+  <p><b>对应初学版第 3 节③「FFN」。</b>初学版说它"补充知识、推动概念"，这里展开。</p>
+  <p>先纠正一个用词造成的误会：<b>它不是在"检查"什么。</b>要检查的那个结果这时候<b>还没算出来</b>——预测（打分）要到最后一页才发生。</p>
+  <p>它做的是一次<b>更细的改写</b>。研究发现它很像一张<b>"模式 → 补充信息"的查找表</b>：当这串数字里出现某种<b>模式</b>，它就往里<b>补充对应的信息</b>，把那个概念往上抬。</p>
+  <p>论文的原例：当前文是 <code>Eiffel Tower is located in</code>（埃菲尔铁塔位于）时，某一条"记忆"被触发，把 <b>「Paris」</b> 的分往上推。</p>
+  <p>所以与其说"检查 / 消化"，不如说<b>"补充知识、推动概念"</b>。</p>
+
+  <h2 id="q8-layers">Q8 · 中间某一层的数字，能不能直接拿去用？</h2>
+  <p><b>对应初学版第 3 节④「走完一层，换一层再来一遍」。</b>初学版说"每行数字被反复修改几十遍"，那改到一半的能不能用？</p>
+  <p><b>能，而且结果有点意外。</b>就算只走一半的层，拿当时的数字去词表里对分，也能猜出个大概。</p>
+  <p>这说明<b>预测是一层一层"磨"出来的</b>，不是最后一层突然顿悟。Geva et al.（EMNLP 2022）甚至把它看成"逐层推动概念"的过程。</p>
+  <p style="color:var(--muted)">（这个手法有个名字叫 <b>logit lens</b>：把中间那层的数字，直接接到最后那道"打分"的表上，偷看它当时想说哪个字。正式出处见下面的 Belrose et al. 2023。）</p>
+
+  <h2 id="q9-window">Q9 · 上下文窗口怎么算？没用满的宽度填什么？</h2>
+  <p><b>对应初学版第 4 节末那句"表的宽度从头到尾是 d，只是行数多一行"。</b>那这张表最多能多大？</p>
+  <p><b>"上下文"的底层含义，就是这条流水线一次最多能同时处理多少个 token 的位置。</b>上限叫<b>上下文窗口（context window）</b>。</p>
+  <p>但它数的不只是你输入的——<b>模型自己写出来的字也占位置</b>，因为它们也得留在"前文"里供后面回头去看：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>上下文窗口 = 输入的 token + 已经写出来的 token</b>，加起来不能超过上限。</p>
+  </div>
+  <p>上限卡在<b>显存</b>：每个位置都要留一份 K/V，位置越多占得越多。这正是第 3 课 KV Cache 的代价。</p>
+
+  <h3>那没用满的部分，填什么？</h3>
+  <p><b>什么都不填，也不占。</b>上限不是"必须填满的固定宽度"。刚开会话只有 3 个 token，就只用掉 3 个位置——模型天生处理<b>变长</b>序列（0 到上限之间随便多少都行）。</p>
+  <div class="note">
+    <span class="label">那工程上会不会"补满"？</span>
+    <p>会，但只在一种情况：一次同时算<b>好几条长短不一</b>的句子时（为了批量快）。短的会被补上<b>填充（padding）</b>的假 token，而补的部分会被<b>遮住（掩码 masking）</b>——模型看不见，也不参与计算。</p>
+    <p>记这句就够：<b>空位上没有东西；就算临时补了假货，也是被遮掉的，等于没有。</b></p>
+  </div>
+
+  <h2 id="q10-sampling">Q10 · 「按百分比抽一个」到底是怎么抽的？temperature、top_p 调的是什么？</h2>
+  <p><b>对应初学版第 3 节⑤「最后一站：打分，然后挑字」</b>，也就是开头那条总链的最后一环。初学版只说"按百分比抽一个"，听着像只有一种抽法。<b>其实从分表里挑字有好几种挑法，而且怎么挑是你可以调的</b>——那一组旋钮叫<b>采样参数</b>，随请求一起传。</p>
+
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>模型只负责给出那张分表（logits）。分表之后的事，模型管不着。</b></p>
+    <p>温度、<code>top_p</code> 这些<b>一个都不改分表</b>，只改"从分表里挑一个"的规则。所以调温度<b>不会让模型变聪明或变笨</b>——只会让它的话更多样，或者更保守。</p>
+  </div>
+
+  <h3>四个旋钮各在改什么</h3>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">旋钮</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">干什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">效果</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><code>temperature</code><br><b>温度</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">换算百分比<b>之前</b>，把所有原始分<b>除以 T</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">只改<b>差距有多悬殊</b>，不改名次。T = 1 原样；<b>T 越小越尖</b>（几乎只挑那个高的），<b>T 越大越平</b>（小概率的字也有机会）</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><code>top_k</code></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">只留分数<b>最高的 k 个</b>，其余直接出局</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">按<b>个数</b>砍尾巴</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><code>top_p</code><br>（<b>核采样 nucleus</b>）</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">从高到低<b>累加百分比</b>，加够 p 就停；留下的那一批叫<b>核</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">按<b>攒够多少</b>砍尾巴——分布尖就少留几个，分布平就多留几个</td></tr>
+      <tr><td style="padding:0.55rem"><code>seed</code><br><b>种子</b></td>
+          <td style="padding:0.55rem">让"抽"这个动作可以复现</td>
+          <td style="padding:0.55rem">不改分布，只固定<b>运气</b></td></tr>
+    </tbody>
+  </table>
+  <p><b>把温度推到头，就看见了另一种挑法。</b>T 推向 0 时，百分比会塌成一个点，"按百分比抽"退化成<b>永远挑最高分</b>——那叫<b>贪心（greedy）</b>，已经不是抽了。T = 1 时分数原样不动，换算出来的就是模型给的那个分布本身。</p>
+
+  <h3>叠着用的时候，有先后</h3>
+  <p>通行顺序是：<b>先按温度调锐度 → 再用 top_k / top_p 砍尾巴 → 最后从剩下的里面抽</b>（HuggingFace 的 <code>generate</code> 里就是按这次序排成一串处理器）。所以两把刀叠着用时<b>各砍各的，起作用的往往是更紧的那把</b>。</p>
+
+  <h3>那"挑"这个动作，到底是谁在执行？</h3>
+  <p><b>模型只算到分表为止。</b>真正动手挑的，是跑模型的那个<b>推理引擎</b>——vLLM、SGLang，或者各家 API 的服务端。所以<b>同一个模型换一家部署，同样的参数不保证挑出一模一样的字</b>。</p>
+
+  <h3>那为什么现在很少听人提这些了？</h3>
+  <p>因为 <b>harness 把旋钮收走了</b>，替你定了一套默认值，你只管写提示词。<b>藏起来不等于不存在</b>——它正是"同一个 prompt 两次答案不一样""评估跑两遍对不上"的来源。什么时候该自己动手调，见 <a href="../../reference/sampling-params.html">速查 · 采样参数</a>。</p>
+
+  <h3>动手：看旋钮怎么改分布</h3>
+  <p>脚本在工作区：<code>exercises/llm/0001-sampling-params.py</code>。它只做最后那一步"挑字"，把四个旋钮各拧一遍。</p>
+  <pre><code>python exercises/llm/0001-sampling-params.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">数字全是手编的、故意只有 5 个候选。下面是输出摘录（跑了就有完整的）。</p>
+  <pre><code>[2] 旋钮① temperature：换算百分比之前，先把所有分数除以 T
+      T = 0.2  换算后的百分比：
+        「好」98.6%   「冷」 1.2%   「坏」 0.2%   「差」 0.0%   「热」 0.0%
+      T = 1.0  换算后的百分比：
+        「好」49.7%   「冷」20.7%   「坏」13.9%   「差」 9.3%   「热」 6.4%
+      T = 2.0  换算后的百分比：
+        「好」33.7%   「冷」21.8%   「坏」17.8%   「差」14.6%   「热」12.1%
+
+[8] 每种旋钮各抽 2000 次，看真实的落点分布
+      T = 0.5（偏尖）
+        「好」77.0%   「冷」13.2%   「坏」 5.5%   「差」 2.8%   「热」 1.6%
+      T = 2.0（偏平）
+        「好」33.2%   「冷」21.9%   「坏」18.1%   「差」15.5%   「热」11.3%
+      T = 1.0 + top_p = 0.7（只留下「好」「冷」，其余三个永远抽不到）
+        「好」70.5%   「冷」29.5%   「坏」 0.0%   「差」 0.0%   「热」 0.0%</code></pre>
+  <p><b>看最后一行</b>：被砍掉的那三个，<b>百分比直接变成 0，永远抽不到</b>——这就是"砍尾巴"的字面意思。</p>
+
+  <div class="note">
+    <span class="label">一条别记错的边界</span>
+    <p><b>温度设成 0、种子固定，也不保证逐字复现。</b>服务端把多条请求拼在一起算、浮点加法的顺序不固定，都可能让结果差上一两个字。<b>能要求的是"结果等价"，不是"一字不差"</b>。（第 3 课那条"缓存不改变怎么生成"说的是另一半：<b>输出会不会变，看的是这最后一步，跟前面省没省算力无关</b>。）</p>
+  </div>
+
+  <h2 id="q-misconceptions">附 · 四个别误会（关于向量本身）</h2>
+  <div class="note">
+    <span class="label">向量本身</span>
+    <p><b>① 别去猜每个数字的含义。</b>不要想象"第 1 个数字代表'动物性'、第 2 个代表'大小'"。这些数字人读不懂，是模型自己学出来的。</p>
+    <p><b>② 它不是词典里的意思</b>，而是"<b>此刻、在这句话里</b>"的意思——所以会随前文变化。</p>
+    <p><b>③ 它不是死的。</b>整条流水线剩下的工作，就是<b>反复修改这串数字</b>。</p>
+    <p><b>④ token 也不是向量。</b>token 是文本零件，先变成编号，编号才变成向量（见 <a href="#q1-vocab">Q1</a>）。</p>
+  </div>
+
+  <h2>再来五个更难的</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 为什么输入必须是「n 行 × d 列」的表，而不能拼成一根？</p>
+    <button class="quiz-option" data-correct="true">拼了长度就变，同一把尺子用不了</button>
+    <button class="quiz-option">因为拼了会让显存瞬间爆掉</button>
+    <button class="quiz-option">因为拼了就没法做并行的运算</button>
+    <button class="quiz-option">因为拼了会丢掉词序的信息</button>
+    <p class="feedback"
+       data-ok="对。d 固定是权重共享的前提——同一套规则才能通吃所有位置和所有长度。"
+       data-no="关键在「权重共享」：长度一变，同一套换算就没法用在每个位置上。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 上下文窗口的消耗，包含下面哪一项？</p>
+    <button class="quiz-option" data-correct="true">输入 token 加已写出的 token</button>
+    <button class="quiz-option">只有用户自己输入的 token</button>
+    <button class="quiz-option">只有模型自己写出的 token</button>
+    <button class="quiz-option">输入 token 减去被缓存的部分</button>
+    <p class="feedback"
+       data-ok="对。写出来的字也占位置——它们也得留在「前文」里。"
+       data-no="两部分都占：输入的 + 已写出的。缓存省的是重算，不省位置。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 关于 FFN，哪一句是对的？</p>
+    <button class="quiz-option" data-correct="true">按模式补充信息，推动某些概念</button>
+    <button class="quiz-option">检查预测结果并做相应的微调</button>
+    <button class="quiz-option">把别的位置的信息按比重取过来</button>
+    <button class="quiz-option">把原始分换算成百分比以便采样</button>
+    <p class="feedback"
+       data-ok="对。注意力管「取信息」，FFN 管「补充知识 / 推动概念」。"
+       data-no="B 时序不对（预测还没发生）；C 是注意力；D 是 softmax。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 把 <code>temperature</code> 从 1.0 调到 0.2，会发生什么？</p>
+    <button class="quiz-option" data-correct="true">分表没动，只是换算出的百分比更尖</button>
+    <button class="quiz-option">分表被压平了，候选之间的差距变小</button>
+    <button class="quiz-option">尾部的候选被砍掉，从此再也抽不到</button>
+    <button class="quiz-option">模型重算了一遍，给出一张新的分表</button>
+    <p class="feedback"
+       data-ok="对。温度只动「换算百分比」那一步，logits 一个数都没改。"
+       data-no="温度不砍候选、也不让模型重算——它只把分差拉大或压小。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> <code>top_p</code> 设成 0.8，是在做什么？</p>
+    <button class="quiz-option" data-correct="true">从高到低累加百分比，加够八成就停</button>
+    <button class="quiz-option">只留下分数排在前面八成的那些候选</button>
+    <button class="quiz-option">把每个候选的百分比统统乘上零点八</button>
+    <button class="quiz-option">抽八次，再留下出现次数最多的候选</button>
+    <p class="feedback"
+       data-ok="对。从最高的开始累加，够 0.8 就停，留下的这批叫「核」。"
+       data-no="top_p 按「攒够多少」砍，不按个数砍，也不会去改百分比本身。"></p>
+  </div>
+
+  <div class="source">
+    <b>这篇的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/1706.03762">Vaswani et al., 2017</a>——注意力与因果掩码（§3.2.3："每个位置只依赖它之前的输出"）。<br>
+    <a href="https://arxiv.org/abs/2207.09238">Formal Algorithms for Transformers</a>——unembedding、采样、masked self-attention 的精确写法。<br>
+    <a href="https://aclanthology.org/2021.emnlp-main.446/">Geva et al., EMNLP 2021</a>——FFN 层运作得像键值记忆，原例 <code>Eiffel Tower is located in</code> → 推动「Paris」。<br>
+    <a href="https://aclanthology.org/2022.emnlp-main.3/">Geva et al., EMNLP 2022</a>——FFN 逐层"推动概念"，最终预测是一层层磨出来的。<br>
+    <a href="https://aclanthology.org/2023.acl-long.325/">Belrose et al., ACL 2023（Tuned Lens）</a>——Q8 那条"半层也能猜"的正式出处（logit lens）。<br>
+    <a href="https://sebastianraschka.com/blog/2025/bpe-from-scratch.html">Raschka — BPE Tokenizer From Scratch</a>——各家词表规模的实测数字，以及<b>词表自己是怎么被训练出来的</b>（反复合并高频相邻对；Q1 那张图就靠它）。<br>
+    <a href="https://www.fast.ai/posts/2025-10-16-karpathy-tokenizers">fast.ai — Let's Build the GPT Tokenizer</a>——<b>Q3 的依据</b>："tokenizer 是把字符串翻译成 token ID 的独立程序；而嵌入表的每一行是可训练参数，靠反向传播优化"。GPT-2 初始化取标准差 0.02 的正态分布，见官方 <code>config.json</code> 的 <code>initializer_range</code>。<br>
+    <a href="https://arxiv.org/abs/1904.09751">Holtzman et al., ICLR 2020（The Curious Case of Neural Text Degeneration）</a>——Q11 里 <code>top_p</code>（核采样）的原始出处："砍掉不可靠的尾巴，只从模型真正有把握的那批里抽"。<br>
+    <a href="https://huggingface.co/blog/how-to-generate">HuggingFace — How to generate text</a>——把"挑字"的几种挑法讲全（贪心 / beam search / 采样 / Top-K / Top-p / temperature）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>这里可以问得更深了，比如："Q/K/V 的三套换算是怎么学出来的？""为什么换算百分比前要除以 √dₖ？""温度是除在原始分上，为什么不干脆直接把百分比拉平？""LM Head 能不能和词嵌入表共用一套权重？"
+  </div>
+
+  <p class="next">
+    <b>回初学版</b>：<a href="0001-from-token-to-next-token.html">LLM 底层 · 第 1 课（初学版）</a><br>
+    <b>前置</b>：<a href="0000-how-models-learn.html">LLM 底层 · 第 0 课 · 模型是怎么学出来的</a><br>
+    <b>顺着往下</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · 一次请求的两段</a> · <a href="0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache 与缓存命中</a> · <a href="0004-batching.html">第 4 课 · 批处理</a><br>
+    <b>主线</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么？</a><br>
+    术语表：<a href="../../reference/glossary.html#tensor">张量</a> · <a href="../../reference/glossary.html#causal-mask">因果掩码</a> · <a href="../../reference/glossary.html#weight-sharing">权重共享</a> · <a href="../../reference/glossary.html#padding">填充 / 掩码</a> · <a href="../../reference/glossary.html#autoregressive">自回归生成</a> · <a href="../../reference/glossary.html#ffn">FFN</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 1 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

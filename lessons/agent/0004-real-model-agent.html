@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 原理篇 · 第 4 课（初学版）· 换上真模型，假的骗了你哪些地方</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 原理篇 · 第 4 课 · 初学版</div>
+  <h1>换上真模型：假的骗了你哪些地方</h1>
+  <p class="subtitle">骨架<b>一行没改</b>，只换了一个函数。但你会看到，真模型和假模型差得很远。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>前三课的脚本里，"模型"都是一个<b>写死的小函数</b>——我们用它把机制看清楚。</p>
+    <p>但你可能一直有个疑问：<b>假的和真的，到底差在哪？</b>会不会我学了半天，真跑起来根本不是那么回事？</p>
+    <p>这一课就把它换掉。<b>会发现两件事</b>：一是骨架真的一行不用改；二是假模型其实骗了你不少地方——而且多是往"太顺利"的方向骗。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：说清换模型该动哪里、以及假模型到底骗了你哪几处。<span style="color:var(--muted)">（要动手的人，能让自己的 agent 接上真模型跑起来。）</span></p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>agent 的骨架是<b>循环</b>，模型只是<b>插在循环里的一个零件</b>。</p>
+    <p>所以换模型这件事，理论上只该动<b>一个函数</b>。<b>如果发现要改的地方很多，说明你的骨架写歪了。</b>——这本身就是一条很好的检验标准。</p>
+  </div>
+
+  <h2>1. 先看骨架：真的没改</h2>
+  <p>0003 的 <code>run_agent()</code> 原样搬过来，一行不动：</p>
+  <pre><code>for step in range(1, max_steps + 1):
+    reply = real_model(messages, tools)        # ← 只有这一行换了函数名
+
+    if reply 是「一段话」:
+        return reply
+
+    result = 调用那个工具(reply)
+    messages.append(result)</code></pre>
+  <p><b>差别只在 <code>real_model()</code> 内部</b>：它现在要发一次 HTTP 请求，把各家接口的返回<b>统一成和假模型一样的形状</b>。</p>
+  <div class="note">
+    <span class="label">一处小差别，要老实说</span>
+    <p>各家接口要求把"模型说的那句话"<b>原样放回对话历史</b>（连同它那段 <code>tool_calls</code>）。这是<b>接口格式的事</b>，不是逻辑的事——但它确实是假模型时代看不到的细节。</p>
+  </div>
+
+  <h2>2. 怎么配</h2>
+  <p style="color:var(--muted)">（<b>不跑代码可以整节跳过</b>——下面全是运行细节，跟主线无关。）</p>
+  <p>脚本只用<b>标准库</b>，不用 <code>pip install</code> 任何东西。设两个环境变量就能跑：</p>
+  <pre><code>$env:OPENAI_API_KEY = "sk-..."
+$env:OPENAI_MODEL   = "gpt-4o-mini"          # 可选，默认就是它
+$env:OPENAI_BASE_URL = "https://api.deepseek.com/v1"   # 可选，用别家才要改</code></pre>
+  <p>然后：</p>
+  <pre><code>python exercises/agent/0004-real-model-agent.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">⚠ <b>这会真的花钱</b>，但很少——跑三次大概几厘到几分。脚本最后会把 <b>token 账单</b>打出来。</p>
+
+  <h2>3. 假模型骗了你哪些地方</h2>
+  <p>跑完对比一下，差距集中在这五点：</p>
+
+  <div class="note">
+    <span class="label">① 假模型认关键词，真模型读语义</span>
+    <p>脚本第三个问题问"<b>魔都</b>今天多少度"。假模型认不出"魔都"，直接翻车；真模型知道那是上海。<br>
+    <b>好处</b>：你不用把用户会怎么问都写进 if。<b>代价</b>：它的"理解"你预测不了，所以它也会在你没料到的地方出错。</p>
+  </div>
+  <div class="note">
+    <span class="label">② 假模型不会犯错，真模型会</span>
+    <p>真模型会<b>填错参数</b>（写成"北京市"）、<b>编出清单里没有的工具</b>、<b>该调不调</b>（自己瞎猜个温度）、<b>调了不该调</b>。<br>
+    所以脚本里给了 <code>try/except</code> 和"没有这个工具"的兜底——<b>真 agent 的代码，一半是在防模型出错</b>。</p>
+  </div>
+  <div class="note">
+    <span class="label">③ 假模型一轮就完，真模型会绕</span>
+    <p>假模型每次都精准命中。真模型可能绕几圈、可能中途放弃、也可能自作聪明提前收工。<b>所以最大步数不是摆设</b>。</p>
+  </div>
+  <div class="note">
+    <span class="label">④ 假模型不要钱不花时间，真模型两样都要</span>
+    <p>每一步都是<b>真金白银 + 等待</b>。这就是为什么前面 LLM 底层那几课讲的<b>缓存、省 token</b>，在 agent 里特别值钱。</p>
+  </div>
+  <div class="note">
+    <span class="label">⑤ 输出格式是接口说了算</span>
+    <p>真模型返回的 <code>tool_calls</code> 是接口规定好的结构（各家还不一样），不是你随便写个 JSON 就行。<b>这就是"适配层"存在的理由</b>。</p>
+  </div>
+
+  <h2>4. 三个必须记住的画面</h2>
+
+  <div class="note">
+    <span class="label">① 模型是可以拔插的零件</span>
+    <p>好 agent 的骨架应该做到<b>换模型只改一个函数</b>。做不到，就说明模型的细节渗进了你的逻辑里。</p>
+  </div>
+  <div class="note">
+    <span class="label">② 真 agent 的代码，一半在防错</span>
+    <p>参数校验、工具白名单、try/except、最大步数——这些不是"锦上添花"，是<b>必需品</b>。</p>
+  </div>
+  <div class="note">
+    <span class="label">③ 每一步都记账</span>
+    <p>脚本最后打了 token 账单。<b>做 agent 就是要盯这个数</b>——它直接是你的成本和速度。</p>
+  </div>
+
+  <h2>5. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 从假模型换成真模型，理想情况下要改多少代码？</p>
+    <button class="quiz-option" data-correct="true">只改调用模型那个函数</button>
+    <button class="quiz-option">整个循环要重写一遍</button>
+    <button class="quiz-option">工具的定义也得重新写</button>
+    <button class="quiz-option">所有输出都要改成 JSON 格式</button>
+    <p class="feedback"
+       data-ok="对。模型是零件，循环才是 agent。改得多，说明骨架写歪了。"
+       data-no="骨架不该被模型绑住。理想情况只动 model 那一个函数。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 真模型最容易在哪个环节出问题？</p>
+    <button class="quiz-option" data-correct="true">调工具那一步的参数和选择</button>
+    <button class="quiz-option">把向量变回字的那一步</button>
+    <button class="quiz-option">分词器切分文字的那一步</button>
+    <button class="quiz-option">把结果写进日志的那一步</button>
+    <p class="feedback"
+       data-ok="对。所以真 agent 的代码一半在防它出错。"
+       data-no="出问题的是「该调哪个、参数填什么」，不是底层那些环节。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 为什么 agent 特别在意省 token？</p>
+    <button class="quiz-option" data-correct="true">每一步都真的花钱和等待</button>
+    <button class="quiz-option">token 太多会让模型变笨</button>
+    <button class="quiz-option">token 多了会触发限流</button>
+    <button class="quiz-option">token 多了会漏掉工具</button>
+    <p class="feedback"
+       data-ok="对。循环转一圈就多花一次钱，所以省 token 就是省钱。"
+       data-no="根因是成本和延迟：每一轮都要真金白银地跑一遍。"></p>
+  </div>
+
+  <h2>6. 下一步</h2>
+  <p>真模型接上了，接下来让它<b>更靠谱</b>：</p>
+  <ul>
+    <li><b>工具设计</b>：名字、描述、参数怎么写，模型才调得准——这是影响成功率最直接的一件事；</li>
+    <li><b>怎么知道它变好了</b>：怎么测一个 agent 好不好用——见 <a href="../practice/0002-evaluating-agents.html">技巧篇 · 第 2 课</a>。</li>
+  </ul>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://developers.openai.com/api/docs/guides/function-calling">OpenAI — Function calling（官方指南）</a>：本课 <code>tool_calls</code> 那个返回格式的出处，以及"把函数写成 JSON schema 传给模型"的做法。<br>
+    <a href="https://www.anthropic.com/engineering/advanced-tool-use">Anthropic — Introducing advanced tool use</a>：另一家的同一件事（<code>tool_use</code> / <code>tool_result</code>），可以看到"适配层"为什么存在。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"为什么我的模型不认工具？""为什么它调了两次同一个工具？""能不能一边跑一边看它在想什么？""换个便宜的模型会差多少？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0003-mini-agent.html">Agent 原理篇 · 第 3 课 · 把零件装起来</a> · <a href="0002-tool-use.html">第 2 课 · 工具调用</a> · <a href="0001-what-is-an-agent.html">第 1 课 · Agent 到底是什么？</a><br>
+    <b>LLM 底层</b>：<a href="../llm/0001-from-token-to-next-token.html">第 1 课 · 从 token 到下一个 token</a> · <a href="../llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache</a>（工具清单是稳定前缀，吃缓存）<br>
+    术语表：<a href="../../reference/glossary.html#tool">工具（Tool）</a> · <a href="../../reference/glossary.html#guardrail">护栏</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 4 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

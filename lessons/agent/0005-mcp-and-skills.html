@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 原理篇 · 第 5 课（初学版）· 工具长出两个新形状：MCP 与 Skill</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 原理篇 · 第 5 课 · 初学版</div>
+  <h1>工具长出两个新形状：MCP 与 Skill</h1>
+  <p class="subtitle">一个管<b>「怎么接」</b>，一个管<b>「怎么做」</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你的 agent 现在只会你自己写的那几个工具。但你大概已经撞到这两个墙了：</p>
+    <ul style="margin:0.5rem 0 0">
+      <li><b>别人写好的工具，怎么拿来就用？</b>难道每接一家，都要为它写一遍适配？</li>
+      <li><b>你做过的这类事，怎么做下一次才不用从头教？</b>每次都要把"步骤、注意点、翻车怎么救"重讲一遍？</li>
+    </ul>
+    <p style="margin-top:0.7rem">这两个墙，工具长出<b>两个新形状</b>来解决：<b>MCP</b> 管"怎么接"，<b>Skill</b> 管"怎么做"。</p>
+    <p><b>学完这课，你能</b>：说清 MCP 和 Skill 各解决什么问题、跟工具差在哪，并且动手写出自己的第一个 skill。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>用厨房打比方，三个东西是这样的：</p>
+    <p><b>工具</b>＝厨具（锅铲、烤箱）——能干一件具体的事。<br>
+       <b>MCP</b>＝插座标准——让任何厨具都能插进任何厨房，不用配转接头。<br>
+       <b>Skill</b>＝菜谱——教你"做这一类菜"的完整做法，包括火候和翻车怎么救。</p>
+  </div>
+
+  <h2>1. 先看问题：自己写工具，写到什么时候是个头？</h2>
+  <p>上一课你已经体会到：工具是<b>一个个手写</b>的。这在只有三五个工具时没问题。但——</p>
+  <ul>
+    <li>你想用别人写好的（天气、搜索、读数据库、发邮件……），<b>每家的调用格式都不一样</b>；</li>
+    <li>你想让 agent 会做某类事（比如"报天气顺便给穿衣建议"），<b>光有工具不够，还得教它怎么做</b>。</li>
+  </ul>
+  <p>这两件事，性质不同，所以长出了两个不同的东西。</p>
+
+  <h2>2. MCP：给工具定一个统一的插口</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>MCP（Model Context Protocol，模型上下文协议）</b>是一套<b>开放标准</b>：让"提供工具的一方"和"用工具的一方"<b>说同一种话</b>。</p>
+    <p>类比：<b>插座标准</b>。以前每台电器配一个专用插头，现在统一成国标，任何厨房都能插任何电器。</p>
+  </div>
+
+  <h3>三个角色</h3>
+  <ul>
+    <li><b>MCP server</b>（提供方）：把你的能力（工具、数据）按标准<b>公布</b>出去；</li>
+    <li><b>MCP client / host</b>（使用方）：你的 agent 或 IDE，按标准<b>接入</b>；</li>
+    <li><b>协议本身</b>：双方都遵守的那套说辞。</li>
+  </ul>
+
+  <h3>关键是"能被发现"</h3>
+  <p>以前你要把工具<b>硬编码</b>进 prompt；有了 MCP，client 可以先问一句：</p>
+  <pre><code>client → server：  你能干什么？
+server → client：  我有这些：get_weather、list_cities、send_email …
+                    每个都带名字、说明、参数</code></pre>
+  <p>这就叫<b>发现（discovery）</b>。<b>工具可以被找到，不用你一个个写死。</b></p>
+
+  <div class="note">
+    <span class="label">术语</span>
+    <p><b>MCP</b>＝Model Context Protocol，一套开放标准。<b>MCP server</b>＝按这套标准公布能力的一方。<b>发现（discovery）</b>＝先问"你能干什么"，再决定用哪个。</p>
+    <p>server 一般公布三样东西：<b>工具（tools）</b>、<b>资源（resources）</b>、<b>提示词模板（prompts）</b>。</p>
+  </div>
+
+  <p><b>好处</b>：写一次，到处能用；工具可以被搜到；整个生态可以共享——你不用为每家 API 重写一遍适配。</p>
+
+  <h2>3. Skill：把「怎么做这类事」打包</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>Skill（技能）</b>不是"一个函数"，是<b>"做某一类事的完整做法"</b>：一个目录，里面装着<b>指令 + 可能的脚本 + 参考资料</b>。</p>
+    <p>类比：<b>菜谱</b>。厨具（工具）告诉你"能切能炒"，菜谱（skill）告诉你"红烧肉该怎么做、什么时候放糖、糊了怎么办"。</p>
+  </div>
+
+  <p>一个 skill 长这样：</p>
+  <pre><code>weather-dress/
+  SKILL.md         ← 正文：什么时候用我 / 怎么做 / 翻车怎么救
+  reference.md     ← 补充资料，用到才打开</code></pre>
+
+  <h3>SKILL.md 的第一行最关键</h3>
+  <pre><code>---
+name: weather-dress
+description: 查天气并给出穿衣建议。当用户问「今天穿什么」
+             「要不要带伞」这类跟天气有关的出门问题时使用。
+---</code></pre>
+  <p>这段叫 <b>frontmatter</b>。其中 <code>description</code> 是<b>模型决定"要不要用这个 skill"的唯一依据</b>——写得含糊，它就用不起来。</p>
+
+  <h3>关键设计：渐进式加载</h3>
+  <p>skill 不是一股脑塞进 prompt 的。它分三层：</p>
+  <ol>
+    <li><b>平时</b>：只有 <code>description</code> 那<b>一句话</b>进上下文；</li>
+    <li><b>模型觉得用得上</b>：才打开 <code>SKILL.md</code> 正文；</li>
+    <li><b>正文里提到某个文件</b>：再按需打开那个文件。</li>
+  </ol>
+  <div class="note">
+    <span class="label">为什么非要这样？</span>
+    <p>因为<b>上下文是稀缺资源</b>——LLM 底层第 3 课讲过：进上下文的东西都要花钱、占位置、还会互相干扰。<br>
+    把所有东西一次性塞进去，又贵又慢还容易跑偏。<b>渐进式加载就是"不看不用的，连打开都不打开"。</b></p>
+    <p style="color:var(--muted)">（这跟 <b>RAG 是同一个思想</b>：按需取资料，而不是把整份文档塞进去。见 <a href="../rag/0001-why-retrieval.html">RAG · 第 1 课</a>。）</p>
+  </div>
+
+  <h2>4. 三样东西，一张表看清</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">工具</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">MCP</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">Skill</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>是什么</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一个函数</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一套接口标准</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一个"做法包"</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>解决什么</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">让模型能动手</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">让工具能被任何应用接上</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">让 agent 会做某类事</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>里面有什么</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">代码</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">协议 + 描述</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">指令 + 脚本 + 资料</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>怎么被发现</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">你写在 prompt 里</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>自动发现</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>按需加载</b></td></tr>
+      <tr><td style="padding:0.45rem"><b>类比</b></td>
+          <td style="padding:0.45rem">厨具</td>
+          <td style="padding:0.45rem">插座标准</td>
+          <td style="padding:0.45rem">菜谱</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. 动手：写你自己的第一个 skill</h2>
+  <p>不调 API，纯离线。脚本生成一个 skill 骨架，并且<b>自检</b>你写得好不好：</p>
+  <pre><code>python exercises/agent/0005-make-a-skill.py</code></pre>
+  <p>它会在当前目录下生成 <code>my-first-skill/</code>，并且打印：</p>
+  <pre><code>[自检] 这几条最容易翻车，逐条看：
+  OK  名字小写字母+连字符、1~64 字符：weather-dress
+  OK  description 长度 20~1024 字符（现在 61）
+  OK  description 里说了「什么时候用」——光说功能不够
+  OK  description 里最好写清适用场景</code></pre>
+  <p><b>重点看那句"什么时候用"</b>：<code>description</code> 不只是"这个 skill 是干嘛的"，更要写<b>"什么情况下该用我"</b>。模型全靠这句做判断。</p>
+
+  <h2>6. 三个必须记住的画面</h2>
+
+  <div class="note">
+    <span class="label">① 工具是"能干什么"，Skill 是"该怎么做"</span>
+    <p>工具给能力，skill 给判断。<b>光有工具，agent 会做但不会判断该不该做、怎么做才对。</b></p>
+  </div>
+  <div class="note">
+    <span class="label">② MCP 解决"接"，不解决"做"</span>
+    <p>MCP 让工具好接，但接上之后怎么用得好，是 skill 的事。<b>两者互补，不互相替代。</b></p>
+  </div>
+  <div class="note">
+    <span class="label">③ 一切按需加载，因为上下文是稀缺资源</span>
+    <p>MCP 的"发现"、skill 的"渐进式加载"，背后是同一个理由：<b>塞进上下文的东西，都要花钱、占位置、互相干扰。</b>这条从 LLM 底层一路贯到 agent 工程。</p>
+  </div>
+
+  <h2>7. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> MCP 主要解决的是什么问题？</p>
+    <button class="quiz-option" data-correct="true">让工具能被任何应用接上</button>
+    <button class="quiz-option">让模型回答得更加准确</button>
+    <button class="quiz-option">让上下文窗口变得更大</button>
+    <button class="quiz-option">让模型学会新的知识</button>
+    <p class="feedback"
+       data-ok="对。它是接口标准——像插座的国标，省掉每家一套适配。"
+       data-no="MCP 管的是「怎么接」，不是模型能力、不是上下文、不是知识。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> Skill 为什么要做成"渐进式加载"？</p>
+    <button class="quiz-option" data-correct="true">上下文是稀缺的，塞多了又贵又乱</button>
+    <button class="quiz-option">因为模型一次读不了太长的文件</button>
+    <button class="quiz-option">因为文件太大下载会比较慢</button>
+    <button class="quiz-option">因为技能多了以后会互相冲突</button>
+    <p class="feedback"
+       data-ok="对。不看不用的，连打开都不打开——这就是省 token 的核心手段。"
+       data-no="根因在成本和干扰：进上下文的东西都要买单，还容易跑偏。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 工具和 skill 的分工是什么？</p>
+    <button class="quiz-option" data-correct="true">工具给能力，skill 给判断</button>
+    <button class="quiz-option">工具管速度，skill 管准确度</button>
+    <button class="quiz-option">工具管本地，skill 管远程</button>
+    <button class="quiz-option">工具管输入，skill 管输出</button>
+    <p class="feedback"
+       data-ok="对。工具说「能干什么」，skill 说「该不该做、怎么做才对」。"
+       data-no="区别在层次：一个是动作，一个是做一类事的做法。"></p>
+  </div>
+
+  <h2>8. 下一步</h2>
+  <p>工具这条线到这儿就成体系了。接下来两个方向：</p>
+  <ul>
+    <li><b>工具设计</b>：名字、描述、参数怎么写，模型才调得准——上面 <code>description</code> 那一课就是它的缩影；</li>
+    <li><b>怎么知道它变好了</b>：怎么评估一个 agent（这块资料还缺，是公认的难点）。</li>
+  </ul>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro">Model Context Protocol — 官方文档</a>：MCP 是"把 AI 应用连到外部系统的开放标准"；server 公布 tools / resources / prompts。<br>
+    <a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Anthropic — Equipping agents for the real world with Agent Skills</a>：Skill 的设计理念，<b>渐进式加载（progressive disclosure）是核心</b>——"像一本组织良好的手册"。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"MCP server 自己怎么写？""skill 和把说明写进系统提示有什么区别？""skill 会不会跟工具冲突？""一个 agent 能挂多少 skill？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0004-real-model-agent.html">Agent 原理篇 · 第 4 课 · 换上真模型</a> · <a href="0003-mini-agent.html">第 3 课 · 把零件装起来</a> · <a href="0002-tool-use.html">第 2 课 · 工具调用</a> · <a href="0001-what-is-an-agent.html">第 1 课 · Agent 到底是什么？</a><br>
+    <b>LLM 底层</b>：<a href="../llm/0001-from-token-to-next-token.html">第 1 课</a> · <a href="../llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache</a>（"按需加载"省的就是这个）<br>
+    术语表：<a href="../../reference/glossary.html#tool">工具</a> · <a href="../../reference/glossary.html#mcp">MCP</a> · <a href="../../reference/glossary.html#skill">Skill</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 5 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

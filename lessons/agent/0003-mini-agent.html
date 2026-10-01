@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 原理篇 · 第 3 课（初学版）· 把零件装起来：一个真的 agent</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 原理篇 · 第 3 课 · 初学版</div>
+  <h1>把零件装起来：一个真的 agent</h1>
+  <p class="subtitle"><b>推理 → 行动 → 观察</b>，跑起来就是 agent。全部核心代码只有十几行。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>前两课都是零件：第 1 课给了<b>循环骨架</b>，第 2 课给了<b>工具调用的来回</b>。</p>
+    <p>这一课把它们<b>装在一起</b>。</p>
+    <p>你会有点意外：<b>所谓 agent，全部核心代码其实只有十几行</b>——一个循环而已。市面上那些"agent 框架"，大多是在这个骨架上加便利和护栏。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：看懂一个最小 agent 的骨架是怎么转的，说清每一步在干嘛、护栏为什么得自己加。<span style="color:var(--muted)">（要动手的人，能照着写出一个来。）</span></p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>agent 的全部秘密就是<b>把一个循环转起来</b>：</p>
+    <p><b>推理</b>（模型说话）→ <b>行动</b>（调工具）→ <b>观察</b>（看结果）→ 再<b>推理</b>……直到模型认为说完了。</p>
+    <p>第 2 课讲的"工具调用来回"，就是这里<b>「行动」那一环</b>。</p>
+  </div>
+
+  <h2>1. 骨架：agent 的全部代码</h2>
+  <p>先看骨架，别怕，就这么点：</p>
+  <pre><code>def run_agent(question, tools, max_steps=5):
+    messages = [系统提示, 用户问题]
+
+    for step in range(1, max_steps + 1):
+        reply = model(messages, tools)        # ① 推理
+
+        if reply 是「一段话」:                 # 模型认为说完了
+            return reply                      #    停
+
+        result = 调用那个工具(reply)           # ② 行动
+        messages.append(result)               # ③ 观察（塞回对话）
+
+    return "走满步数，被护栏拦下"              # 护栏</code></pre>
+  <p><b>没有别的了。</b>这个 <code>for</code> 循环转一次，就是 agent 循环转一圈。</p>
+
+  <div class="note">
+    <span class="label">三种角色，一目了然</span>
+    <p><b>推理</b>＝模型读对话、决定说什么或调什么。<br>
+       <b>行动</b>＝你的程序真的去调工具（第 2 课讲的那半边）。<br>
+       <b>观察</b>＝把工具结果塞回对话，好让模型下一步"看见"它。</p>
+    <p>三者串成一圈，转一圈就往目标靠近一点。</p>
+  </div>
+
+  <h2>2. 循环长什么样</h2>
+  <div class="loop">
+    <div class="loop-node">推理<small>模型说话 / 决定调工具</small></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node">行动<small>程序真的去调</small></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node">观察<small>结果塞回对话</small></div>
+    <span class="loop-arrow">→</span>
+    <div class="loop-node">再推理<small>它现在"看见"结果了</small></div>
+    <span class="loop-back">↻ 一圈一圈转，直到模型说「我说完了」，或撞上护栏</span>
+  </div>
+  <p>关键是<b>观察</b>那一步：结果不塞回去，模型就看不见刚才发生了什么，<b>循环等于断了</b>。</p>
+
+  <h2>3. 什么时候停？</h2>
+  <p>只有两个出口，都很朴素：</p>
+  <ul>
+    <li><b>模型说完了</b>：它不再"说要调工具"，而是给了一段人话 → 停；</li>
+    <li><b>撞上护栏</b>：转了 <code>max_steps</code> 圈还没完 → 强制停。</li>
+  </ul>
+  <p><b>为什么要护栏？</b>因为模型可能一直"我觉得还要再查一下"，绕来绕去停不下来。第 1 课说过：agent 的代价是不确定性，<b>所以永远要设最大步数</b>。</p>
+
+  <h2>4. 三个必须记住的画面</h2>
+
+  <div class="note">
+    <span class="label">① agent ＝ 一个循环，不是一个模型</span>
+    <p>模型是零件，循环才是 agent。你换个模型，agent 还是那个 agent；你把循环去掉，就只剩一个问答机器。</p>
+  </div>
+  <div class="note">
+    <span class="label">② 状态全在 messages 里</span>
+    <p>这一轮走了几步、查了什么、得到什么——<b>全都在 messages 这个列表里</b>。想调试 agent，第一件事就是<b>打印 messages</b>。</p>
+  </div>
+  <div class="note">
+    <span class="label">③ 护栏是你的，不是模型的</span>
+    <p>最大步数、工具白名单、高风险动作人审——<b>这些都写在你的代码里</b>。模型永远不会自己给自己设限。</p>
+  </div>
+
+  <h2>5. 动手：看它一步步走</h2>
+  <p>脚本在工作区：<code>exercises/agent/0003-mini-agent.py</code>。它跑三个问题，把每一步的<b>推理 / 行动 / 观察</b>打出来。</p>
+  <pre><code>python exercises/agent/0003-mini-agent.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。里面用的是<b>假模型</b>；真模型只要换掉 <code>fake_model()</code> 一个函数。</p>
+  <pre><code>用户问：上海比北京热多少？
+  [1] 调工具：get_weather({'city': '北京'}) → {"city": "北京", "temp_c": 26, "cond": "晴"}
+  [2] 调工具：get_weather({'city': '上海'}) → {"city": "上海", "temp_c": 28, "cond": "多云"}
+  [3] 完成：上海比北京热 2 度（北京 26 度 / 上海 28 度）。
+  ✔ done，共走 3 步</code></pre>
+  <p><b>重点看第二个问题</b>：它<b>连着调了两次工具</b>，中间什么都没输出——这就是"多步循环"的意思。第一次调完，观察塞回去，它才"知道"还差上海。</p>
+
+  <h2>6. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 让一个问答机器变成 agent，缺的是什么？</p>
+    <button class="quiz-option" data-correct="true">一个能反复转的循环</button>
+    <button class="quiz-option">一个更大的上下文窗口</button>
+    <button class="quiz-option">一个更强的模型权重</button>
+    <button class="quiz-option">一份更长的系统提示</button>
+    <p class="feedback"
+       data-ok="对。模型是零件，循环才是 agent。"
+       data-no="差别在结构不在规模：有了「推理→行动→观察」的循环，才是 agent。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 工具结果拿到后，为什么必须塞回对话？</p>
+    <button class="quiz-option" data-correct="true">不然模型不知道刚才发生了啥</button>
+    <button class="quiz-option">不然程序会抛出一个异常</button>
+    <button class="quiz-option">不然工具会被调用第二次</button>
+    <button class="quiz-option">不然上下文窗口会变小</button>
+    <p class="feedback"
+       data-ok="对。观察断了，循环就断了。"
+       data-no="messages 就是 agent 的全部状态；不塞回去，模型等于什么都没看见。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 最大步数（max_steps）这一类护栏，应该写在哪？</p>
+    <button class="quiz-option" data-correct="true">写在你的程序代码里</button>
+    <button class="quiz-option">写在给模型的系统提示里</button>
+    <button class="quiz-option">写在工具的参数格式里</button>
+    <button class="quiz-option">写在模型的训练数据里</button>
+    <p class="feedback"
+       data-ok="对。护栏是你的，不是模型的。"
+       data-no="模型不会自己给自己设限。护栏必须由你的代码强制执行。"></p>
+  </div>
+
+  <h2>7. 下一步</h2>
+  <p>骨架有了，接下来是让它<b>更好用</b>。几个方向：</p>
+  <ul>
+    <li><b>接真模型</b>：把 <code>fake_model()</code> 换成一次真正的 API 调用；</li>
+    <li><b>工具怎么设计</b>：名字、描述、参数怎么写，模型才调得准；</li>
+    <li><b>怎么知道它变好了</b>：怎么测一个 agent 好不好用——已写：<a href="../practice/0002-evaluating-agents.html">技巧篇 · 第 2 课</a>。</li>
+  </ul>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/2210.03629">ReAct: Synergizing Reasoning and Acting in Language Models（Yao et al., ICLR 2023）</a>——本课这个"推理 → 行动 → 观察"循环的原始论文。现代 agent 循环的理论来源。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"为什么不用现成的框架？""messages 会不会越堆越长？""模型怎么知道该停？""能不能让它同时调多个工具？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0002-tool-use.html">Agent 原理篇 · 第 2 课 · 工具调用</a> · <a href="0001-what-is-an-agent.html">第 1 课 · Agent 到底是什么？</a><br>
+    <b>LLM 底层</b>：<a href="../llm/0001-from-token-to-next-token.html">第 1 课 · 从 token 到下一个 token</a> · <a href="../llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache</a>（工具清单正是"稳定前缀"，吃缓存）<br>
+    术语表：<a href="../../reference/glossary.html#loop">Agent 循环</a> · <a href="../../reference/glossary.html#observation">观察</a> · <a href="../../reference/glossary.html#guardrail">护栏</a> · <a href="../../reference/glossary.html#trace">轨迹</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 3 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

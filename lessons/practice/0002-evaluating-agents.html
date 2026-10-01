@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 技巧篇 · 0002 · 怎么判断一个 agent 好不好用</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 技巧篇 · 0002</div>
+  <h1>怎么判断一个 agent 好不好用</h1>
+  <p class="subtitle">使用者视角——<b>不看它最漂亮的那次，看它最差的那次</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你要挑一个 agent 工具，或者已经在用一个。怎么知道它<b>靠不靠谱</b>？</p>
+    <p>可 demo 都很好看——那是精挑细选出来的、跑得最顺的那一次。</p>
+    <p style="margin-top:0.7rem">拆穿了就一句：<b>判断 agent 好不好，不看它最漂亮的那次，看它最差的那次。</b></p>
+    <p><b>学完你能</b>：用 3～5 个真实任务各跑几遍，就看出它到底行不行；并且不再被"平均成功率"骗。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>别信平均分，信"能不能每次都做对"。</b>具体三件事：<b>跑多遍 · 看真实结果 · 盯代价</b>。</p>
+    <p style="color:var(--muted)">（这一篇是<b>使用者视角</b>：不教你怎么搭评估系统，只教你怎么判断手上这个 agent 靠不靠谱。想搭系统的话，那是开发者的活。）</p>
+  </div>
+
+  <h2>1. 先破一个误会：成功率不等于能用</h2>
+  <p>假设你试了 10 次，成功 9 次，感觉很好。但问题是——<b>你需要的是一件事只干一次就成</b>，而不是"多试几次总有一次成"。</p>
+  <p>官方基准给过一个很扎心的实测数字：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p>最强的 agent，<b>单次成功率超过 60%</b>；但让它把同一个任务<b>连续做 8 遍、要求 8 遍全对</b>，比例掉到 <b>不到 25%</b>。</p>
+  </div>
+  <p>为什么掉这么多？因为"每次都成"是连乘：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">单次成功率</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.5rem">连做 3 次全对</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.5rem">连做 5 次全对</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.5rem">连做 8 次全对</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">95%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">86%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">77%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">66%</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">90%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">73%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">59%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right"><b>43%</b></td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">75%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">42%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">24%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right"><b>10%</b></td></tr>
+      <tr><td style="padding:0.5rem">60%</td><td style="padding:0.5rem;text-align:right">22%</td><td style="padding:0.5rem;text-align:right">8%</td><td style="padding:0.5rem;text-align:right">2%</td></tr>
+    </tbody>
+  </table>
+  <p><b>看第二行</b>：单次 90% 听着很稳，但你要它<b>连着 8 次都不出错</b>，只剩 43%——<b>一半以上的概率会翻车</b>。</p>
+  <div class="note">
+    <span class="label">两个指标的名字（知道就行）</span>
+    <p><b>pass@k</b>：k 次里<b>至少成功一次</b>。适合"多试几次总行"的场景（比如让它想几个方案，你挑一个）。<br>
+       <b>pass^k</b>：k 次<b>全部成功</b>。适合"每次都必须对"的场景（比如让它自动处理客户订单）。</p>
+    <p>做使用者，你要盯的是<b>后面那个</b>。</p>
+    <p style="color:var(--muted)">（顺带：这个数字是 <a href="https://arxiv.org/abs/2406.12045">τ-bench 论文</a> 里的，不是"大概感觉"。）</p>
+  </div>
+
+  <h2>2. 技巧一：同一个任务，多跑几遍</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>做法</b>：挑 <b>3～5 个你真实要它干的活</b>，每个<b>跑 3～5 遍</b>，记下成功几次。</p>
+  </div>
+  <p><b>理由</b>：agent 是不确定的——同样的输入，两次结果可能不一样。<b>跑一次等于掷一次骰子</b>，掷出六点不代表这骰子每把都是六。</p>
+  <p><b>那"两次不一样"是哪来的？</b>挑字那一步本来就是<b>按百分比抽的</b>——抽法由你随请求传的<b>采样参数</b>（temperature、top_p）决定。想稳就把温度调低；但<b>温度 0 也不保证逐字一样</b>，所以判分要判<b>结果等价</b>，别判"一字不差"。对照表见 <a href="../../reference/sampling-params.html">速查 · 采样参数</a>。</p>
+  <p><b>反例</b>：只试一次就成了，于是直接拿它去处理真事。那个"成功"可能只是运气。</p>
+  <div class="note">
+    <span class="label">什么时候不适用</span>
+    <p><b>任务本身每次都不一样</b>（比如"帮我研究这个新领域"）——那没法重复跑。<br>
+    换个做法：<b>多试几个不同任务</b>，看它在新情况下的表现。核心都是"别用单次结果下结论"。</p>
+  </div>
+  <p style="color:var(--muted)">（官方建议：起步 <b>20～50 个真实用例</b>就够看出效果。但你自己在选工具时，3～5 个就能看出苗头。）</p>
+
+  <h2>3. 技巧二：看它是"做成了"，还是"说做成了"</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>做法</b>：别只看它的话，<b>去查真实状态</b>——文件改了没？订单建了没？邮件发出去了没？</p>
+  </div>
+  <p><b>理由</b>：agent 的"回答"和"现实"是两回事。官方举的例子特别典型：</p>
+  <blockquote style="border-left:3px solid var(--ink);margin:1rem 0;padding:0.2rem 0 0.2rem 1rem;font-size:0.95rem">
+    一个订票 agent 最后说"<b>已为您预订</b>"——但真正的结果（outcome）是<b>数据库里到底有没有这条预订记录</b>。<br>
+    工具可能只返回了"部分成功"，agent 却当成成功报了。
+  </blockquote>
+  <p>这就是"<b>看起来成功</b>"和"<b>真的成功</b>"的差别。而且它很容易骗过你——因为界面会告诉你成功了。</p>
+  <div class="note">
+    <span class="label">什么时候不适用</span>
+    <p><b>纯问答任务</b>（问它一个知识、让它写一段文字）——没有外部状态可查，那就只能看内容质量。这时换个角度：<b>拿它说的关键事实去核对一遍</b>。</p>
+  </div>
+
+  <h2>4. 技巧三：盯代价，不只看对错</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>做法</b>：同一个任务跑两次，比<b>它走了几步、调了几次工具</b>。</p>
+  </div>
+  <p><b>理由</b>：<b>同样的成功率，成本可能差几十倍</b>。有的 agent 三步就干完，有的绕了十几步、重复调同一个工具好几次——最后都对，但一个便宜一个贵，一个快一个慢。</p>
+  <p><b>反例</b>：只看"成了没"，忽略它绕了多少圈。等你按量付费的时候才发现账单不对劲。</p>
+  <div class="note">
+    <span class="label">什么时候不适用</span>
+    <p><b>一次性的大活</b>（比如"帮我把这个项目重构一遍"）——跑一次就够，成本不敏感，那就不用纠结步数。</p>
+  </div>
+
+  <h2>5. 技巧四：警惕"分数涨了"</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>做法</b>：听说它"变好了 X 个点"，<b>先抽几条它跑的记录读一遍</b>，再信。</p>
+  </div>
+  <p><b>理由</b>：分数涨不等于真的变强。官方讲过一个真事：</p>
+  <blockquote style="border-left:3px solid var(--ink);margin:1rem 0;padding:0.2rem 0 0.2rem 1rem;font-size:0.95rem">
+    模型分数一口气涨了 9 个点。读记录才发现：它是<b>绕过了一个测评环境的 bug</b>，蒙对的——不是真本事。<br>
+    <b>分数告诉你哪里变了；读过程才知道为什么变。</b>
+  </blockquote>
+  <p>对使用者来说，这条的实操版就是：<b>别信宣传里的分数，信你自己试出来的结果</b>。别人测的场景跟你的场景，很可能不是一回事。</p>
+  <div class="note">
+    <span class="label">什么时候不适用</span>
+    <p>你要是<b>自己反复用同一批任务在测</b>，分数变化当然有参考价值——前提是<b>任务没变、环境没变</b>。</p>
+  </div>
+
+  <h2>6. 三个必须记住的画面</h2>
+  <div class="note">
+    <span class="label">① 跑一次不算数</span>
+    <p>agent 是不确定的。<b>单次 90% 的成功率，连着做 8 次可能只剩 43% 靠谱。</b></p>
+  </div>
+  <div class="note">
+    <span class="label">② 它说成了，不等于成了</span>
+    <p><b>去查真实状态</b>——文件、订单、邮件。别信它那句"已完成"。</p>
+  </div>
+  <div class="note">
+    <span class="label">③ 别只问"对不对"，也问"绕了多大圈"</span>
+    <p>同样的结果，代价可能差几十倍。</p>
+  </div>
+
+  <h2>7. 动手：给你手上的 agent 打个分</h2>
+  <p>脚本在工作区，纯离线、不用 API。你把试出来的数字填进去，它给你算一致性：</p>
+  <pre><code>python exercises/practice/0002-agent-scorecard.py</code></pre>
+  <pre><code>任务 1 名字 > 查天气并写邮件
+  跑了几次 > 5
+  成功几次 > 4
+  平均每次花的相对成本 > 10
+
+--- 记分卡 ---
+任务                跑次  成功  单次成功率  连做 5 次全对  每次成本
+查天气并写邮件        5     4      80%          33%        10
+
+结论：
+  [!] 「查天气并写邮件」单次 80%，但连做 5 次全对只有 33%——
+      这类任务别让它无人值守。
+  [OK] 平均每次成本 10，没有明显的绕圈。</code></pre>
+  <p><b>重点看"连做 N 次全对"那一列</b>——那才是你真正要赌的那个数。</p>
+
+  <h2>8. 判断题（技巧篇考这个）</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 你试了一次，agent 干得挺好。这意味着什么？</p>
+    <button class="quiz-option" data-correct="true">可能只是运气，得多跑几遍</button>
+    <button class="quiz-option">说明它这个任务已经稳了</button>
+    <button class="quiz-option">完全没有任何参考价值</button>
+    <button class="quiz-option">说明它每次都一定能做对</button>
+    <p class="feedback"
+       data-ok="对。跑一次等于掷一次骰子，得看它稳不稳定。"
+       data-no="单次成功不能推出稳定。agent 是不确定的，要跑多遍才看得出。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> agent 回复你"已为您完成预订"，接下来你该做什么？</p>
+    <button class="quiz-option" data-correct="true">去系统里查那笔预订在不在</button>
+    <button class="quiz-option">直接相信它然后继续下一步</button>
+    <button class="quiz-option">让它再重复一遍这个操作</button>
+    <button class="quiz-option">问它有没有百分之百把握</button>
+    <p class="feedback"
+       data-ok="对。它说成了不等于成了——查真实状态。"
+       data-no="回答和现实是两回事。工具可能只返回了「部分成功」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 同一个任务，两次都做对了，但一次 3 步一次 15 步。说明什么？</p>
+    <button class="quiz-option" data-correct="true">代价可能差很多，得盯着步数</button>
+    <button class="quiz-option">步数多的那次肯定是算错了</button>
+    <button class="quiz-option">两次完全等价不用管步数了</button>
+    <button class="quiz-option">步数少的说明它偷懒没做完</button>
+    <p class="feedback"
+       data-ok="对。同样的结果，代价可能差几十倍。"
+       data-no="都对，但一个可能贵好几倍、慢好几倍。绕圈是要付钱的。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 单次成功率 90%，连着做 8 次全对的大概概率是？</p>
+    <button class="quiz-option" data-correct="true">大概四成出头，会翻车</button>
+    <button class="quiz-option">大概九成，基本没什么问题</button>
+    <button class="quiz-option">大概一成，肯定不能这样子</button>
+    <button class="quiz-option">几乎和单次成功率一样高</button>
+    <p class="feedback"
+       data-ok="对。0.9 的 8 次方 ≈ 0.43——一半以上的概率会出错。"
+       data-no="「每次都成」是连乘：0.9 连乘 8 次 ≈ 0.43，不是 0.9。"></p>
+  </div>
+
+  <h2>9. 一张清单，带走</h2>
+  <p>把上面四步压缩成一张"试一个 agent 该问什么"的清单：</p>
+  <p>→ <a href="../../reference/agent-eval-checklist.html"><b>速查 · 试一个 agent 该问什么</b></a></p>
+
+  <div class="source">
+    <b>这篇的一手资料</b>：<br>
+    <a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic — Demystifying evals for AI agents</a>：结果 vs 轨迹、pass@k vs pass^k、"别拿固定路径判分"、"读记录才知道为什么变"、以及"20～50 个用例就够起步"。<br>
+    <a href="https://arxiv.org/abs/2406.12045">τ-bench（Yao et al., 2024）</a>：pass^k 的出处；"单次 >60%、连续 8 次 &lt;25%"那个数字在这里。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"我该拿哪几个任务去试？""多少次才够？""怎么算一次'成功'？""同一个 agent 换个模型会差多少？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>同篇</b>：<a href="0001-context-engineering.html">0001 · 上下文工程</a> · <a href="../index.html">课程目录</a><br>
+    <b>想懂原理</b>：<a href="../agent/0003-mini-agent.html">Agent 原理篇 · 第 3 课 · 把零件装起来</a>（agent 的不确定性从哪来）· <a href="../agent/0006-harness.html">第 6 课 · Harness</a>（"同一个模型换个壳，表现差很多"）<br>
+    <b>速查</b>：<a href="../../reference/agent-eval-checklist.html">试一个 agent 该问什么</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 技巧篇 · 0002 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

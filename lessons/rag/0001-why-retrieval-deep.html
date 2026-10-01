@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 1 课（进阶版）· 稀疏和稠密各自在哪翻车</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 1 课 · 进阶版</div>
+  <h1>稀疏和稠密各自在哪翻车？怎么把它们合起来</h1>
+  <p class="subtitle">初学版只点了一句"稀疏看字面、稠密看意思"。这里用两道题，让<b>两种方法各翻一次车</b>。</p>
+
+  <div class="note">
+    <span class="label">怎么用这篇</span>
+    <p style="color:var(--muted)">只收读完初学版仍会冒出来的问题。<b>按需跳读</b>。<br>
+    这一篇还在长：嵌入模型怎么选、换了会怎样，等真问了再写。</p>
+    <p style="color:var(--muted)">先放一句话：<b>两种比法翻车的地方完全不同</b>——这正是要把它们合起来的<b>全部理由</b>，不是为了"更高级"。</p>
+  </div>
+
+  <h2 id="q1-sparse-dense">Q1 · 稀疏和稠密各自在哪翻车？混合检索怎么合？</h2>
+  <p><b>对应初学版第 1 课动手那节</b>最后那条，以及术语表的<a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a>。那儿只给了"各有各的失手"，没给<b>具体在哪翻</b>、<b>翻了怎么办</b>。</p>
+
+  <h3>先看两道题，两种方法各翻一次车</h3>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">查编号 <code>E-2107</code></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">问「发烧了怎么办」</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>稀疏</b><br>（按字面）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>✅ 赢</b>。直接撞上编号，5 个字组合对上</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>❌ 翻车</b>。文档写的是「发热」「降温」，<b>字面没撞上，给 0 分</b></td></tr>
+      <tr><td style="padding:0.45rem"><b>稠密</b><br>（按语义）</td>
+          <td style="padding:0.45rem"><b>❌ 翻车</b>。2107 和 2108 被看成一回事，<b>两段打成同一分</b></td>
+          <td style="padding:0.45rem"><b>✅ 赢</b>。换个说法也找得到</td></tr>
+    </tbody>
+  </table>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>稀疏翻在"换个说法"，稠密翻在"精确字面"。</b></p>
+    <p>记法：<b>稀疏看字面撞没撞，稠密看意思近不近。</b></p>
+  </div>
+  <p style="color:var(--muted)">（稠密还有两个隐性失效值得知道：<b>同名不同物</b>——"苹果"水果和公司；<b>没见过的词</b>——新术语、生僻缩写，向量空间里压根没有它们的位置。）</p>
+
+  <h3>怎么合：RRF（倒数排名融合）</h3>
+  <p>难点在于<b>两个榜的分数没法直接相加</b>：字面匹配分和语义相似度<b>量纲完全不同</b>，加起来没有意义。</p>
+  <p>RRF 的做法是<b>只看名次，不看分</b>：</p>
+  <pre><code>每个榜给每一段：1 / (k + 它在这个榜里的名次)
+两个榜的这一项加起来，再按总分排序。k 通常取 60。</code></pre>
+  <p><b>为什么这样就行</b>：既然分数不可比，那就<b>把分数全扔掉，只用"谁排第几"</b>——名次是两个榜共有的语言。</p>
+
+  <h3>k = 60 在做什么</h3>
+  <pre><code>第  1 名得 1/61 = 0.01639
+第  2 名得 1/62 = 0.01613      ← 只比第 1 名少 1.6%
+第 10 名得 1/70 = 0.01429      ← 仍有第 1 名的 87% 权重</code></pre>
+  <p><b>名次被压得很平。</b>所以 RRF 奖励的是<b>"两个榜都说它好"</b>，不是"某个榜的冠军"。<b>共识 > 单榜第一。</b></p>
+
+  <h3>但 RRF 有个前提，踩了会翻车</h3>
+  <div class="note">
+    <span class="label">它假设每个榜的名次都有意义</span>
+    <p>脚本实测：问题 B 的稀疏榜<b>给所有段都是 0 分</b>（一个都没撞上），但排序函数还是吐了个名次出来——<b>纯按索引顺序</b>。</p>
+    <p>RRF 把这个名次当真了，结果<b>把毫无关系的段 1 顶到了第一</b>。</p>
+    <p><b>一个全是并列的榜，名次本身就是噪音。</b></p>
+    <p><b>解法</b>：给"没命中"设个阈值，<b>分数为 0 的段不进榜</b>，只让真有分的段参与融合。过滤之后，段 3 就回到第一了。</p>
+  </div>
+
+  <h3>混合检索的代价（别当免费午餐）</h3>
+  <ul>
+    <li><b>索引翻倍</b>：一份关键词索引、一份向量索引。存两份、建两份、更新两份。</li>
+    <li><b>融合还要调</b>：两个方法的相对权重怎么给。</li>
+    <li><b>所以先量再上</b>：单用一种已经够好，就别付这个成本。<a href="0004-two-failure-modes-deep.html">第 4 课进阶</a>那套尺子就是用来量这个的。</li>
+  </ul>
+
+  <h3>动手：让两种方法各翻一次车</h3>
+  <p>脚本在工作区：<code>exercises/rag/0001-sparse-vs-dense.py</code>。两道题、两份榜、两种方法各翻一次，再用 RRF 合起来。</p>
+  <pre><code>python exercises/rag/0001-sparse-vs-dense.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。<b>「稠密」这里是玩具</b>：按同义词表归一、把数字看成一回事。真的用文本嵌入模型——但"两榜各会翻车"这件事一模一样。下面是 RRF 那节的输出摘录。</p>
+  <pre><code>      问题 B
+        稀疏榜　　：段1 > 段2 > 段3 > 段4 > 段5
+        稠密榜　　：段3 > 段1 > 段2 > 段4 > 段5
+        RRF 融合　：段1 > 段3 > 段2 > 段4 > 段5
+
+      ⚠ 看问题 B 的融合结果：【段 1 冒到了第一】，可它跟问题毫无关系。
+        因为稀疏榜给所有段都是 0 分——【一个全是并列的榜，名次本身就是噪音】，
+        而 RRF 会把每个名次都当真。
+
+      过滤之后再融：
+        问题 A：段1 > 段2 > 段4 > 段5
+        问题 B：段3</code></pre>
+  <p><b>两处要看懂</b>：</p>
+  <ul>
+    <li><b>稀疏榜那五个段全是 0 分</b>，但它仍然排出了"1 &gt; 2 &gt; 3 &gt; 4 &gt; 5"——<b>这个名次是假的</b>。融合却当真了。</li>
+    <li><b>过滤后问题 B 只剩段 3</b>——因为只有它真的被找到了。<b>宁可只剩一个，也别混进噪音。</b></li>
+  </ul>
+
+  <h3>带走四条</h3>
+  <ol>
+    <li><b>稀疏看字面撞没撞，稠密看意思近不近。</b>编号 / 型号 / 专有名词 → 稀疏赢；换个说法 → 稠密赢。</li>
+    <li><b>两个都会翻车，翻的还不是同一处</b>——这才是要合的理由。</li>
+    <li><b>RRF 只看名次不看分</b>，所以不用归一化两个量纲：简单、稳、可解释。</li>
+    <li><b>但 RRF 假设每个榜的名次都有意义。</b>一个榜全是并列时，名次是噪音——<b>上线前给"没命中"设阈值</b>。</li>
+  </ol>
+
+  <h3>检查一下你懂了没</h3>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 查「E-2107 是什么意思」，哪种比法更靠谱？</p>
+    <button class="quiz-option" data-correct="true">按字面匹配的稀疏检索</button>
+    <button class="quiz-option">按语义相似的稠密检索</button>
+    <button class="quiz-option">两种一样靠谱不分伯仲</button>
+    <button class="quiz-option">两种都不行，只能靠人工</button>
+    <p class="feedback"
+       data-ok="对。编号是精确字面，稠密会把 2107 和 2108 看成一回事。"
+       data-no="稠密对精确字面迟钝——这正是它最容易翻的地方。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 为什么 RRF 要「只看名次、不看分数」？</p>
+    <button class="quiz-option" data-correct="true">两种方法的分数量纲根本不同</button>
+    <button class="quiz-option">因为算分数比算名次更费时间</button>
+    <button class="quiz-option">因为名次比分数更加精确可靠</button>
+    <button class="quiz-option">因为分数容易被对手方篡改</button>
+    <p class="feedback"
+       data-ok="对。字面匹配分和语义相似度加起来没有意义，名次才是两个榜共有的语言。"
+       data-no="不是精度或安全问题——是两种分数根本不可比。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 一个榜给所有段都打了 0 分，却还是给出了名次。这时候该怎么办？</p>
+    <button class="quiz-option" data-correct="true">别让它参与融合，名次是噪音</button>
+    <button class="quiz-option">照常用，反正名次也有先后</button>
+    <button class="quiz-option">把这个榜的权重调到最大值</button>
+    <button class="quiz-option">重新训练这个榜的模型再说</button>
+    <p class="feedback"
+       data-ok="对。全是并列的榜没有区分度，它的名次纯属噪音。"
+       data-no="RRF 假设每个榜的名次都有意义——这个前提破了，融合就会被带偏。"></p>
+  </div>
+
+  <h3>一手资料</h3>
+  <div class="source">
+    <b>这一问的来源</b>：<br>
+    <a href="https://arxiv.org/abs/2005.11401">Lewis et al., NeurIPS 2020</a>——稠密检索这一侧的原始出处（Dense Passage Retrieval）。<br>
+    <a href="https://www.anthropic.com/engineering/contextual-retrieval">Anthropic — Introducing Contextual Retrieval</a>——工业界把<b>稠密 + BM25 两种一起用</b>的实测（top-20 失败率 5.7% → 2.9%）。<br>
+    <b>RRF（Reciprocal Rank Fusion）</b>：Cormack et al. 2009 提出，k = 60 是他们实测的经验值。<span style="color:var(--muted)">（<b>二手</b>：本篇未读原文，取自公开综述转引。）</span>
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"中文的关键词匹配要不要分词？""两个榜的权重怎么调？""为什么不用学习排序？""向量索引选哪个？"——最后那个最容易过时，问的时候我按机制答。
+  </div>
+
+  <p class="next">
+    <b>回初学版</b>：<a href="0001-why-retrieval.html">RAG · 第 1 课（初学版）· 为什么得"先查资料再回答"</a><br>
+    <b>顺着往下</b>：<a href="0002-rag-pipeline-deep.html">第 2 课进阶 · 切块切多大</a> · <a href="0004-two-failure-modes-deep.html">第 4 课进阶 · RAG 怎么评</a><br>
+    术语表：<a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a> · <a href="../../reference/glossary.html#text-embedding">文本嵌入</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 1 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

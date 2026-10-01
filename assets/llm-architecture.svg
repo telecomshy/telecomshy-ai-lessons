@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 985" width="720" height="985" role="img" aria-label="大模型架构图：输入 n 行 d 列的向量表，经过 N 个步骤相同的 Block（自注意力 + 残差 + FFN + 残差，每层参数不同），输出同样形状，取最后一行经 LM Head 变成词表大小的分数，再 softmax 采样出下一个 token">
+  <defs>
+    <marker id="a1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="720" height="985" fill="#fdfcf8"/>
+
+  <!-- ============ 输入 ============ -->
+  <text x="150" y="86" text-anchor="end" font-family="monospace" font-size="13" fill="#8a2b06">[n × d]</text>
+  <text x="150" y="104" text-anchor="end" font-family="sans-serif" font-size="10.5" fill="#6c675e">n 行 × d 列</text>
+
+  <rect x="170" y="24" width="526" height="118" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="192" y="48" font-family="sans-serif" font-size="12.5" fill="#8a2b06">输入：n 串向量，排成一张「n 行 × d 列」的数字表</text>
+  <text x="192" y="76" font-family="monospace" font-size="13.5" fill="#1b1a17">「天」  [1.0, 0.0, 0.0, 0.5]      ← 位置 1</text>
+  <text x="192" y="100" font-family="monospace" font-size="13.5" fill="#1b1a17">「气」  [0.8, 0.6, 0.0, 0.4]      ← 位置 2</text>
+  <text x="192" y="124" font-family="monospace" font-size="13.5" fill="#1b1a17">「很」  [0.2, 0.1, 1.0, 0.0]      ← 位置 3</text>
+
+  <text x="170" y="164" font-family="sans-serif" font-size="11.5" fill="#9b1c1c">✗ 不是把 3 串拼成一根 [n·d] 的大向量。那样 3 个字和 4 个字的长度就不同，</text>
+  <text x="170" y="182" font-family="sans-serif" font-size="11.5" fill="#9b1c1c">   「同一把尺子」（权重共享）也就用不了。d 固定、n 可变 —— 所以是「表」，不是「一根」。</text>
+
+  <line x1="90" y1="198" x2="90" y2="222" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#a1)"/>
+
+  <!-- ============ 模型 ============ -->
+  <text x="150" y="248" text-anchor="end" font-family="monospace" font-size="13" fill="#8a2b06">[n × d]</text>
+  <text x="150" y="266" text-anchor="end" font-family="sans-serif" font-size="10.5" fill="#6c675e">进 / 出一样</text>
+
+  <rect x="170" y="226" width="526" height="322" rx="10" fill="#fff" stroke="#1b1a17" stroke-width="1.8"/>
+  <text x="192" y="252" font-family="sans-serif" font-size="13" fill="#1b1a17">模型 = N 个 Block 堆叠（步骤一样，每层的参数不同；几十层）</text>
+
+  <!-- B1 自注意力 -->
+  <rect x="192" y="268" width="482" height="96" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="212" y="292" font-family="sans-serif" font-size="12.5" fill="#8a2b06">① 自注意力 Self-Attention</text>
+  <text x="212" y="316" font-family="serif" font-size="13" fill="#1b1a17">每个位置拿自己的 Q，去比「自己及之前」每个位置的 K，</text>
+  <text x="212" y="338" font-family="serif" font-size="13" fill="#1b1a17">再按比重把它们的 V 加起来（加权求和）</text>
+  <text x="212" y="358" font-family="sans-serif" font-size="11" fill="#6c675e">★ 这里算出的 K/V 会被存下来 = KV Cache（下一课）</text>
+
+  <!-- B2 残差 -->
+  <rect x="192" y="376" width="482" height="38" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="212" y="400" font-family="serif" font-size="13" fill="#1b1a17">② ＋ 残差：把原来的向量加回来（别覆盖，只增补）</text>
+
+  <!-- B3 FFN -->
+  <rect x="192" y="424" width="482" height="80" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="212" y="448" font-family="sans-serif" font-size="12.5" fill="#8a2b06">③ FFN 前馈网络</text>
+  <text x="212" y="472" font-family="serif" font-size="13" fill="#1b1a17">把这串数字按学到的规律改写一次（非线性变换）。</text>
+  <text x="212" y="494" font-family="sans-serif" font-size="11" fill="#6c675e">不是「检查」，也不看预测结果 —— 预测要到最后才发生；且不跨 token。</text>
+
+  <!-- B4 残差 -->
+  <rect x="192" y="514" width="482" height="38" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="212" y="538" font-family="serif" font-size="13" fill="#1b1a17">④ ＋ 残差：再加一次</text>
+
+  <text x="192" y="578" font-family="sans-serif" font-size="11.5" fill="#6c675e">↑ ①→④ 合起来叫「一层」，重复 N 次（几十层）。形状全程不变。</text>
+
+  <line x1="90" y1="586" x2="90" y2="612" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#a1)"/>
+
+  <!-- ============ 输出表 ============ -->
+  <text x="150" y="632" text-anchor="end" font-family="monospace" font-size="13" fill="#8a2b06">[n × d]</text>
+
+  <rect x="170" y="602" width="526" height="58" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="192" y="626" font-family="sans-serif" font-size="12.5" fill="#8a2b06">输出：还是 n 行 × d 列</text>
+  <text x="192" y="648" font-family="serif" font-size="13" fill="#1b1a17">n 串数字，每一串都被加工过（但仍是 n 串，没拼成一根）</text>
+
+  <line x1="90" y1="668" x2="90" y2="694" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#a1)"/>
+  <text x="108" y="686" font-family="sans-serif" font-size="11.5" fill="#8a2b06">只取最后一行（其它行的猜测没人用）</text>
+
+  <!-- ============ LM Head ============ -->
+  <text x="150" y="714" text-anchor="end" font-family="monospace" font-size="13" fill="#8a2b06">[1 × d]</text>
+
+  <rect x="170" y="684" width="526" height="58" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="192" y="708" font-family="sans-serif" font-size="12.5" fill="#8a2b06">LM Head（另一张大表：d 列 × |V| 行）</text>
+  <text x="192" y="730" font-family="serif" font-size="13" fill="#1b1a17">把这 1 串数字，变成词表里每个 token 各得多少分</text>
+
+  <line x1="90" y1="750" x2="90" y2="776" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#a1)"/>
+
+  <!-- ============ logits ============ -->
+  <text x="150" y="796" text-anchor="end" font-family="monospace" font-size="13" fill="#8a2b06">[|V|]</text>
+  <text x="150" y="814" text-anchor="end" font-family="sans-serif" font-size="10.5" fill="#6c675e">词表大小</text>
+
+  <rect x="170" y="766" width="526" height="58" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="192" y="790" font-family="sans-serif" font-size="12.5" fill="#8a2b06">logits（原始分，一个 token 一个）</text>
+  <text x="192" y="812" font-family="monospace" font-size="13.5" fill="#1b1a17">好 2.469     差 0.796     冷 1.595     …共 |V| 个</text>
+
+  <line x1="90" y1="832" x2="90" y2="858" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#a1)"/>
+  <text x="108" y="850" font-family="sans-serif" font-size="11.5" fill="#8a2b06">softmax 换算成百分比 → 采样抽一个</text>
+
+  <!-- ============ 结果 ============ -->
+  <text x="150" y="888" text-anchor="end" font-family="monospace" font-size="13" fill="#8a2b06">token</text>
+
+  <rect x="170" y="856" width="526" height="58" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="192" y="880" font-family="sans-serif" font-size="12.5" fill="#8a2b06">下一个 token</text>
+  <text x="192" y="904" font-family="serif" font-size="18" fill="#1b1a17">「好」</text>
+
+  <!-- 底注 -->
+  <text x="40" y="952" font-family="sans-serif" font-size="11.5" fill="#6c675e">形状规律：d（列数）全程固定，n（行数）随句长变。所以下一轮 4 个字，就是 4 行 × d 列，模型一个零件都不用换。</text>
+  <text x="40" y="972" font-family="sans-serif" font-size="11.5" fill="#6c675e">把「好」接到句子后面再走一遍 —— 这就是「一个字一个字蹦出来」的原因。</text>
+</svg>

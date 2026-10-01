@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 1 课（初学版）· 为什么得"先查资料再回答"</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 1 课 · 初学版</div>
+  <h1>为什么得"先查资料再回答"</h1>
+  <p class="subtitle">RAG 这个词听着技术，其实就一件事：<b>问它之前，先替它翻书。</b></p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你把公司的年假制度问模型："请三天年假要走什么流程？"</p>
+    <p>它答得头头是道——<b>可那套流程是你上个月才改的，它给的是老版本。</b></p>
+    <p style="margin-top:0.7rem">它怎么知道的？——<b>它不知道。它在"接得像"。</b></p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>说清：模型为什么会"不知道"、RAG 到底做了什么、以及它<b>一个字都没改模型</b>是怎么回事。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>RAG ＝ 先从你的资料里查出相关的几段，塞进提示词，再让模型回答。</b></p>
+    <p>它<b>不改模型、不训练模型</b>——只是在问之前，先替它翻书。</p>
+  </div>
+
+  <h2>1. 模型为什么会"不知道"？三个原因，但都不是因为它笨</h2>
+  <ul>
+    <li><b>它没见过你的文档。</b>训练用的是公开语料，你的合同、制度、聊天记录一个字都不在里面。<b>这是最常见的原因。</b></li>
+    <li><b>它有知识截止。</b>训练之后才发生的事，它不知道。</li>
+    <li><b>它学的是"接下一个字"，不是"查事实"。</b>（<a href="../llm/0000-how-models-learn.html">LLM 底层 · 第 0 课</a>）所以它<b>不知道自己不知道</b>——你问它，它就按"接得像"编一套。</li>
+  </ul>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>这三条都不是"模型不行"，是"信息不在它手边"。</b></p>
+    <p>所以解法<b>不是换更大的模型</b>，而是<b>把信息递过去</b>。</p>
+  </div>
+
+  <h2>2. RAG 就是"先翻书再回答"</h2>
+  <p>把上面那句主线拆开，就是三件事：</p>
+  <pre><code>你的问题
+   │
+   ├─① 先去你的资料里查：哪几段跟这个问题有关？
+   │
+   ├─② 把查到的那几段，跟问题一起发给模型
+   │
+   └─③ 模型照着资料回答</code></pre>
+  <p><b>关键：模型本身一个字没变，也没重新训练。</b>变的只是你发过去的那段话——多了几段资料。</p>
+  <p>这个词叫 <b>RAG（检索增强生成，Retrieval-Augmented Generation）</b>：<b>检索</b>就是"翻书"，<b>生成</b>就是"回答"。<b>增强</b>的意思是——它只是在回答之前，多拿了几段资料。</p>
+
+  <h2>3. 先分清两种「嵌入」，不然后面全混</h2>
+  <p>上面第①步"查哪几段有关"，靠的是<b>把文字变成数字再比</b>。这个动作叫<b>嵌入（embedding）</b>——但你已经在别的课里见过这个词，而且是<b>另一个东西</b>：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">词嵌入</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">文本嵌入</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">压什么</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>一个 token</b> → 一根向量</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>一整段文字</b> → 一根向量</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">谁算的</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">语言模型的<b>第一层</b>（查表）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>另一个小模型</b>，专门干这个</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">拿来干嘛</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>喂给模型</b>当输入</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>只用来排序</b>，挑出该给哪几段</td></tr>
+      <tr><td style="padding:0.45rem">在哪讲的</td>
+          <td style="padding:0.45rem"><a href="../llm/0001-from-token-to-next-token.html">LLM 底层 · 第 1 课</a></td>
+          <td style="padding:0.45rem">这一课</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.9rem;color:var(--muted)">（两条都叫 embedding，很容易混。术语表里有 <a href="../../reference/glossary.html#vector">词嵌入</a> 和 <a href="../../reference/glossary.html#text-embedding">文本嵌入</a> 两条，分开写的。）</p>
+
+  <h2>4. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/rag/0001-why-retrieval.py</code>。它<b>不调任何模型</b>，只演一件事——<b>不检索 vs 检索之后，模型手上有什么</b>。</p>
+  <pre><code>python exercises/rag/0001-why-retrieval.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
+  <pre><code>[3] 不检索时，模型手上有什么
+      ——只有那一句问题。资料一个字都没有。
+      ——它学的是「接得像」（见 LLM 底层第 0 课），于是会编一套听起来合理的流程。
+      ——注意：它不会说「我不知道」。它不知道自己不知道。
+
+[4] 检索：把每段压成一根向量，跟问题比相似度（点积）
+      相似度 = 2   段 2．请假三天以内（含三天），向直属主管口头报备即可，事后补一条消息。
+      相似度 = 1   段 3．请假三天以上，需在系统里提交申请单，附上证明材料，主管审批后生效。
+      相似度 = 1   段 4．报销流程：每月 25 日前提交发票，财务在次月 15 日统一打款。
+      相似度 = 0   段 1．年假天数：入职满一年者每年 5 天，满三年者 10 天，满五年者 15 天。
+      相似度 = 0   段 5．加班调休：加班满 4 小时可调休半天，调休需当月用完，过期作废。
+
+[5] 检索之后，模型手上有什么
+      【资料 1】（原第 2 段）请假三天以内（含三天），向直属主管口头报备即可…
+      【资料 2】（原第 3 段）请假三天以上，需在系统里提交申请单，附上证明材料…
+      【问题】请三天假要走什么流程？</code></pre>
+  <p><b>两处要看懂</b>：</p>
+  <ul>
+    <li><b>前后对比是重点。</b>同一句问题，模型手上从"光秃秃一句"变成"问题 + 两段资料"。<b>RAG 干的就是这一件事。</b></li>
+    <li><b>"三天以内"和"三天以上"两段都拿到了</b>——因为问题正好卡在分界线上。只取 1 段，模型看到的就只有半套规则。<b>取几段，是 RAG 里第一个要调的数。</b></li>
+    <li>顺带：<b>比相似度用的就是 LLM 底层第 1 课那个「点积」</b>。同一个动作用在两处——注意力里比"像不像"，这里比"相不相关"。</li>
+    <li><b>还有个词得先知道</b>：脚本里是按"共有的二字组合"来比的，也就是<b>按词匹配</b>——这种叫<b>稀疏检索</b>。真的 RAG 常常还会同时用<b>按语义匹配</b>（把整段压成向量、比远近），叫<b>稠密检索</b>。<b>两种各有各的失手</b>：换个说法，稀疏就漏；撞上同名不同物，稠密就瞎。所以很多系统<b>两个一起用</b>。<span style="color:var(--muted)">（<a href="../../reference/glossary.html#sparse-dense">术语表 · 稀疏 / 稠密检索</a>）</span></li>
+  </ul>
+
+  <h2>5. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 不给模型任何资料，它答不出你的内部流程时，通常会怎么做？</p>
+    <button class="quiz-option" data-correct="true">编一套听起来合理的话给你</button>
+    <button class="quiz-option">明确地告诉你它并不知道</button>
+    <button class="quiz-option">干脆拒绝回答这道问题</button>
+    <button class="quiz-option">反过来问你要补充的材料</button>
+    <p class="feedback"
+       data-ok="对。它学的是「接得像」，不知道自己不知道，所以不会主动说不知道。"
+       data-no="它不会拒绝、也不会反问——它只会按「接得像」编，编得还很顺。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> RAG 到底改了模型的什么？</p>
+    <button class="quiz-option" data-correct="true">模型什么都没改，只改了提示词</button>
+    <button class="quiz-option">重新训练了一遍，让它记住</button>
+    <button class="quiz-option">把资料写进模型的参数里面</button>
+    <button class="quiz-option">换了一个更大的模型来回答</button>
+    <p class="feedback"
+       data-ok="对。RAG 不碰模型，它只往提示词里多塞几段资料。"
+       data-no="RAG 不训练、不改参数、也不换模型——它只改发过去的那段话。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 「它不知道自己不知道」，为什么是关键？</p>
+    <button class="quiz-option" data-correct="true">它不会说不知道，只会编答案</button>
+    <button class="quiz-option">它没联网，查不到最新的消息</button>
+    <button class="quiz-option">它回答的速度比搜索引擎慢</button>
+    <button class="quiz-option">它只能处理文字，不能看图片</button>
+    <p class="feedback"
+       data-ok="对。所以「答得顺」不能当「答得对」，得把资料递到它手上。"
+       data-no="联网、速度、图片都不是重点——重点是它没有「我不会」这个反应。"></p>
+  </div>
+
+  <h2>6. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/2005.11401">Lewis et al., NeurIPS 2020 — Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a>——RAG 这个名字的原始出处。里面有一句特别值钱：<b>换掉那份资料索引，就能更新模型的知识，不用重新训练</b>。<br>
+    <a href="https://www.anthropic.com/engineering/contextual-retrieval">Anthropic — Introducing Contextual Retrieval</a>——工业界怎么做 RAG 的检索那一步，带实测数字（第 2 课会用到）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"文档有一千页，全塞进去不行吗？""检索错了怎么办？""RAG 能不能让它不胡说？""跟把文档直接贴给它，有什么区别？"
+  </div>
+
+  <p class="next">
+    <b>顺着往下</b>：<a href="0002-rag-pipeline.html">RAG · 第 2 课 · 一条 RAG 链长什么样</a><br>
+    <b>换个角度</b>：<a href="../llm/0000-how-models-learn.html">LLM 底层 · 第 0 课 · 模型是怎么学出来的</a>　·　<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a><br>
+    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#vector">词嵌入</a> · <a href="../../reference/glossary.html#training">训练 / 损失</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 1 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

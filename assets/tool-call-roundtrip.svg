@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 560" width="720" height="560" role="img" aria-label="工具调用的完整来回：模型只输出调用意图，程序执行并把结果塞回">
+  <defs>
+    <marker id="ta" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+    <marker id="tb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f6b3a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="720" height="560" fill="#fdfcf8"/>
+
+  <!-- 两栏标题 -->
+  <rect x="28" y="24" width="300" height="42" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="48" y="51" font-family="sans-serif" font-size="13" fill="#8a2b06">模型（只会吐字，不会动手）</text>
+
+  <rect x="392" y="24" width="300" height="42" rx="8" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.5"/>
+  <text x="412" y="51" font-family="sans-serif" font-size="13" fill="#1f6b3a">你的程序 + 外部世界（真动手）</text>
+
+  <!-- ① 工具清单 + 问题 -->
+  <text x="360" y="112" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">①</text>
+  <line x1="672" y1="118" x2="60" y2="118" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ta)"/>
+  <rect x="392" y="92" width="300" height="26" rx="5" fill="none"/>
+  <text x="378" y="112" text-anchor="end" font-family="sans-serif" font-size="11.5" fill="#8a2b06">工具清单 + 用户的问题</text>
+
+  <!-- ② 调用意图 -->
+  <text x="360" y="176" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">②</text>
+  <line x1="60" y1="182" x2="672" y2="182" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ta)"/>
+  <text x="44" y="204" font-family="monospace" font-size="11.5" fill="#8a2b06">「我要调 get_weather(city='北京')」</text>
+  <text x="44" y="222" font-family="sans-serif" font-size="11" fill="#9b1c1c">↑ 这只是一段文字，不是真的去调了</text>
+
+  <!-- ③ 程序真的调 -->
+  <rect x="392" y="250" width="300" height="62" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="412" y="274" font-family="sans-serif" font-size="12.5" fill="#1f6b3a">③ 程序解析这段文字，真的去调</text>
+  <text x="412" y="298" font-family="monospace" font-size="11.5" fill="#1b1a17">查天气库 → {"temp_c": 26, "cond": "晴"}</text>
+
+  <!-- ④ 结果塞回 -->
+  <text x="360" y="356" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">④</text>
+  <line x1="672" y1="362" x2="60" y2="362" stroke="#1f6b3a" stroke-width="1.6" marker-end="url(#tb)"/>
+  <text x="378" y="356" text-anchor="end" font-family="sans-serif" font-size="11.5" fill="#1f6b3a">结果塞回对话（tool_result）</text>
+
+  <!-- ⑤ 说人话 -->
+  <rect x="28" y="392" width="300" height="62" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="48" y="416" font-family="sans-serif" font-size="12.5" fill="#8a2b06">⑤ 模型说人话了</text>
+  <text x="48" y="440" font-family="serif" font-size="13" fill="#1b1a17">「北京今天 26 度，晴。」</text>
+
+  <!-- 循环提示 -->
+  <path d="M 178 466 L 178 496 L 542 496 L 542 470" fill="none" stroke="#6c675e" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#ta)"/>
+  <text x="360" y="516" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">↻ 如果模型还想调别的工具，就回到 ② 再走一遍 —— agent 循环就是这么转起来的</text>
+
+  <!-- 底注 -->
+  <text x="28" y="546" font-family="sans-serif" font-size="11" fill="#6c675e">关键：模型的输出永远是「一段文字」。真正动手的是你的程序。</text>
+</svg>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 2 课（进阶版）· 里面到底在转什么</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 2 课 · 进阶版</div>
+  <h1>Prefill 与 Decode：里面到底在转什么</h1>
+  <p class="subtitle">初学版讲「是什么」，这篇答「<b>里面具体在转什么</b>」。<b>按需跳读</b>——多条都能从<a href="0002-prefill-vs-decode.html">初学版</a>的括号直达。</p>
+
+  <div class="note">
+    <span class="label">怎么用这篇</span>
+    <p>只收<b>读完初学版仍会冒出来</b>的疑问。初学版已经讲清楚的（"一段算力、一段带宽""货架越写越厚"），这里不再重复。</p>
+    <p><b>这篇的所有问题，都挂在下面这条链的某一环上</b>——先看链，再挑你卡的那一环。</p>
+  </div>
+
+  <h2 id="chain">总图 · 一次请求从头到尾（下面每一问，都是某一环的展开）</h2>
+  <p>以你输入「你好，请」、模型回「很高兴」为例。<b>每环只写三样：发生什么、这一步的输入是什么、详见哪一问。</b>理由不重复讲，一律指回去。</p>
+  <ol class="chain">
+    <li><b>分词 → 查词表</b>：文字变成一串<b>编号</b>。
+      <span class="in">这一步的输入：<b>你那段文字</b>。出来的是一串整数。</span>
+      <span class="to">详见 <a href="0001-from-token-to-next-token-deep.html#q4-boundary">第 1 课进阶 · Q4</a>（哪几步算"模型"）· <a href="0001-from-token-to-next-token-deep.html#q1-vocab">Q1</a>（词表多大）</span></li>
+    <li><b>查嵌入表</b>：每个编号换一根向量，<b>拼成一张表</b>——n 行 × d 列。
+      <span class="in">这一步的输入：<b>那串编号</b>。出来的表<b>宽度 d 固定、行数 n 随字数变</b>。</span>
+      <span class="to">详见 <a href="0001-from-token-to-next-token-deep.html#q5-shape">第 1 课进阶 · Q5</a>（为什么是"表"不是"一根"）</span></li>
+    <li class="hub"><b>一轮 ＝ 一个 token 从第 1 层走到最后一层</b>　<b>（下面这一整段才是"跑模型"）</b>
+      <span class="loop-note">↻ <b>层内循环</b>：模型有几十层，每层 4 步——<b>注意力 → 残差 → FFN → 残差</b>。每过一层，表中每一行都被改写一遍。</span>
+      <span class="loop-note">↻ <b>层内是并行的</b>：n 行<b>并排</b>过，不排队。整条链真正串行的只有第 5 环的"挑字"。</span>
+      <span class="loop-note">↻ <b>顺手做的事</b>：每一层算出的 k、v 全部填进缓存（KV cache），后面的轮次直接取。</span>
+      <span class="in">这一步的输入：<b>上一环那张表</b>。出来的是<b>同样形状、但每行都被改写过的新表</b>。</span>
+      <span class="to">层与轮两个轴的关系见 <a href="#q11-axes">Q11</a>；为什么能并行见 <a href="#q9-parallel">Q9</a>；缓存里为什么只有 K/V 见 <a href="#q1-hidden">Q1</a>；每步的"搬运"见 <a href="#q2-overlap">Q2</a>；FFN 为什么不进缓存见 <a href="#q4-ffn">Q4</a></span></li>
+    <li><b>只取最后一层、最后一个位置</b>，得到<b>一根向量</b>。
+      <span class="in">这一步的输入：<b>第 3 环改写完的那张表</b>。其它行也出了结果，但推理时没人要——<b>作废</b>。</span>
+      <span class="to">为什么"只有最后一行被采用"，见 <a href="#q10-why-all">Q10</a></span></li>
+    <li><b>LM Head：对词表里每个字打分</b> → 一张<b>分数表</b>（logits），再 softmax 换算成百分比。
+      <span class="in">这一步的输入：<b>那根向量</b>。出来的是<b>词表里每个字各一个分</b>——十几万个数。</span>
+      <span class="to">详见 <a href="#q8-output">Q8</a></span></li>
+    <li class="hub"><b>按比例挑一个</b>（采样）→ 挑出<b>一个 token 编号</b>。
+      <span class="in">这一步的输入：<b>那张百分比表</b>。出来的是<b>一个编号</b>——一个整数，<b>不是向量</b>。</span>
+      <span class="loop-note">★ <b>整条链唯一真串行的一步</b>——上一个字没挑出来，就不知道下一个字是谁。详见 <a href="#q9-parallel">Q9</a>。挑的方法（temperature 等）见 <a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 · Q10</a></span></li>
+    <li class="hub"><b>拿这个编号，再去查一次嵌入表</b> → 得到<b>一根新向量</b>，<b>追加到表尾</b>，进入下一轮、回到第 3 环。
+      <span class="in">这一步的输入：<b>刚挑出来的那个编号</b>。出来的是<b>长了一行的表</b>（n → n+1，宽度 d 不变）。</span>
+      <span class="loop-note">★ <b>最容易跳错的一环</b>：百分比给你的是"哪个字最像"的排行榜，<b>不是内容</b>。↻ <b>只算新增那一行</b>——前面所有行的 k、v <b>从缓存取，不重算</b>。详见 <a href="#q8-output">Q8</a></span></li>
+  </ol>
+  <div class="note">
+    <span class="label">这条链之外，还有两件事</span>
+    <p><b>① 前缀缓存（第 3 课）：</b>跨<b>多次请求</b>复用老前缀的 k、v。第 3 环每轮都在造新的 k、v——如果下一次请求的<b>开头一字不差</b>，那些 k、v 就不用重造。→ <a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a></p>
+    <p><b>② 多轮对话：</b>每来一条新输入，就<b>整个重来一遍</b>上面这条链。→ <a href="#q6-preflight">Q6</a>　<b>缓存命中时的新增部分算哪一段</b> → <a href="#q5-incremental">Q5</a></p>
+  </div>
+  <div class="note">
+    <span class="label">卡在哪一环？直接跳过去</span>
+    <p><b>第 3 环</b>　为什么每一行都能并排过、不排队 → <a href="#q9-parallel">Q9</a>　·　前缀的字自己也要算注意力吗 → <a href="#q10-why-all">Q10</a>　·　层和轮到底是什么关系 → <a href="#q11-axes">Q11</a>　·　缓存里为什么只有 K/V → <a href="#q1-hidden">Q1</a><br>
+       <b>第 4 环</b>　中间某一层能不能直接拿去用 → <a href="0001-from-token-to-next-token-deep.html#q8-layers">第 1 课进阶 · Q8</a><br>
+       <b>第 5–7 环</b>　挑出来的是编号不是向量 → <a href="#q8-output">Q8</a>　·　采样参数（temperature / top_p）各在调什么 → <a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 · Q10</a><br>
+       <b>第 3 环的代价</b>　每步为什么卡带宽 → <a href="#q2-overlap">Q2</a> / <a href="#q3-intensity">Q3</a>　·　滑动窗口 → <a href="#q7-window">Q7</a></p>
+  </div>
+
+  <h2 id="q1-hidden">Q1 · 「hidden 向量」是什么？为什么盒子里存的是 K/V，不是它？</h2>
+  <p><b>对应初学版第 3 节末尾那个「货架」的说法。</b><span style="color:var(--muted)">（总图 第 3 环）</span>那儿说"每个字在每层留下一张标签（k）＋ 一个货箱（v）"。那在放上去<b>之前</b>，每个字手里拿的是什么呢？</p>
+  <p>Transformer 每一层里，每个位置都有一根向量（长度 <code>d</code>，比如 4096）。这根向量叫 <b>hidden state（隐状态）</b>，日常就叫 <b>hidden 向量</b>。它其实<b>不是新东西</b>——就是初学版第 1 课那张"n 行 × d 列"表里的<b>某一行</b>。</p>
+  <p>它一路往上走，每过一层就被改写一次：</p>
+  <pre><code>token 编号
+  → 查嵌入表 → 一根向量
+  → 第 1 层（注意力 + FFN）→ 改写成新的一根
+  → 第 2 层 → 又改写成新的一根
+  → ……
+  → 最后一层、最后一个位置 → lm_head → 打分 → 挑出下一个字</code></pre>
+  <p style="color:var(--muted)">（每一层里"改写"具体是哪几步，见 <a href="0001-from-token-to-next-token.html">第 1 课第 3 节</a>；这条链的<b>后半段</b>——打分、挑字、再变回一根向量——见 <a href="#q8-output">Q8</a>。完整的一条链在上面的<a href="#chain">总图</a>。）</p>
+
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>关键：这些 hidden 向量，模型不存。</b>盒子里存的是<b>每一层注意力算出来的 K/V</b>。</p>
+  </div>
+
+  <p>为什么可以不存 hidden？因为<b>算下一个字的时候，历史 hidden 根本用不上</b>：</p>
+  <ul>
+    <li>新字的 <b>Query</b> 要查的，是历史每个位置的 <b>Key</b>（看谁跟它相关）；</li>
+    <li>再按相关度取走的，是那些位置的 <b>Value</b>。</li>
+  </ul>
+  <p>K 和 V 是<b>从 hidden 投影出来的两样东西</b>——一张<b>标签</b>（K）、一个<b>货箱</b>（V）。要查的时候，扫标签、取货就行，不必把 hidden 序列再算一遍。</p>
+  <p>所以盒子里装的是：<b>每一层、每一个历史位置的 K/V</b>。不是 hidden 向量。</p>
+  <div class="note">
+    <span class="label">别跟 Q10 打架：这句话说的是 decode，不是 prefill</span>
+    <p>Q10 说"前面每个位置的注意力都得算、一个都省不掉"——那是 <b>prefill 阶段</b>的事：那一轮所有位置本来就一起算，hidden 自然会一层层往下传。</p>
+    <p>而这里说的"用不上历史 hidden"，是 <b>decode 阶段</b>的事：<b>不需要把历史位置重新算一遍</b>，因为它们的 K/V 早就存在货架上了。</p>
+    <p>两句话讲的是<b>两个阶段</b>，不冲突。<b>prefill 负责把 K/V 造出来，decode 负责复用它们。</b></p>
+  </div>
+  <p style="color:var(--muted)">（这解释了一个常见的疑惑："为什么缓存不叫 hidden cache？"——因为它存的根本不是 hidden。）</p>
+  <p style="color:var(--muted)">（还有一问常被跟这题混在一起：<b>FFN 是不是也有一份 K/V？</b>不是，那是另一个"键值"。→ <a href="#q4-ffn">Q4</a>）</p>
+
+  <h2 id="q2-overlap">Q2 · 「搬」和「算」是两个阶段，还是同一个过程？</h2>
+  <p><b>对应初学版第 4 节。</b>初学版说 decode 卡在"搬"。<span style="color:var(--muted)">（总图 第 3 环 · 每一步的代价）</span>但很容易读成"<b>先搬完，再开算</b>"——<b>不是的</b>：搬和算在同一个前向里<b>交替、流水线式</b>发生。</p>
+  <p>假设正在生成第 <code>t</code> 个字，走进第 <code>l</code> 层：</p>
+  <ol>
+    <li><b>搬权重</b>：把这一层的 Q/K/V 投影矩阵、输出矩阵、FFN 权重，从显存读到芯片上；</li>
+    <li><b>搬历史 K/V</b>：把第 <code>l</code> 层货架里<b>所有历史</b>的 K/V 读出来；</li>
+    <li><b>算这一步的 Q/K/V</b>：只用<b>当前这一个字</b>的向量（就是刚挑出来那个 token 重新查嵌入表得到的那根，<a href="#q8-output">Q8</a>），算出它自己的 q、k、v；</li>
+    <li><b>写回</b>：把它刚算出的 k、v 追加到第 <code>l</code> 层货架的末尾；</li>
+    <li><b>算注意力</b>：用当前 q 去比货架里所有历史 K/V；</li>
+    <li><b>算 FFN</b>；</li>
+    <li>交给下一层，重复 1–6。</li>
+  </ol>
+  <p>把上面那些"搬"和"算"按<b>量</b>排一下，就看出问题在哪了：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">动作</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">每步的量</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">说明</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>读</b>模型权重</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>很大</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">每吐一个字都要重来一遍</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>读</b>历史 K/V</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>大</b>，序列越长越大</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">这半截随上下文变长</td></tr>
+      <tr><td style="padding:0.55rem"><b>写</b>新的 K/V</td>
+          <td style="padding:0.55rem"><b>很小</b></td>
+          <td style="padding:0.55rem">只有这 1 个字的量，可以忽略</td></tr>
+    </tbody>
+  </table>
+  <p>所以：<b>带宽压力全在"读"，不在"写"。</b>顺序上还有一个容易搞反的点——</p>
+  <div class="note">
+    <span class="label">一个容易搞反的顺序</span>
+    <p>是<b>先把当前的 k/v 算出来、写进货架</b>，再拿当前的 q 去比；而不是"先比完再写"。<br>
+       所以当前这个字<b>也会看上自己一眼</b>——因果掩码的规矩是"能看自己和它之前的所有位置"（原始论文的措辞：attend to all positions in the decoder <b>up to and including that position</b>）。</p>
+  </div>
+  <p>另外，GPU 会尽量让"搬"和"算"<b>重叠</b>——搬下一批数据的时候，计算单元正在算上一批。但 decode 的问题是<b>搬的活实在太多</b>，重叠也填不满，所以整体瓶颈仍然是搬。</p>
+
+  <h2 id="q3-intensity">Q3 · 「算力受限 / 带宽受限」是怎么算出来的？</h2>
+  <p><b>对应初学版第 4 节（prefill 卡算力、decode 卡带宽）。</b><span style="color:var(--muted)">（总图 第 3 环 · 每一步的代价）</span>初学版给的是结论，这里给算式。</p>
+  <p>用一个词量这件事：<b>算术强度（arithmetic intensity）</b> ＝ 干了多少次运算 ÷ 搬了多少字节。翻译成人话就是：<b>每搬一个字的数据，能榨出多少计算</b>。</p>
+  <details class="formula">
+    <summary>看算式（可跳过）——那个数是怎么估出来的</summary>
+    <p>设 <code>d</code> 是向量长度、<code>L</code> 是一次处理多少个 token：</p>
+    <table style="border-collapse:collapse;width:100%;font-size:0.9rem;background:#fff">
+      <thead><tr>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">阶段</th>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">计算量约</th>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">要搬的约</th>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">算术强度约</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>Prefill</b>（一次 <code>L</code> 个）</td>
+            <td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><code>L × d²</code></td>
+            <td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><code>d²</code>（权重）</td>
+            <td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b><code>L</code></b></td></tr>
+        <tr><td style="padding:0.5rem"><b>Decode</b>（一次 1 个）</td>
+            <td style="padding:0.5rem"><code>d²</code></td>
+            <td style="padding:0.5rem"><code>d²</code>（权重）＋ K/V</td>
+            <td style="padding:0.5rem"><b><code>1</code></b></td></tr>
+      </tbody>
+    </table>
+    <p>关键在<b>分母是共享的</b>：那段权重不管你算几行都得整张读一遍。所以行数一多，分母不变、分子线性涨，<b>强度就被摊上去了</b>。</p>
+  </details>
+  <p><b>结论只看两句：</b></p>
+  <ul>
+    <li><b>prefill</b>：一次要算一大批 → 强度高，<b>卡算力</b>。</li>
+    <li><b>decode</b>：一次只算一个 → 强度低，<b>卡带宽</b>。</li>
+  </ul>
+  <p>而一块 GPU 的"算力 ÷ 带宽"这个比值，通常有<b>上百到几百</b>。decode 的强度跟它<b>差得非常远</b>——意思是：它拿到的数据，根本喂不饱计算单元，绝大部分时间在等。</p>
+  <p><b>这就是"卡在带宽"的严格含义。</b></p>
+  <div class="note">
+    <span class="label">查资料时你会撞上另一个数字：60–80</span>
+    <p>Weka 那篇里写着 decode 的算术强度实测是 <b>60–80</b>，跟上面这个"1"差得挺远。<b>不矛盾，是两把尺子</b>：上面那个只算"一次矩阵乘"最理想的情况，算出来是个下限；60–80 是整个模型跑一步的实测平均，中间的损耗全算进去了。</p>
+    <p><b>你只要带走一句</b>：不管用哪个数，跟显卡的"算力 ÷ 带宽"（上百到几百）比，<b>都还差着一个数量级上下</b>——所以结论永远是那句"喂不饱计算单元"。</p>
+  </div>
+  <p style="color:var(--muted)">（顺带：<code>L</code> 越大，prefill 的算术强度越高。所以输入越长，prefill 越"划算"——一次搬权重，能算一大片。）</p>
+  <details class="formula">
+    <summary>看公式（可跳过）——那个 n×n 的"比较表"到底怎么一次算出来</summary>
+    <p>注意力这一步也是矩阵乘。<code>Q</code>、<code>K</code> 都是 n 行，<b>把它们乘起来就是 n×n 的分数表</b>：</p>
+    <pre><code>S = Q · Kᵀ / √d_k        ← n×n，每一格 = "第 i 行的 q 跟第 j 行的 k 有多像"
+O = softmax(S) · V         ← 按每一行的权重，把 V 加权取回来</code></pre>
+    <p><b>为什么能一次算完</b>：第 (i, j) 那一格只吃一个 q<sub>i</sub> 和一个 k<sub>j</sub>，两样都是现成的 → <b>每格互不依赖，整张表一次填满</b>。</p>
+    <p><b>顺带解释了一件事</b>：因果掩码是在<b>整张 n×n 表算完之后</b>才把"不该看"的那半遮掉的——位置 1 跟位置 3 的相似度<b>白算了，然后扔掉</b>。所以即使有掩码，prefill 干的活仍是完整的 n² 那一份，<b>掩码不影响"算了多少"，只影响"哪些分作废"</b>。这正是 prefill 算力吃紧的根源。</p>
+  </details>
+
+  <h2 id="q4-ffn">Q4 · FFN 也有 K/V 吗？</h2>
+  <p><b>对应初学版第 3 节末尾那个顺带的问题</b><span style="color:var(--muted)">（总图 第 3 环 · 里面那步 FFN）</span>（"FFN 也有 K/V 吗？"）。答案是一句干净的"没有"，但背后有一个<b>同词不同义</b>的坑。</p>
+  <p><b>没有。</b>盒子里说的 K/V，<b>专指注意力那一步算出来的东西</b>——每一层只有注意力那一份，FFN 没有。</p>
+  <p>理由：<b>FFN 不回头读历史。</b>注意力要去看所有历史位置，所以它的产值得留着被后面反复读；FFN 是<b>逐位置处理</b>的（每一行各走各的，谁都不看）——<b>没有"被后面复用"的东西，就不需要缓存。</b></p>
+  <p style="color:var(--muted)">（跟 <a href="#q1-hidden">Q1</a> 是一对：Q1 讲"盒子里为什么只有 K/V"，这里讲"为什么 FFN 不往盒子里放东西"。）</p>
+  <p>不过要小心：FFN 也常被形容成一张"<b>键值记忆</b>"表。那是<b>另一个意思</b>的"键值"：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">注意力的 K/V</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">FFN 的"键值记忆"</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">谁产生的</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">注意力那一步算出来</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">FFN 的两层权重</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">「键」是什么</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">每个 token 的"我是谁"</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">训练里学到的<b>文本模式</b></td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">「值」是什么</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">每个 token 的"我带了什么"</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>输出词表上的一个分布</b></td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">干什么用</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">决定"看谁、取什么"</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">决定"该补充哪个概念"</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">会缓存吗</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>会</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>不会</b>，也没意义</td></tr>
+      <tr><td style="padding:0.55rem">性质</td>
+          <td style="padding:0.55rem">机制</td>
+          <td style="padding:0.55rem"><b>比喻</b>（解释它"像"查表）</td></tr>
+    </tbody>
+  </table>
+  <p>来源是 Geva et al.（EMNLP 2021），论文标题就叫《Transformer Feed-Forward Layers Are <b>Key-Value Memories</b>》：</p>
+  <blockquote style="border-left:3px solid var(--ink);margin:1rem 0;padding:0.2rem 0 0.2rem 1rem;font-size:0.95rem">
+    FFN 层像<b>键值记忆</b>：每个<b>键</b>对应训练语料里的<b>文本模式</b>，每个<b>值</b>对应<b>输出词表上的一个分布</b>。
+  </blockquote>
+  <p>论文给的原例：前文是 <code>Eiffel Tower is located in</code> 时，某一条"记忆"被触发，把 <b>「Paris」</b> 的分往上推。</p>
+  <p>那是"解释它怎么工作"的比喻，<b>跟缓存一点关系都没有</b>——它每用一次都要重新查，没有"存起来下次再用"这回事。展开见 <a href="0001-from-token-to-next-token-deep.html#q7-ffn">第 1 课（进阶版）· Q7</a>。</p>
+
+  <h2 id="q5-incremental">Q5 · 缓存命中时，「计算」具体指什么？</h2>
+  <p><b>对应初学版第 2 节末尾那两个词</b><span style="color:var(--muted)">（总图 第 7 环 · 缓存命中时那一段算哪一步）</span><b>（「一遍」「一次请求」）</b>和第 3 课的前缀缓存。这里要拆开一个容易含糊的词："计算"。</p>
+  <p>先把两件事分开——它们都常被叫"处理"，但贵贱差着好几个数量级：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">步骤</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">干什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">贵不贵</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>tokenize</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">把新文字切成 token 编号</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>很轻</b>（常在 CPU 上做）</td></tr>
+      <tr><td style="padding:0.55rem"><b>前向传播</b></td>
+          <td style="padding:0.55rem">编号 → 查嵌入 → 逐层算 → 打分 → 挑出一个字</td>
+          <td style="padding:0.55rem"><b>这才是"计算"</b></td></tr>
+    </tbody>
+  </table>
+  <p>所以命中缓存<b>不等于</b>"新增部分 tokenize 一下就完了"。真实流程是：</p>
+  <pre><code>新增文字 → tokenize → 查嵌入
+   → 逐层前向（每层算出新增 token 的 K/V，追加进货架）
+   → 用最后一个位置的输出来预测第一个回复字
+   → 之后进入正常 decode 循环</code></pre>
+  <p>新增部分可能有<b>好几个</b> token，而且都是<b>已知的输入</b>（不是模型一个个挑出来的），所以<b>可以并行算</b>——这本质上就是<b>一次小型 prefill</b>。</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p>术语：这叫 <b>增量 prefill（incremental prefill）</b>，也叫<b>部分 prefill</b>。<br>
+       判断标准不是"从第 1 个 token 开始算"，而是：<b>对一段"已知输入"做并行前向、算出每层 K/V 填进缓存，最后拿最后一个位置预测下一个字。</b></p>
+  </div>
+  <p>新增提问恰好全符合——所以它<b>算 prefill</b>，不叫 decode：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">这一段</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">算不算</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">叫什么</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">整个 prompt，从头</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">要算</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>全量 prefill</b></td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">命中的老前缀</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>不算</b>，复用</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">——</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">新增的那一段</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">要算（可并行）</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>增量 prefill</b></td></tr>
+      <tr><td style="padding:0.55rem">之后每吐一个字</td>
+          <td style="padding:0.55rem">要算（只能串行）</td>
+          <td style="padding:0.55rem"><b>decode</b></td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="q6-preflight">Q6 · 多轮对话、agent 跑起来，prefill 会反复发生吗？</h2>
+  <p><b>对应初学版第 2 节末尾的「一次请求」。</b><span style="color:var(--muted)">（总图 整条链被重跑一遍的场合）</span>初学版已经把"一次回复内部"说清了（<b>prefill 只发生一次</b>）。这里只补更大的一层——<b>请求与请求之间</b>。</p>
+  <p><b>每来一段新的输入，就再来一次 prefill。</b></p>
+  <pre><code>用户第 1 句  → prefill → decode × N（助手回复）
+用户第 2 句  → 又一次 prefill（通常增量，复用前面的 KV）→ decode × N</code></pre>
+  <p>所以完整口径是：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>每一条新的用户输入，都会开启一次新的「prefill + decode」循环。但在一次回复内部，prefill 只发生一次。</b></p>
+  </div>
+  <p><b>agent 就是把这句话放大几十倍</b>：一次任务发出十几次请求，就是十几段这样的循环（初学版第 5 节讲它的代价）。</p>
+
+  <h2 id="q7-window">Q7 · 「必须全部读一遍」有没有例外？</h2>
+  <p><b>对应初学版第 4 节末尾那句"有没有例外"。</b><span style="color:var(--muted)">（总图 第 3 环 · 读缓存那一步）</span>有——这里展开。</p>
+  <p>初学版说的"每步都要把整个货架读完"，是<b>标准注意力（dense attention）</b>的性质——<b>不是物理定律</b>。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">做法</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">每步读多少</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">代价</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>标准注意力</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">全部历史</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">显存和带宽都随长度涨</td></tr>
+      <tr><td style="padding:0.55rem"><b>滑动窗口</b>（sliding window）</td>
+          <td style="padding:0.55rem">只读<b>最近 N 个位置</b></td>
+          <td style="padding:0.55rem">更快更省，但<b>老信息够不着了</b></td></tr>
+    </tbody>
+  </table>
+  <p>要注意：滑动窗口是<b>真的把老货位扔掉</b>（不是"留着但不读"）——所以它省的不只是带宽，还有显存。</p>
+  <p>所以"必须全部读一遍"这句话，完整版是：<b>在标准注意力下成立。</b></p>
+
+  <h2 id="q8-output">Q8 · 模型最后吐出来的，是「字」还是「向量」？</h2>
+  <p><b>对应初学版第 1 节的「出口」那一条。</b><span style="color:var(--muted)">（总图 第 5–7 环）</span>那儿一笔带过："最后那根向量拿去打分，再挑出一个字"。这里补上中间那个容易漏掉的环节。</p>
+  <p><b>最后一层的输出是一根向量——它既不是"字"，也不会变成下一轮的输入。</b>中间隔着整整一套动作：</p>
+  <pre><code>最后一层、最后那根向量
+      │ ① 乘上「反嵌入表」—— 给词表里十几万个字，每个打一个分
+      ▼
+  十几万个分数（叫 logits）
+      │ ② softmax → 换算成百分比
+      ▼
+  十几万个百分比
+      │ ③ 挑一个（挑最高的，或按比例抽——这一步叫采样）
+      ▼
+  一个 token 编号   ←←←  这个才是「蹦出来的那个字」
+      │ ④ 下一轮：拿这个编号去查表
+      ▼
+  一根新向量 → 再走一遍</code></pre>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>向量 →（打分）→ 分表 →（挑一个）→ 字 →（查表）→ 新向量。</b></p>
+    <p>中间那一步不能省——<b>模型直接产出的不是字，是一张"对每个字打的分"</b>；字是从那张分表里<b>挑</b>出来的。</p>
+  </div>
+  <p><b>为什么要绕这一圈？</b>因为模型天生就是干"从词表里选一个"这件事——它训练的目标就是这个。而下一轮的输入，要求的是一串 <b>token 编号</b>（模型只认编号，不认向量）。</p>
+  <p style="color:var(--muted)">（顺带一个容易说错的：模型的"输出"严格说是<b>一张对词表里每个字打的分表</b>，不是一个字。从分表里<b>挑出一个字</b>这一步叫<b>采样</b>——<b>怎么挑，由你随请求一起传的「采样参数」决定</b>（<code>temperature</code>、<code>top_p</code>、<code>seed</code> 这些，"挑最高分"只是其中一种）；<b>而真正执行"挑"这个动作的，是跑模型的那个推理引擎</b>。三步的细节见 <a href="0001-from-token-to-next-token.html">第 1 课第 3 节⑤</a>，<b>那些旋钮各在调什么</b>见 <a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 · Q10</a>。）</p>
+
+  <h2 id="q9-parallel">Q9 · 为什么第 1 轮那一整批字可以一起算，不用排队等前面？</h2>
+  <p><b>对应初学版第 3 节</b>里"所以第 1 轮能一起算"那一行（初学版只留了一句，展开在这里）。</p>
+  <p>先分清一件容易混的事：<b>注意力这一步，其实是两步，不是一步。</b></p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>第一步</b>：把整张表一次性投影出<b>每个位置的 q、k、v</b>（三个大矩阵乘）。<br>
+       <b>第二步</b>：拿各自的 q 去比 k、按比重取 v——<b>算出每个位置各自的注意力</b>。</p>
+  </div>
+  <p>很多人以为这两步是<b>一起</b>做完的，于是产生一个矛盾："既然每个字都要看前面的字，那不就得分先后？"——<b>不矛盾</b>。因为第一步已经<b>把全部位置的 k、v 一次性备齐了</b>，轮到第二步时，各查各的，<b>互不等待</b>。</p>
+  <p>把两步的依赖摊开看：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">动作</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">依赖谁</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">能不能并行</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">① 从整张表投影出 q、k、v</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>只依赖各自的向量</b>，跟别的位置无关</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>能</b>，n 行一次算完</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">② 拿 q 比 k、取 v</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">依赖前面所有位置的 k、v</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>也能</b>——那些 k、v 在 ① 里已经备齐</td></tr>
+      <tr><td style="padding:0.55rem">③ 挑出下一个 token</td>
+          <td style="padding:0.55rem">依赖本轮所有位置的输出</td>
+          <td style="padding:0.55rem">挑完之后，<b>才知道下一轮该算哪一行</b></td></tr>
+    </tbody>
+  </table>
+  <p>所以 <b>1 和 2 都不构成"排队"</b>。真正让整个流程串行的只有第 ③ 步：<b>下一个 token 还没被挑出来，就没法开始算它</b>。</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>一张表看完「哪里并行、哪里串行」：</b><br><br>
+       <b>一层之内，n 个位置之间</b>　→　<b>没有依赖</b>，一次算完<br>
+       <b>层与层之间</b>　　　　　　　→　有（一层做完才做下一层），但每层内部仍是并行的<br>
+       <b>挑出下一个 token</b>　　　　→　<b>真串行</b>，要等上一个被选出来</p>
+  </div>
+  <p><b>整条流水线里唯一真正串行的，就是"挑 token"那一步。</b>其余全是"大矩阵乘"。</p>
+  <details class="formula">
+    <summary>看公式（可跳过）——为什么第一步能一次算完</summary>
+    <p>第一步就是三次矩阵乘，<code>X</code> 是那张 n 行 × d 列的表，<code>W</code> 是学出来的权重：</p>
+    <pre><code>Q = X · W_Q        K = X · W_K        V = X · W_V
+（n × d）乘（d × d）得到（n × d）——n 行同时算完</code></pre>
+    <p>每输出行只依赖<b>自己的输入行</b>加<b>共用的权重</b>，不依赖别的输出行——这就是"能并行"的全部原因。像 Excel 公式往下拉。</p>
+  </details>
+  <p style="color:var(--muted)">（顺带回一句初学版第 2 节：第 2 轮起"只补刚挑出来的那一个字"，<b>不是因为"只能一个一个算"</b>，而是因为<b>下一个字还没被挑出来</b>。这两件事很容易被混为一谈。）</p>
+
+  <h2 id="q10-why-all">Q10 · 前缀里的字自己也要算注意力吗？（一个很容易想歪的地方）</h2>
+  <p><b>对应初学版第 3 节</b>那句"每个字的注意力都要算，一个都不少"。初学版给了结论，这里说清<b>为什么不能省</b>。</p>
+  <p>先摆出那个错想法——很自然，我第一次读也想过：</p>
+  <div class="note" style="border-color:var(--bad);background:var(--bad-soft)">
+    <span class="label" style="color:var(--bad)">一个常见的错想法</span>
+    <p>"第 1 轮不就是为了预测第一个字吗？<b>前面那些字只要把 k、v 提供出来就行</b>，它们自己不用回头看前面的字、不用算自己的注意力。"</p>
+  </div>
+  <p><b>答案是：不行，一个都省不掉。</b>理由只有一条，但很关键：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p>每一层的 k、v，都是从<b>上一层改写后那行数字</b>里投影出来的。<br>
+       所以位置 2 在<b>第 1 层</b>算出来的注意力结果，会变成它在<b>第 2 层</b>的输入。</p>
+  </div>
+  <p>换句话说：<b>每个位置算出来的注意力不是终点，是下游每一层都要接着用的原料。</b>你省掉它，后面每一层读到的东西就都变了。</p>
+  <figure class="figure">
+    <img src="../../assets/one-row-through-layers.svg" alt="跟踪「气」这一行往下走的图：从嵌入表查出来，在第 1 层投影出 k、v、q，算出注意力结果，注意力结果被加回这一行，这一行就成了第 2 层的输入；第 2 层里「很」这一行读到的 k、v 就来自这里。最后一层只用「很」那一行去打分。">
+    <figcaption><b>把「气」这一行跟一遍。</b>关键在第 2 层那个 <b>★</b>——它读的 k、v 是从 <b>h″</b> 投影出来的，而 h″ 里已经混进了「气」在第 1 层看过「天」这件事。<b>一层传一格。</b></figcaption>
+  </figure>
+  <h3>亲手量一量</h3>
+  <p>脚本在工作区：<code>exercises/llm/0002-why-all-positions.py</code>。它用一个 4 层玩具模型，依次让某个字"不回头看前面"，再量最后一个位置偏了多少。</p>
+  <pre><code>python exercises/llm/0002-why-all-positions.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。数字是手编的，<b>只看关系、不看绝对值</b>。</p>
+  <pre><code>若「天」不回头看：最终向量最大差 0.0000，原始分最大差 0.0000  （它本来就没有「前面」可看）
+若「气」不回头看：最终向量最大差 0.1533，原始分最大差 0.0553
+
+  （让「气」不回头看，每跑完一层就量一次最后一个位置的向量偏差）
+
+    跑完第 1 层    偏差 0.0000
+    跑完第 2 层    偏差 0.0482
+    跑完第 3 层    偏差 0.1002
+    跑完第 4 层    偏差 0.1533</code></pre>
+  <div class="note">
+    <span class="label">最值得盯的是「跑完第 1 层 偏差 0.0000」这一行</span>
+    <p>位置 2 在第 1 层<b>明明变了</b>，可最后一个位置<b>一点没受影响</b>。这不是"没影响"，而是<b>影响还没传过来</b>：</p>
+    <p>因为在第 1 层里，最后那个位置读的是位置 2 的 k、v —— 而那两个数是从<b>第 0 层的嵌入</b>投影出来的，<b>还没混进位置 2 的注意力结果</b>。位置 2 的注意力要到<b>第 2 层</b>才被读到。偏差正是从那一层开始冒出来的，然后<b>一层层放大</b>。</p>
+  </div>
+  <p>顺带一提，那行「天 → 0.0000」是个漂亮的反证：位置 1 <b>本来就没有"前面"可看</b>，所以它无论如何都不受影响。这说明影响不是凭空来的——<b>是真真切切把它的注意力结果用掉了</b>。</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>那么，真正只算最后一个位置的，是哪一步？</b><br>
+       只有<b>最后那一步「打分」</b>（把最后一行的向量对词表对分）。<br>
+       前面每个位置<b>也各自出了个预测</b>，但推理时没人要——<b>那才是真正被丢掉的部分。</b><br>
+       <span style="color:var(--muted)">（这跟<b>第 1 课第 4 节收尾</b>是同一件事：每个位置都猜了一个下一个字，只有最后一行的猜测被采用。）</span></p>
+  </div>
+
+  <h2 id="q11-axes">Q11 · 「层」和「轮」到底是什么关系？一张图钉死</h2>
+  <p><b>对应初学版第 2 节</b>那条「层」和「轮」的钉死。初学版只给了两句话，这里把它<b>画成一张图</b>。这一问是整门课<b>最容易反复卡住</b>的地方：<b>层</b>和<b>轮</b>是两个垂直的维度，初学版分别在不同地方讲过，但从没并排对过账。</p>
+  <p>先各自定义清楚：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">词</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">到底是什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">有多少</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>层</b>（layer）</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">四个小步：<b>注意力 → 残差 → FFN → 残差</b></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">几十层（第 1 课 Q6 那个"中间某一层"就是其中一层）</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>轮</b>（one pass）</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">一个 token <b>从第 1 层走到最后一层</b>，完整走一遍</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">一次请求里有很多轮（一个输出字一轮）</td></tr>
+      <tr><td style="padding:0.5rem"><b>一次请求</b>（request）</td>
+          <td style="padding:0.5rem">你发一次 API、它回一次</td>
+          <td style="padding:0.5rem">1 次 prefill ＋ 若干次 decode</td></tr>
+    </tbody>
+  </table>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>最容易错的一处：一轮 ≠ 一层。一轮 = 走完全部层。</b><br>
+       「把流程走完、算出一个字」——那是<b>一轮</b>，不是一层。<br>
+       「再走一遍流程」——那是<b>第二轮</b>，不是第二层。</p>
+  </div>
+  <p>为什么这两个方向容易混？第 1 课讲"层"用的是<b>竖着叠</b>的图（Block 一个摞一个），第 2 课讲"轮"用的是<b>竖着往下</b>的流程图——<b>长得像，意思完全不同</b>。把这两个方向摊成<b>横竖两个轴</b>，就是下面这张网格图。</p>
+  <figure class="figure">
+    <img src="../../assets/layer-vs-round.svg" alt="网格图：横轴是层，纵轴是位置与轮次。每一格是某个位置在某一层的向量。prefill 一次填满前三行、从右下角挑出第一个字；decode 每一轮只新增一行。">
+    <figcaption><b>每一格 = 某个位置在某一层的那根向量。</b>红色那几行是 prefill <b>一轮就全填满</b>；绿色是 decode <b>一轮只加一行</b>，上面原封不动。中间那道「挑字」的坎，是整条流水线唯一真串行的地方。<b>横着走是过层（几十遍），竖着加才是加轮（一轮加一行）。</b></figcaption>
+  </figure>
+  <p>把三个数套进这张图：</p>
+  <ul>
+    <li><b>一次请求</b> ＝ 图里从上往下：<b>红框（prefill 一轮填满那几行）＋ 中间那道挑字的坎 ＋ 之后每轮加一行</b>。</li>
+    <li><b>一轮</b> ＝ 图里<b>沿着一行从左走到右</b>（穿过全部层），走到最右边才有资格挑字。</li>
+    <li><b>层</b> ＝ 图里<b>一列</b>（一列就是那四小步）。</li>
+  </ul>
+  <details class="formula">
+    <summary>看公式（可跳过）——把「层」和「轮」写成符号</summary>
+    <p>设层数 <code>L</code>、输入长度 <code>n</code>、输出长度 <code>m</code>：</p>
+    <pre><code>一轮 prefill：   算出 n × L 个向量    （n 行，每行穿过 L 层）
+一次 decode 轮： 算出   1 × L 个向量    （只有新增那一行，穿过 L 层）
+一次请求合计：   (n + m) × L 个向量
+
+⇒ 为什么 prefill 卡算力、decode 卡带宽？
+   prefill：搬一次权重，喂 n 行 → 权重开销被摊薄
+   decode： 一行一搬，每轮都要把权重重搬一遍 → 搬的比算的多</code></pre>
+  </details>
+  <p>顺带把 <a href="#q10-why-all">Q10</a> 那个"偏差一层层放大"放到这张图上就好懂了：<b>竖着加是轮（每轮多一行）</b>，<b>横着走才是层（每层把所有行重算一遍）</b>——所以位置 2 的注意力要到<b>右边那一列</b>才被位置 3 读到。</p>
+
+  <h2 id="q-misconceptions">附 · 一个容易说错的用词</h2>
+  <div class="note">
+    <span class="label">权重不是"被算"的</span>
+    <p>"算"这个词容易把权重也卷进来。其实：<b>权重是参数</b>，它是<b>参与矩阵乘</b>的那一方；真正"被算出来"的是<b>激活值、Q/K/V、注意力结果、FFN 输出</b>这些。<br>
+       说"搬权重、算激活"比说"算权重"准确。</p>
+  </div>
+
+  <h2>检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 盒子里为什么不存 hidden 向量，只存 K/V？</p>
+    <button class="quiz-option" data-correct="true">算下一个字时只会用到历史的 K/V</button>
+    <button class="quiz-option">hidden 向量占的空间实在太大</button>
+    <button class="quiz-option">hidden 向量每层都完全相同</button>
+    <button class="quiz-option">K/V 是训练时就已经算好的</button>
+    <p class="feedback"
+       data-ok="对。新字的 Q 只去查历史的 K 和 V，历史 hidden 后面再也用不到。"
+       data-no="想想新字的 Query 需要什么：它要查的是历史的 Key，要取的是历史的 Value。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> decode 每步的显存带宽压力，主要来自哪一半？</p>
+    <button class="quiz-option" data-correct="true">读：权重和历史 K/V 都要读</button>
+    <button class="quiz-option">写：每步写进去的新 K/V 太多</button>
+    <button class="quiz-option">读写各占一半，完全一样多</button>
+    <button class="quiz-option">都不来自显存，而是来自网络</button>
+    <p class="feedback"
+       data-ok="对。读是大头（权重 + 历史 K/V），写只有 1 个 token 的量。"
+       data-no="每步只写 1 个 token 的 K/V，量很小；贵的是每步都要重读的那两样。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 前缀命中缓存后，新增的那段文字还要不要走完整前向？</p>
+    <button class="quiz-option" data-correct="true">要，这叫增量 prefill，可以并行算</button>
+    <button class="quiz-option">不要，只要 tokenize 一下就足够了</button>
+    <button class="quiz-option">不要，直接从缓存里取出它的 K/V</button>
+    <button class="quiz-option">要，而且只能一个 token 一个 token 算</button>
+    <p class="feedback"
+       data-ok="对。新增部分走一次小型 prefill，算出它自己的 K/V 再追加进缓存。"
+       data-no="命中省掉的是老前缀；新增部分是已知输入，可以并行，要走完整前向。"></p>
+  </div>
+
+  <div class="source">
+    <b>这篇用到的一手资料</b>：<br>
+    <a href="https://magazine.sebastianraschka.com/p/coding-the-kv-cache-in-llms">Sebastian Raschka — Understanding and Coding the KV Cache in LLMs from Scratch</a>：只存 K/V 不存 hidden、每步只算新 token 的 K/V、滑动窗口优化。<br>
+    <a href="https://www.weka.io/learn/ai-ml/prefill-and-decode/">Weka — Prefill and Decode</a>：算术强度与 GPU 利用率（decode 约 60–80 ops/byte、利用率 20–40%）。<br>
+    <a href="https://aclanthology.org/2021.emnlp-main.446/">Geva et al. — Transformer Feed-Forward Layers Are Key-Value Memories（EMNLP 2021）</a>：FFN 的"键值记忆"比喻。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic</a> · <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI</a> — Prompt caching 文档：缓存单元是"前缀"、要整段渲染后完全匹配。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"算术强度能不能用真实数字算一遍？""滑动窗口会不会让模型变笨？""增量 prefill 会不会也命中缓存？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>回初学版</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · 为什么「读长文」快、「写长文」慢？</a>　·　<a href="#chain">回到总图</a><br>
+    <b>前置</b>：<a href="0001-from-token-to-next-token.html">第 1 课 · 从 token 到下一个 token</a>（hidden 向量、Q/K/V、注意力）<br>
+    <b>顺着往下</b>：<a href="0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache 与「缓存命中」</a>——本课 Q5 的"增量 prefill"，那一课会讲清它命中/不命中的条件。<br>
+    <b>Agent 侧</b>：<a href="../agent/0003-mini-agent.html">Agent 原理篇 · 第 3 课 · 把零件装起来</a>（为什么一次任务会发十几次请求）。
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 2 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

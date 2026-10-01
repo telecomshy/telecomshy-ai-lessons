@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 2 课（初学版）· 一条 RAG 链长什么样</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 2 课 · 初学版</div>
+  <h1>一条 RAG 链长什么样</h1>
+  <p class="subtitle">"RAG"听着是一个东西，其实是<b>六个</b>。而且六步里<b>只有最后一步是模型</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>上一课只说了一件事：<b>先翻书，再回答</b>。但"翻书"这两个字，底下是六个动作。</p>
+    <p>知道它们是六个，你才知道<b>出问题该怪谁</b>——因为它们<b>不是同一个东西干的</b>。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>把一条 RAG 链的六步讲出来，说清每步手上的数据长什么样、以及每步最常见的翻车。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>切块 → 变向量 → 存起来 → 查 → 塞进提示词 → 生成。</b></p>
+    <p>前五步是<b>普通程序</b>，第六步才是<b>模型</b>。<b>RAG 出问题时，先别怪模型——多半在前五步。</b></p>
+  </div>
+
+  <h2>1. 六步各在干什么</h2>
+
+  <h3>① 切块（chunking）</h3>
+  <p><b>输入</b>：一份原始文档。<b>输出</b>：若干个小段。</p>
+  <p><b>为什么要切</b>：一份文档里只有一两句话跟问题有关。整份塞进去，重点会被淹掉；切小了才挑得准。</p>
+  <p><b>常见翻车</b>：切太大 → 相关的一句被一堆无关内容埋住；<b>切得不是地方</b> → 一句话被切成两半，剩下的半句谁也看不懂。</p>
+
+  <h3>② 变向量（embedding）</h3>
+  <p><b>输入</b>：一小段文字。<b>输出</b>：一根向量（一串数字）。</p>
+  <p><b>这一步只干一件事</b>：把文字变成可以比大小的数。<b>用的是另一个小模型</b>（文本嵌入模型），不是 LLM 底层第 1 课那个词嵌入——见上一课第 3 节。</p>
+  <p><b>常见翻车</b>：换了一个嵌入模型，老的向量全作废，得<b>全部重算</b>。</p>
+
+  <h3>③ 存起来（向量库）</h3>
+  <p><b>输入</b>：一堆向量。<b>输出</b>：一个能快速比相似度的索引。</p>
+  <p>听着高级，其实就是<b>一堆向量 + 一个查找方法</b>，没有魔法。它只管"存"和"快"，<b>不管像不像</b>。</p>
+
+  <h3>④ 查（retrieval）</h3>
+  <p><b>输入</b>：你的问题。<b>输出</b>：最像的几段。</p>
+  <p>问题也变一根向量，然后<b>逐条比相似度</b>（用的就是点积），排序，取前 <b>k</b> 段。<span style="color:var(--muted)">（这种按<b>语义</b>比的叫<b>稠密检索</b>；还有按<b>词</b>匹配的<b>稀疏检索</b>——各有各的失手，很多系统两个一起用。见 <a href="0001-why-retrieval.html">第 1 课</a>动手那节。）</span></p>
+  <p><b>常见翻车</b>：取太少会漏；取太多会把重点淹掉。<b>k 取多少，是 RAG 里第一个要调的数。</b></p>
+
+  <h3>⑤ 塞进提示词</h3>
+  <p><b>输入</b>：几段资料 + 问题。<b>输出</b>：一条完整的提示词。</p>
+  <p><b>常见翻车</b>：【检索到 ≠ 用上】。塞进去不等于模型会用——这是最隐蔽的一条，下面单说。</p>
+
+  <h3>⑥ 生成</h3>
+  <p><b>输入</b>：那条提示词。<b>输出</b>：答案。</p>
+  <p><b>唯一用到模型的一步。</b>而且用的就是你平时用的那个模型，<b>没换、没训练</b>。</p>
+
+  <h2>2. 两个数字，值得记住</h2>
+  <div class="note">
+    <span class="label">① 检索到 ≠ 用上</span>
+    <p>把资料塞进去，<b>不等于模型会用</b>。有个很硬的实测：</p>
+    <p>把<b>正确答案那段</b>放在一堆资料的<b>中间</b>，模型的成绩会掉到<b>比完全不给资料还差</b>。放在<b>开头或结尾</b>才好使。</p>
+    <p style="color:var(--muted)">（出处：Liu et al. 2023《Lost in the Middle》。所以检索完还要管<b>顺序</b>，不能随手排。）</p>
+  </div>
+  <div class="note">
+    <span class="label">② 检索失败率是可以量化的，而且有人量过</span>
+    <p>Anthropic 实测（取前 20 段时没取到正确那段的比例）：</p>
+    <pre><code>普通 RAG                       5.7% 失败
+＋ 给每段补上一句「这段在讲什么」   3.7%
+＋ 再叠上关键词检索               2.9%
+＋ 再加一道重排序                 1.9%</code></pre>
+    <p><b>看这个降幅</b>：从 5.7% 到 1.9%，<b>没有一步是换更强的模型</b>——全是前五步的改进。</p>
+    <p><b>这就是"RAG 技术性强"的真相</b>：技术全在前五步，跟模型关系不大。</p>
+  </div>
+
+  <h2>3. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/rag/0002-rag-pipeline.py</code>。它把一份文档一路走到模型吐答案，<b>每一步打印手上的数据长什么样</b>。</p>
+  <pre><code>python exercises/rag/0002-rag-pipeline.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
+  <pre><code>[1] 第 1 步 · 切块 chunking：按每 32 字切成 5 段
+      段 2（32 字）：年者 15 天。请假三天以内（含三天），向直属主管口头报备即可。
+      段 3（32 字）：请假三天以上，需在系统里提交申请单，附上证明材料。第二章 报销。
+      ⚠ 看段 2 开头的「年者 15 天。」——半个词被切在了上一段。
+      ⚠ 看段 3 结尾的「第二章 报销。」——两件不相干的事被切进了同一段。
+
+[4] 第 4 步 · 查 retrieval：问题也变向量，逐条比相似度
+      相似度 = 2   段 2：年者 15 天。请假三天以内（含三天）…
+      相似度 = 1   段 3：请假三天以上，需在系统里提交申请单…
+      相似度 = 0   段 1：第一章 年假。入职满一年者每年 5 天…
+
+[5] 第 5 步 · 塞进提示词：把挑出来的 2 段排在问题前面
+      ┌──────────────────────────────────────
+      │【资料 1】年者 15 天。请假三天以内（含三天）…
+      │【资料 2】请假三天以上，需在系统里提交申请单…
+      │【问题】请三天假要走什么流程？
+      └──────────────────────────────────────</code></pre>
+  <p><b>三处要看懂</b>：</p>
+  <ul>
+    <li><b>切块的两个坑，输出里就有现成的例子</b>——段 2 开头是半个词，段 3 尾巴混进了"第二章"。<b>这不是脚本写坏了，是切块本来就容易这样。</b></li>
+    <li><b>排序结果对得上</b>：该拿的两段都在前两名。<b>但注意它们只差 1 分</b>——玩具的相似度很粗，真的会更准，也还是会错。</li>
+    <li><b>最后那条提示词就是模型看到的全部。</b>它看不到你的文档，只看到这一屏。</li>
+  </ul>
+
+  <h2>4. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 一条 RAG 链里，真正用到模型的是哪一步？</p>
+    <button class="quiz-option" data-correct="true">只有最后「生成答案」那一步</button>
+    <button class="quiz-option">从切块到生成每一步都是模型</button>
+    <button class="quiz-option">切块和检索这两步最依赖模型</button>
+    <button class="quiz-option">变向量和生成这两步用到模型</button>
+    <p class="feedback"
+       data-ok="对。前五步是普通程序，只有第六步才调模型。"
+       data-no="只有「生成」那一步用模型；变向量用的是另一个小模型，而且不是生成模型。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 切块切得不是地方，会出什么问题？</p>
+    <button class="quiz-option" data-correct="true">一句话被切碎，半句看不懂</button>
+    <button class="quiz-option">文档总量变多，成本更贵</button>
+    <button class="quiz-option">向量库会被撑得存不下</button>
+    <button class="quiz-option">模型的回答会变得更长</button>
+    <p class="feedback"
+       data-ok="对。上下文被切断，剩下的半句谁也看不懂，检索到也没用。"
+       data-no="切块的坑在「语义被切碎」，不在体积、存储或回答长度。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 正确答案已经被检索到、也塞进提示词了，为什么还会答错？</p>
+    <button class="quiz-option" data-correct="true">排在中间的内容不容易被用上</button>
+    <button class="quiz-option">因为检索到的资料是旧版本</button>
+    <button class="quiz-option">因为模型的上下文窗口太小</button>
+    <button class="quiz-option">因为向量算得不够精确所致</button>
+    <p class="feedback"
+       data-ok="对。「检索到」和「用上」是两件事——顺序也要管。"
+       data-no="题目说的是「已经检索到、已经塞进去」，所以问题不在检索，在用。"></p>
+  </div>
+
+  <h2>5. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.anthropic.com/engineering/contextual-retrieval">Anthropic — Introducing Contextual Retrieval（2024-09）</a>——那组 5.7% → 3.7% → 2.9% → 1.9% 的数字就出自这里。<br>
+    <a href="https://arxiv.org/abs/2307.03172">Liu et al., 2023 — Lost in the Middle: How Language Models Use Long Contexts</a>——"放中间比不给还差"那条实测的出处。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"块到底切多大？""为什么要变向量，直接比字不行吗？""重排序是在补什么？""怎么知道我的 RAG 检索得准不准？"
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0001-why-retrieval.html">RAG · 第 1 课 · 为什么得"先查资料再回答"</a><br>
+    <b>相关</b>：<a href="../practice/0001-context-engineering.html">技巧篇 · 第 1 课 · 上下文工程</a>（检索到的几段怎么放、怎么裁）<br>
+    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#vector">词嵌入</a> · <a href="../../reference/glossary.html#dot-product">点积</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 2 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

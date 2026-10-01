@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 452" width="720" height="452" role="img" aria-label="词表长什么样：一张只有两列的清单，左边是编号，右边是对应的 token，没有第三列，也没有解释">
+  <rect x="0" y="0" width="720" height="452" fill="#fdfcf8"/>
+
+  <text x="26" y="32" font-family="sans-serif" font-size="14" fill="#1b1a17">词表（vocabulary）：一张<tspan font-weight="bold">只有两列</tspan>的清单</text>
+
+  <!-- 表头 -->
+  <rect x="26" y="46" width="360" height="30" rx="6" fill="#f3f0e8" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="46" y="67" font-family="sans-serif" font-size="12.5" fill="#6c675e">编号 ID</text>
+  <text x="186" y="67" font-family="sans-serif" font-size="12.5" fill="#6c675e">token</text>
+  <text x="300" y="67" font-family="sans-serif" font-size="12" fill="#9b1c1c">没有第三列</text>
+
+  <!-- 表体 -->
+  <g font-family="monospace" font-size="15" fill="#1b1a17">
+    <rect x="26" y="80"  width="360" height="30" rx="4" fill="#fff" stroke="#e4ded1" stroke-width="1.2"/>
+    <text x="46" y="101">0</text>      <text x="186" y="101" font-family="serif" font-size="16">「!」</text>
+
+    <rect x="26" y="113" width="360" height="30" rx="4" fill="#fff" stroke="#e4ded1" stroke-width="1.2"/>
+    <text x="46" y="134">312</text>    <text x="186" y="134" font-family="serif" font-size="16">「天」</text>
+
+    <rect x="26" y="146" width="360" height="30" rx="4" fill="#fff" stroke="#e4ded1" stroke-width="1.2"/>
+    <text x="46" y="167">1092</text>   <text x="186" y="167" font-family="serif" font-size="16">「气」</text>
+
+    <rect x="26" y="179" width="360" height="30" rx="4" fill="#fff" stroke="#e4ded1" stroke-width="1.2"/>
+    <text x="46" y="200">55</text>     <text x="186" y="200" font-family="serif" font-size="16">「很」</text>
+
+    <rect x="26" y="212" width="360" height="30" rx="4" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.8"/>
+    <text x="46" y="233" fill="#8a2b06">4021</text>   <text x="186" y="233" font-family="serif" font-size="16">「好」</text>
+    <text x="256" y="233" font-family="sans-serif" font-size="11.5" fill="#8a2b06">← 它要当答案</text>
+
+    <rect x="26" y="245" width="360" height="30" rx="4" fill="#fff" stroke="#e4ded1" stroke-width="1.2"/>
+    <text x="46" y="266">7</text>      <text x="186" y="266" font-family="serif" font-size="16">「 the」</text>
+
+    <rect x="26" y="278" width="360" height="30" rx="4" fill="#fff" stroke="#e4ded1" stroke-width="1.2"/>
+    <text x="46" y="299">50256</text>  <text x="186" y="299" font-family="serif" font-size="16">「…」</text>
+  </g>
+
+  <!-- 右侧注解 -->
+  <g font-family="sans-serif">
+    <text x="412" y="100" font-size="12.5" font-weight="bold" fill="#8a2b06">① 编号只是「第几行」</text>
+    <text x="412" y="120" font-size="12" fill="#6c675e">没有含义，也不能换</text>
+
+    <text x="412" y="156" font-size="12.5" font-weight="bold" fill="#8a2b06">② 不解释意思</text>
+    <text x="412" y="176" font-size="12" fill="#6c675e">「天」「气」挨着，纯粹</text>
+    <text x="412" y="194" font-size="12" fill="#6c675e">因为语料里常这么写</text>
+
+    <text x="412" y="230" font-size="12.5" font-weight="bold" fill="#8a2b06">③ 拿它只干两件事</text>
+    <text x="412" y="250" font-size="12" fill="#6c675e">查 ID、跟它对分</text>
+
+    <text x="412" y="290" font-size="12.5" font-weight="bold" fill="#5d7486">④ 训练前就定好</text>
+    <text x="412" y="310" font-size="12" fill="#6c675e">由分词器数频次产出，</text>
+    <text x="412" y="328" font-size="12" fill="#6c675e">产完就冻住</text>
+  </g>
+
+  <line x1="26" y1="342" x2="694" y2="342" stroke="#e4ded1" stroke-width="1"/>
+  <g font-family="sans-serif" font-size="12.5" fill="#3a3730">
+    <text x="26" y="368">上面 7 行是<tspan font-weight="bold" fill="#8a2b06">示意</tspan>。真实词表是一整列：GPT-2 <tspan font-weight="bold">50,257</tspan> 行 · GPT-4o <tspan font-weight="bold">199,997</tspan> 行。</text>
+    <text x="26" y="394">注意 token <tspan font-weight="bold">≠ 词</tspan>：「 the」是一个 token；GPT-2 里「天」也不是一个（见 <tspan font-style="italic">本页 Q1</tspan> 的「生词」那条）。</text>
+    <text x="26" y="428" fill="#6c675e">这张表跟训练无关——它是"哪个字排第几"的答案，不是被训练拧出来的。</text>
+  </g>
+</svg>

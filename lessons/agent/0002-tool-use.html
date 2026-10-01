@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 原理篇 · 第 2 课（初学版）· 模型只能吐字，它怎么「伸手」做事？</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 原理篇 · 第 2 课 · 初学版</div>
+  <h1>模型只能吐字，它怎么「伸手」做事？</h1>
+  <p class="subtitle"><b>工具调用（Tool Use）</b>—— agent 循环里那个"行动"，到底长什么样。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你让模型查天气、发邮件、读文件——可它自己<b>根本动不了</b>。</p>
+    <p>它从头到尾只会一件事：<b>吐字</b>。</p>
+    <p>那"查天气"到底是怎么发生的？</p>
+    <p style="margin-top:0.7rem">拆穿了其实很简单：<b>它没有动手，它只是"说"要动手。</b>真正去查天气库的，是<b>你的程序</b>。模型说"我要查北京"，你的程序听到就去查，把结果递回去，模型再把结果翻译成人话。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：把一次工具调用的完整来回讲一遍，并且看一眼 prompt 就知道模型会调哪个工具。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>整个来回只有三步：</p>
+    <p><b>① 我们给模型一张「工具清单」→ ② 模型说"我要调 X，参数是 Y" → ③ 程序去调，把结果塞回去</b></p>
+    <p>就这么简单。所谓"agent 能做事"，全靠这个来回<b>反复转</b>。下面一节一节看。</p>
+  </div>
+
+  <h2>1. 模型不执行，它只「说要调」</h2>
+  <p>这是全课最重要的一句话，先立住：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>模型的输出永远是"一段文字"。</b>即使它看起来在"调工具"，那也只是它<b>写出来</b>的一段按约定格式的文字。</p>
+    <p><b>真正去执行的，是你的程序。</b></p>
+  </div>
+  <figure class="figure">
+    <img src="../../assets/tool-call-roundtrip.svg" alt="工具调用的完整来回：模型输出调用意图，程序执行并把结果塞回">
+    <figcaption><b>一次完整的来回</b>。左边是模型（只吐字），右边是你的程序 + 外部世界（真动手）。注意第 ② 步——那只是<b>一段文字</b>。</figcaption>
+  </figure>
+
+  <div class="note">
+    <span class="label">术语</span>
+    <p>这个机制叫<b>工具调用（tool use）</b>，也叫<b>函数调用（function calling）</b>。同一个东西的两个名字。</p>
+    <p>各家的说法稍有不同：模型写出来那段叫 <b>tool_use</b>（"我要调 X"），程序递回去的结果叫 <b>tool_result</b>（"X 的返回值是…"）。记住这一对就够了。</p>
+  </div>
+
+  <h2>2. 怎么让它「会」调？——给它一张工具清单</h2>
+  <p>模型不是天生就知道你有哪些工具。你得<b>把清单写给它看</b>。每条工具写三样：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>名字</b>　+　<b>一句话说明</b>（它能干嘛）　+　<b>参数</b>（要填什么、什么格式）</p>
+  </div>
+  <p>比如脚本里给的这条：</p>
+  <pre><code>{
+  "name": "get_weather",
+  "description": "查某个城市今天的天气。返回气温（摄氏度）和天气状况。",
+  "input_schema": {
+    "properties": {
+      "city": { "type": "string", "description": "城市名，例如「北京」" }
+    },
+    "required": ["city"]
+  }
+}</code></pre>
+  <div class="note">
+    <span class="label">术语</span>
+    <p>这张清单叫<b>工具定义（tool definition）</b>。参数那份"要填什么、什么格式"的规格，叫 <b>schema</b>（中文常叫"参数格式"）。</p>
+    <p><b>模型就是照着这几行字来挑工具、填参数的。</b>清单写得含糊，它就调得不准。</p>
+  </div>
+
+  <h2>3. 一整轮长什么样</h2>
+  <p>把上面两节串起来，一次真实的来回是这样：</p>
+  <ol>
+    <li><b>发清单 + 问题</b>：把工具清单和"北京今天多少度？"一起发给模型；</li>
+    <li><b>模型回一段"调用意图"</b>：它没回答问题，而是写<br><code>{"tool": "get_weather", "args": {"city": "北京"}}</code></li>
+    <li><b>程序接手</b>：解析这段文字，真的去调 <code>get_weather(city="北京")</code>，拿到 <code>{"temp_c": 26, "cond": "晴"}</code>；</li>
+    <li><b>结果塞回去</b>：把这个返回值当作 <b>tool_result</b> 塞回对话，再问模型一次；</li>
+    <li><b>模型说人话</b>：「北京今天 26 度，晴。」</li>
+  </ol>
+  <p><b>如果它还想调别的工具，就回到第 2 步再来一遍。</b>所谓 agent 循环，就是这个来回转起来。</p>
+
+  <h2>4. 三个必须记住的画面</h2>
+
+  <div class="note">
+    <span class="label">① 模型只吐字，执行的是你的程序</span>
+    <p>它说"我要发邮件"，不代表邮件发出去了。<b>决定发不发的永远是你的代码</b>——这也是"高风险动作要人审"能成立的原因。</p>
+  </div>
+  <div class="note">
+    <span class="label">② 工具清单是 prompt 的一部分</span>
+    <p>那张清单<b>会被算进上下文</b>——它占 token、占成本、也影响缓存。工具越多，每一轮都要为它们买单。</p>
+  </div>
+  <div class="note">
+    <span class="label">③ 结果要塞回去，循环才能继续</span>
+    <p>程序拿到结果却不塞回对话，模型就<b>永远不知道</b>刚才发生了什么。这一步断了，循环就断了。</p>
+  </div>
+
+  <h2>5. 会出什么错</h2>
+  <p>工具调用不是稳的，常见翻车有四种：</p>
+  <ul>
+    <li><b>参数填错</b>：城市名写成"北京市"，你的代码查不到；</li>
+    <li><b>调了不存在的工具</b>：清单里有 5 个，它编出第 6 个；</li>
+    <li><b>该调不调</b>：明明要查天气，它自己瞎猜一个温度；</li>
+    <li><b>调了不该调</b>：用户没让它发邮件，它自作主张。</li>
+  </ul>
+  <p>所以才需要<b>护栏</b>（第 1 课讲过）：最大步数、工具白名单、高风险动作要人确认。<b>模型的"行动"永远该被你的代码管着。</b></p>
+
+  <h2>6. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/agent/0002-tool-call-roundtrip.py</code>。它把整个来回打印出来。</p>
+  <pre><code>python exercises/agent/0002-tool-call-roundtrip.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。里面用的是<b>假模型</b>（写死的小函数），好让你把注意力放在来回结构上；真模型只要换掉 <code>fake_model()</code> 一个函数。</p>
+  <pre><code>用户问：北京今天多少度？
+
+[1] 模型返回的不是答案，是「一段调用意图」
+      {"type": "tool_use", "name": "get_weather", "input": {"city": "北京"}}
+
+[1] 程序接手：真的去调 get_weather({'city': '北京'})
+      → 返回 {"city": "北京", "temp_c": 26, "cond": "晴"}
+
+[1] 结果塞回对话（tool_result），再问模型一次
+
+[2] 模型说人话了
+      「北京今天 26 度，晴。」</code></pre>
+  <p><b>重点看第 1 步和第 2 步的分工</b>：模型只"说要调"，动手的是程序。多跑几次，看看它挑工具的依据是什么（其实就藏在 <code>description</code> 那句话里）。</p>
+
+  <h2>7. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 模型"调用工具"的时候，它到底做了什么？</p>
+    <button class="quiz-option" data-correct="true">写出一段要调用哪个工具的文字</button>
+    <button class="quiz-option">直接连上外部接口执行调用</button>
+    <button class="quiz-option">在自己内部模拟出那个结果</button>
+    <button class="quiz-option">把工具的代码改写成自己的</button>
+    <p class="feedback"
+       data-ok="对。它只吐字，动手的是你的程序。"
+       data-no="模型没有执行能力。它输出的只是一段按约定格式写的文字。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 模型凭什么决定调哪个工具？</p>
+    <button class="quiz-option" data-correct="true">凭工具清单里写的那句说明</button>
+    <button class="quiz-option">凭工具名字的长短和顺序</button>
+    <button class="quiz-option">凭你上一次调用的记录</button>
+    <button class="quiz-option">凭工具代码实现的复杂程度</button>
+    <p class="feedback"
+       data-ok="对。所以 description 写得含糊，它就调得不准。"
+       data-no="模型看不到工具的代码，它只看到你写的「名字 + 说明 + 参数」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 程序拿到工具结果后，必须做什么？</p>
+    <button class="quiz-option" data-correct="true">把结果塞回对话再问模型</button>
+    <button class="quiz-option">直接把结果打印给用户看</button>
+    <button class="quiz-option">把结果存进本地文件里</button>
+    <button class="quiz-option">把结果换成向量再保存起来</button>
+    <p class="feedback"
+       data-ok="对。不塞回去，模型就不知道刚才发生了什么，循环就断了。"
+       data-no="塞回对话是循环得以继续的必要一步。"></p>
+  </div>
+
+  <h2>8. 下一步</h2>
+  <p>这一课讲的是<b>零件</b>：工具调用的来回。下一课把这个零件<b>装进第 1 课的循环里</b>——</p>
+  <p><b>推理 → 行动（工具调用）→ 观察（结果）→ 再推理</b>，跑起来就是一个真的 agent 了。</p>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://developers.openai.com/api/docs/guides/function-calling">OpenAI — Function calling（官方指南）</a>：把函数写成 JSON schema 传给模型，模型返回"要调哪个函数、参数是什么"的结构化输出，由你的应用去执行。<br>
+    <a href="https://www.anthropic.com/engineering/advanced-tool-use">Anthropic — Introducing advanced tool use</a>：模型返回 <code>tool_use</code> 块，你的代码执行后把结果以 <code>tool_result</code> 送回。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"工具清单会不会被模型看腻？""能不能让它一次调多个工具？""schema 写多细才够？""为什么它会编出不存在的工具？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>顺着往下</b>：把工具调用装进 agent 循环（推理 → 行动 → 观察）<br>
+    <b>回上一课</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么？</a><br>
+    <b>LLM 底层</b>：<a href="../llm/0001-from-token-to-next-token.html">第 1 课 · 从 token 到下一个 token</a> · <a href="../llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache</a><br>
+    术语表：<a href="../../reference/glossary.html#tool">工具（Tool）</a> · <a href="../../reference/glossary.html#function-calling">函数调用</a> · <a href="../../reference/glossary.html#guardrail">护栏</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 2 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

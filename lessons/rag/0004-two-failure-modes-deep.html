@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 4 课（进阶版）· RAG 到底怎么评</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 4 课 · 进阶版</div>
+  <h1>RAG 到底怎么评</h1>
+  <p class="subtitle">初学版给了"两类翻车"的<b>诊断办法</b>；这里给<b>能分开量它们的尺子</b>。</p>
+
+  <div class="note">
+    <span class="label">怎么用这篇</span>
+    <p style="color:var(--muted)">只收读完初学版仍会冒出来的问题。<b>按需跳读</b>。<br>
+    这一篇还在长：引用与可追溯、矛盾资料怎么处理，等真问了再写。</p>
+    <p style="color:var(--muted)">先放一句话：<b>不评，就没法说"我改了之后真的变好了"</b>——而 RAG 恰好是最容易"改了也不知道好没好"的东西。</p>
+  </div>
+
+  <h2 id="q1-eval">Q1 · RAG 到底怎么评？（才能分清那两类翻车）</h2>
+  <p><b>对应初学版第 4 课</b>。那儿教的是"把提示词打出来看一眼"这个手工诊断；<b>但手工诊断只能救急，量不了趋势</b>——你改了切块、换了嵌入模型、调了 <code>top-k</code>，哪一次真的更好？</p>
+
+  <h3>第一条铁律：分开评，别只看最终答案</h3>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p>RAG 只有两段：<b>检索</b> → <b>生成</b>。<b>评也必须分开。</b></p>
+    <p>只看最终答案对不对，你只知道"坏了"，不知道<b>哪一段坏了</b>。</p>
+  </div>
+  <p>分开评的意义是<b>归因</b>：</p>
+  <ul>
+    <li><b>检索分高 + 生成分低</b> → 是「<b>来了但没用上</b>」→ 修提示词、修顺序、修段数；</li>
+    <li><b>检索分低 + 生成分高</b> → 是「<b>该来的没来</b>」→ 修切块、修变向量、修 k。</li>
+  </ul>
+  <p><b>尺子和病灶是一一对应的</b>——这正是初学版那两类翻车。</p>
+
+  <h3>检索侧：四个数，各问一个问题</h3>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">尺子</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">它问什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">低了意味着</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Recall@k</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">该拿的都拿到了吗？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>漏了</b>——缺了就一定答不出</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Hit rate@k</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">这一次成没成？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">最粗的及格线，<b>看不出漏了多少</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Precision@k</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">拿到的里面噪音多吗？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>答案会被淹</b>（正是"来了但没用上"）</td></tr>
+      <tr><td style="padding:0.45rem"><b>MRR</b></td>
+          <td style="padding:0.45rem">正确的那段排得靠前吗？</td>
+          <td style="padding:0.45em">排序不好——<b>放中间比放两端差</b></td></tr>
+    </tbody>
+  </table>
+  <p><b>它们会打架，而且打架的方式本身就是信息。</b>脚本实测（8 个问题的最小标注集）：</p>
+  <pre><code>      k   Recall@k   Hit rate@k   Precision@k
+      1      0.70         0.80          0.80
+      2      0.80         0.80          0.50
+      3      0.90         0.90          0.37
+      5      1.00         1.00          0.24
+
+    MRR = 0.86</code></pre>
+  <p><b>看这条曲线</b>：<code>k</code> 从 1 调到 5，Recall 一路涨到满分，<b>Precision 却从 0.80 掉到 0.24</b>——<b>每题多塞了 3 段没用的，正好亲手制造"来了但没用上"</b>。</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>所以不能只报一个数。</b>至少同时看 <b>Recall@k + MRR</b>：一个管"漏没漏"，一个管"排得好不好"。</p>
+    <p><b>而且 k 不是越大越好</b>——它是"漏"和"淹"之间的取舍。</p>
+  </div>
+
+  <h3>生成侧：Faithfulness（忠实度）</h3>
+  <p><b>定义</b>：答案里的每一句断言，能不能在<b>检索到的资料里</b>找到依据。</p>
+  <pre><code>忠实度 = 能找到依据的断言数 ÷ 答案里的断言总数</code></pre>
+  <ul>
+    <li><b>生产目标 90% 以上</b>；<b>低于 70% 不能上线</b>。</li>
+    <li>它是<b>信任</b>那一档的指标：引用看起来都对，但只有量了才知道。</li>
+    <li>注意它<b>不问"答案对不对"</b>，只问"有没有编"。答得对但资料里没有，也是低忠实度。</li>
+  </ul>
+
+  <h3>动手：把尺子跑一遍</h3>
+  <p>脚本在工作区：<code>exercises/rag/0004-rag-eval.py</code>。它拿一个<b>最小标注集</b>（8 个问题）跑检索，把四个数都算出来。</p>
+  <pre><code>python exercises/rag/0004-rag-eval.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。检索器仍是玩具（二字组合 + 点积）——<b>评的是尺子，不是检索器</b>。下面是起步做法那段的输出摘录。</p>
+  <pre><code>[5] 起步做法（照抄）
+    ① 收集 50～100 个真实问题（别自己编，用用户真问的）
+    ② 每个问题手标「该命中哪几段」——二元判断就够，不用打分
+    ③ 每次改动后重跑一遍，看四个数怎么变
+    ④ 【线上答错的问题，加进标注集当回归测试】——这才是标注集的正确长大方式
+
+    为什么 50～100 条：这个量已经能测出「一个点」的差别；
+    超过 200 条，标注成本线性涨，统计功效却已经饱和。</code></pre>
+  <p><b>第 ④ 条最值钱</b>：标注集不该是"一次性攒够 500 条"的工程，而是<b>随着线上翻车自然长大</b>。每一个被用户标记的错答，都是一个回归测试。</p>
+
+  <h3>带走三条</h3>
+  <ol>
+    <li><b>分开评</b>：检索侧量"找没找到"，生成侧量"有没有编"。<b>混在一起评，就只能知道坏了、不知道哪坏了。</b></li>
+    <li><b>至少报两个数</b>：Recall@k（漏没漏）＋ MRR（排得好不好）。<b>只报 Hit rate 是自欺欺人。</b></li>
+    <li><b>50～100 条真实问题起步</b>，让线上答错的问题持续进标注集。</li>
+  </ol>
+
+  <h3>检查一下你懂了没</h3>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 为什么 RAG 必须把检索和生成分开评？</p>
+    <button class="quiz-option" data-correct="true">混在一起只能知道坏了，不知道哪坏了</button>
+    <button class="quiz-option">因为两个阶段用的是不同模型</button>
+    <button class="quiz-option">因为检索这一段的运行速度更慢</button>
+    <button class="quiz-option">因为分开评可以让总成本降下来</button>
+    <p class="feedback"
+       data-ok="对。分开评的意义是归因——它直接对应那两类翻车。"
+       data-no="跟模型、速度、成本无关，关键是「能定位病灶」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> <code>top-k</code> 调大之后，Recall 涨到 1.0，Precision 掉到 0.24。这说明什么？</p>
+    <button class="quiz-option" data-correct="true">每题多塞了三段没用的资料</button>
+    <button class="quiz-option">检索器已经彻底失效了</button>
+    <button class="quiz-option">嵌入模型需要重新训练</button>
+    <button class="quiz-option">标注集标错了需要重标</button>
+    <p class="feedback"
+       data-ok="对。这正是「来了但没用上」的制造过程——k 不是越大越好。"
+       data-no="Recall=1.0 说明找齐了；掉的是 Precision，说明塞进来的噪音变多。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> Faithfulness（忠实度）低，具体是什么意思？</p>
+    <button class="quiz-option" data-correct="true">答案里的断言在资料里找不到依据</button>
+    <button class="quiz-option">答案写得太长，用户读不完</button>
+    <button class="quiz-option">检索到的资料数量不够用</button>
+    <button class="quiz-option">回答的语气不够专业得体</button>
+    <p class="feedback"
+       data-ok="对。它只问「有没有编」，不问「答得对不对」。"
+       data-no="忠实度是信任那一档：每一句能不能追溯到检索到的资料。"></p>
+  </div>
+
+  <h3>一手资料</h3>
+  <div class="source">
+    <b>这一问的来源</b>：<br>
+    <a href="https://docs.anyscale.com/rag/evaluation">Anyscale — RAG evaluation</a>——"分开评、先分后端到端"的理由，以及 Precision@k / Recall@k / MRR 的定义。<br>
+    <a href="https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/">RAGAS — List of available metrics</a>——Context Precision / Context Recall / Faithfulness 那一套。<br>
+    <a href="https://arxiv.org/html/2405.07437v2">Evaluation of Retrieval-Augmented Generation: A Survey（2024）</a>——各框架指标的对照。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"忠实度具体怎么算？""要不要人工标注还是让模型判？""怎么区分检索失败和忠实度失败？""评估跑一遍多少钱？"
+  </div>
+
+  <p class="next">
+    <b>回初学版</b>：<a href="0004-two-failure-modes.html">RAG · 第 4 课（初学版）· 两种典型翻车</a><br>
+    <b>相关</b>：<a href="0002-rag-pipeline-deep.html">第 2 课进阶 · 切块切多大</a>（切块好坏要靠本篇的尺子量）<br>
+    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 4 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

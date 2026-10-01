@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 1 课（初学版）· 从「token」到「下一个 token」</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 1 课 · 初学版</div>
+  <h1>从「token」到「下一个 token」</h1>
+  <p class="subtitle">模型是怎么"想"出下一个字的。这一版<b>只走完整流程</b>；细节在<a href="0001-from-token-to-next-token-deep.html">进阶版</a>，用括号标出来了。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你和模型聊天的时候，有没有闪过这些念头：</p>
+    <ul style="margin:0.5rem 0 0">
+      <li>它<b>怎么</b>就把这句话说出来了？</li>
+      <li>为什么回复也<b>一个字一个字往外蹦</b>？</li>
+      <li>它是"想好了再说"，还是"边写边想"？</li>
+    </ul>
+    <p style="margin-top:0.7rem">看着很聪明，其实拆开非常朴素：<b>大模型就是一个程序</b>。它每一刻只在做一件事——<b>给定已经写出来的字，猜下一个字</b>。猜完接到后面，再猜下一个；反反复复，就成了整篇文章。</p>
+    <p><b>「一个字一个字蹦」不是它慢，是因为它每次只猜一个。</b></p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：把"从你敲的字到下一个字"这条链完整讲一遍，并且说清它为什么要一个一个蹦。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>先立一个概念：计算机只认数字。</b>它存的一切实打实都是数字，看不懂「天」这个字——所以要让计算机处理一句话，第一步一定是<b>把字换成数字</b>。</p>
+    <p>换出来的这一串数字，我们给它起名叫<b>向量</b>——<b>一串数字，仅此而已</b>（别当数学术语看，它在这儿不参与任何计算，只是"每个字在数字世界里的一串代号"）。</p>
+    <p>这就是这一课的主线：<b>整条路上流动的只有向量这一个东西。</b>字进来先变成向量，中间每一步都是<b>把向量里的数字改一改</b>，<b>只有最后一步才变回字</b>。<span style="color:var(--muted)">（一串一串叠起来的样子叫"表"，第 1 节会看到——<b>但那是许多根向量摞在一起，不是另一种东西</b>。主线只认向量这一件。）</span></p>
+    <p>所以这一课其实就是一句话：<b>模型怎么把一堆数字变来变去，最后变出下一个字。</b>接下来一节一节走。</p>
+  </div>
+
+  <h2>1. 先把文字变成一张数字表</h2>
+  <p>模型的世界里没有字，只有数字。所以文字要先"翻译"成数字，中间是<b>两步查表</b>：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>文字 → token（零件）→ 编号 → 向量</b></p>
+  </div>
+  <pre><code>文字          「天气很」
+  ↓ 分词 (tokenizer)
+token        「天」 「气」 「很」
+  ↓ 查词表 (vocabulary)
+编号          312, 1092, 55
+  ↓ 查嵌入表 (embedding)
+向量          [1.0, 0.0, 0.0, 0.5]
+              [0.8, 0.6, 0.0, 0.4]
+              [0.2, 0.1, 1.0, 0.0]</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted);margin-top:0.4rem">（<b>上面全是示意</b>：编号是编的，向量也只留了 4 个数——真实模型的向量有几千个。）</p>
+  <ul>
+    <li><b>token</b>：切成的小零件。<b>分词（tokenization）</b>是切的动作，<b>分词器（tokenizer）</b>是那把刀。切法不等于"词"——长词生僻词会被切碎，空格、标点、表情也算。</li>
+    <li><b>编号（ID）</b>：去<b>词表（vocabulary）</b>——模型认识的全部 token 的名单——里对号，只表示"它排第几"，没有含义。<span style="color:var(--muted)">（<a href="0001-from-token-to-next-token-deep.html#q1-vocab">词表多大？生词怎么办？</a>）</span></li>
+    <li><b>向量</b>：拿编号去<b>嵌入表</b>查第 N 行，得到一串数字。这动作叫<b>词嵌入（embedding）</b>。<span style="color:var(--muted)">（<a href="0001-from-token-to-next-token-deep.html#q2-embedding">嵌入表是什么？查表怎么就查出向量了？</a>）</span></li>
+  </ul>
+
+  <p>上面那张图里，<b>一个 token 对应一行向量</b>——「天气很」是 3 个 token，所以是 3 行。把所有行摞起来，才是<b>一张「n 行 × d 列」的数字表</b>（n ＝ token 数，d ＝ 每串向量的长度），这张表学名叫<b>张量（tensor）</b>（二维的也叫<b>矩阵 matrix</b>）。</p>
+  <p><b>宽度 d 是固定的，长度 n 跟着 token 数变</b>——下一句多一个字，表就多一行，别的什么都不用改。</p>
+  <p><b>所以，送进模型、开始被计算的就是这整张表。</b>这一节讲的是它长什么样；下一节看模型拿它做什么。</p>
+  <p style="color:var(--muted)">（为什么非得是"一堆并排的向量"、不能把 n 串拼成一根大向量？<a href="0001-from-token-to-next-token-deep.html#q5-shape">→ 看「为什么是 n 行 × d 列」</a>）</p>
+
+  <h2>2. 张量表进入模型：核心是一摞一模一样的盒子</h2>
+  <p>接下来，这张表就进入模型的核心部分了。<b>核心部分是一堆堆叠在一起的盒子</b>——一个盒子叫<b>一层</b>，正式名称是 <b>Block</b>，真实模型有<b>几十个</b>这样的盒子摞起来。</p>
+  <p><b>每个盒子干的事完全一样</b>，里面都是同样四步：<b>注意力</b>（看一眼前文）→ <b>残差</b>（把原来的也留一份）→ <b>FFN</b>（再细改一遍）→ <b>残差</b>。整摞盒子<b>进进出出都是同样形状</b>：进去时是 n 行 × d 列，出来还是 n 行 × d 列——<b>形状一路不变，变的只是里面那些数字</b>。</p>
+  <p><b>但模型不只是这一摞盒子。</b>完整的模型是<b>查嵌入表（上一节那一步）＋ 这一摞 Block ＋ 最后那张打分表</b>。<b>再往左</b>的分词、查词表是<b>门外的程序</b>（配套的小工具，不算模型）；<b>再往右</b>的换算成百分比、抽字，<b>也不是模型干的</b>——模型只交出那张分数表就下班了。<span style="color:var(--muted)">（分词、查词表这两步到底算不算模型的一部分？<a href="0001-from-token-to-next-token-deep.html#q4-boundary">→ 看「什么算模型」</a>）</span></p>
+
+  <p><b>整条链长什么样，先看这张总图。</b>九站，从你敲的字一路走到下一个字。</p>
+  <figure class="figure" id="fig-pipeline">
+    <img src="../../assets/llm-pipeline.svg" alt="从文字到下一个 token 的完整流程图。框左边一列是每一步的术语，右边一列是每一步手里东西的形状：从查嵌入表起一直是 3 行乘 d 列，一层几十个也还是 3 行乘 d 列；只取最后一行后变成 1 行乘 d 列；再摊成词表那么多个分数、一样多个百分比；最后抽出 1 个 token。底色深的一段是模型本体，从查嵌入表到打分；左边分词和查词表是门外的程序，右边换算和挑字也不是模型干的">
+    <figcaption><b>流程图</b>：框左边一列是每一步的<b>术语</b>，右边一列是这一步手里东西的<b>形状</b>（几个 × 多长），框里是数据本身。<b>底色深的那一段＝模型本体</b>：门外的分词、查词表在它上边，换算和抽字在它下边。</figcaption>
+  </figure>
+  <p>图给你的是<b>印象</b>，每一步在干嘛下一节一段一段说。这里只盯一件最要紧的事：<b>右边那一列形状全程没变</b>——第 ③ 步查完嵌入表是「3 行 × d 列」，第 ④ 站（那几十层）走完<b>还是 3 行 × d 列</b>；一直到第 ⑤ 站才缩成 1 行。这就是上面说的"形状一路不变"。</p>
+
+  <h2>3. 一个盒子里那四步，分别在干嘛</h2>
+
+  <h3>① 注意力：看一眼前文</h3>
+  <p>每个位置都举一个"我要找什么"（<b>Query</b>），去和<b>自己以及它之前</b>每个位置的"能不能被对上"（<b>Key</b>）比相似度，再按比重把大家的"能给出什么"（<b>Value</b>）加起来。<b>看不到后面</b>——后面还没写出来。</p>
+  <p>结果还是一个向量，但含义变了：从"我本来的理解"变成<b>"我看过前文之后的理解"</b>。<span style="color:var(--muted)">（<a href="0001-from-token-to-next-token-deep.html#q6-mask">为什么必须看不到后面？</a>）</span></p>
+
+  <h3>② 残差：把原来的也留一份</h3>
+  <pre><code>新的向量 = 原来的向量 + 从别人那里取来的向量</code></pre>
+  <p>别覆盖，只增补——免得抄着抄着把自己弄丢了。</p>
+
+  <h3>③ FFN：补充知识、推动概念</h3>
+  <p>注意力只是把别人的信息粗略混进来。FFN 接着对这串数字做一次<b>更细的改写</b>：出现某种模式，就往里补充对应的信息，把那个概念往上抬。<span style="color:var(--muted)">（它到底在改什么？<a href="0001-from-token-to-next-token-deep.html#q7-ffn">→ 看「FFN 到底在改什么」</a>）</span></p>
+  <p><b>它不是在"检查"什么</b>——要检查的那个结果，这时候还没算出来呢（要到最后一页才发生）。</p>
+
+  <h3>④ 走完一层，换一层再来一遍</h3>
+  <p>"注意力 → 残差 → FFN → 残差"合起来叫<b>一层</b>。真实模型叠几十层，<b>每一行数字被反复修改几十遍</b>，一次比一次更贴近"该说什么"。</p>
+
+  <h3>⑤ 最后一站：打分，然后挑字</h3>
+  <p>只取<b>最后一行</b>，去词表里逐个对分（叫 <b>logits 原始分</b>），换算成百分比（叫 <b>softmax</b>），按百分比抽一个（叫 <b>采样 sampling</b>）。</p>
+  <p><b>抽出来的那一个，就是下一个 token。</b></p>
+  <p style="font-size:0.9rem;color:var(--muted)">（一个容易跳过的细节：抽出来的其实是它的<b>编号（ID）</b>，<b>还不是一根向量</b>。要变回向量，得<b>拿这个编号再去查一次嵌入表</b>——这就是下一次那张表多出来的那一行从哪来。<a href="0002-prefill-vs-decode.html">第 2 课</a>接着讲这一轮。）</p>
+
+  <h2>4. 为什么它是一个字一个字蹦</h2>
+  <p>回到开头那个问题：它是"想好了再说"，还是"边写边想"？<b>边写边想</b>——它没有另一条"先想好"的路径，只有刚才这一条。</p>
+  <p>每蹦一个字，它内部就把整条流水线<b>从头完整走一遍</b>：n 行的表进摞、穿过几十层、回到出口。<b>每个位置其实都猜了一个字，但只有最后一行那个被采用</b>，其余的猜完就丢掉。挑出来的接在句子后面，下一个字再从头走一遍——<b>而这一遍里，表的宽度从头到尾是 d，只是行数多一行</b>（3 行 → 4 行 → 5 行…）。</p>
+  <p style="color:var(--muted)">（顺带钉一个最容易混的：<b>一个字 ≠ 一次请求</b>。你发一次请求、它回一整段话，里面就是这样重走了很多遍。<a href="0002-prefill-vs-decode.html">第 2 课</a>会把"第一遍"和"后面那些遍"为什么不一样拆开讲。）</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>整条流水线只有一条，一次只吐得出一个字；吐完把字接上去再走一遍——所以你看到的是"一个字一个字往外蹦"。</b></p>
+  </div>
+
+  <h2>5. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/llm/0001-tiny-attention.py</code>。它把上面的链全打印出来。</p>
+  <pre><code>python exercises/llm/0001-tiny-attention.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。数字都是手编的、故意很小，只为看清流程。<b>下面是输出摘录</b>（跑了就有完整的）。</p>
+  <pre><code>[2] 和每个 Key 比相似度（逐位相乘再相加；越大越相关）
+      「天」: 1.0×0.5 + 0.0×0.1 = 0.500
+      「气」: 1.0×0.9 + 0.0×0.2 = 0.900
+      「很」: 1.0×0.2 + 0.0×0.0 = 0.200
+
+[3] 把分数换算成百分比（softmax），这组百分比就是「权重」
+      「天」: 0.309  = 30.9%
+      「气」: 0.461  = 46.1%
+      「很」: 0.229  = 22.9%
+
+[4] 按权重把每个 Value 加起来（这一步就是「交流」）
+      = [0.679, 0.323, 0.115, 0.200]   <- 还是一串数字，但已经「看过前文」
+
+[7] 打分（logits）：拿最终向量去词表里逐个对分
+      「好」: 2.469      「差」: 0.796      「冷」: 1.595
+
+[8] 换算成百分比（softmax）
+      「好」: 62.3%      「差」: 11.7%      「冷」: 26.0%
+
+[9] 采样：按百分比抽一个（像按比例抽奖）
+      -> 「好」</code></pre>
+  <p><b>看第 [3] 步</b>：「很」把最多的注意力给了「气」（46.1%），所以最后挑出「好」就顺理成章。多跑几次会抽到不同的字——那就是"采样"。</p>
+
+  <h2>6. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 一次模型调用，喂进去的是什么？</p>
+    <button class="quiz-option" data-correct="true">一张 n 行 d 列的数字表</button>
+    <button class="quiz-option">一根很长很长的大向量</button>
+    <button class="quiz-option">一个 token 一个往里送</button>
+    <button class="quiz-option">一段纯文本的字符串</button>
+    <p class="feedback"
+       data-ok="对。宽度 d 固定，长度 n 随 token 数变。"
+       data-no="是「一张表」：n 行 × d 列。不是一根，也不是一个个送。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 注意力这一步，本质上在做什么？</p>
+    <button class="quiz-option" data-correct="true">按相关度把别的位置信息取进来</button>
+    <button class="quiz-option">把当前 token 翻译成另种语言</button>
+    <button class="quiz-option">把整句话压缩成一个很小的数</button>
+    <button class="quiz-option">把词表里所有 token 排成一队</button>
+    <p class="feedback"
+       data-ok="对。用 Query 比 Key，按比重把 Value 加起来。"
+       data-no="注意力只做一件事：按相关度，把别的位置的 Value 取进自己。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 为什么模型"一个字一个字往外蹦"？</p>
+    <button class="quiz-option" data-correct="true">每次只猜下一个 token</button>
+    <button class="quiz-option">网络太慢只能一个字发</button>
+    <button class="quiz-option">输出窗口一次只能放一字</button>
+    <button class="quiz-option">为了让我们看得更清楚些</button>
+    <p class="feedback"
+       data-ok="对。每次只预测一个 token，接上再走一遍。"
+       data-no="机制如此：每次只取最后一个位置的猜测。"></p>
+  </div>
+
+  <h2>7. 想深挖？进阶版在等你</h2>
+  <p>上面这些够你看懂全貌了。读的过程中如果冒出疑问，点对应的链接就行——<b>不用从头看进阶版</b>。</p>
+  <ul>
+    <li><a href="0001-from-token-to-next-token-deep.html#q1-vocab">Q1 · 词表是什么？有多大？遇到生词怎么办？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q2-embedding">Q2 · 嵌入表是什么？查表怎么就查出向量了？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q3-training">Q3 · 嵌入表是怎么训练出来的？它一开始不就是一堆随机数吗？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q4-boundary">Q4 · 分词、查词表这两步，算不算「模型」的一部分？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q5-shape">Q5 · 为什么是「n 行 × d 列」的表，而不是拼成一根大向量？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q6-mask">Q6 · 表里的 n 行，互相能看到对方吗？（因果掩码）</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q7-ffn">Q7 · FFN 那一步到底在改什么？为什么说它不是「检查」？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q8-layers">Q8 · 中间某一层的数字，能不能直接拿去用？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q9-window">Q9 · 上下文窗口怎么算？没用满的宽度填什么？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q10-sampling">Q10 · 「按百分比抽一个」到底是怎么抽的？temperature、top_p 调的是什么？</a></li>
+  </ul>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need（Vaswani et al., 2017）</a>——整条架构的原始论文。（里面有条公式 <code>softmax(QKᵀ/√dₖ)V</code>，就是第 3 节「注意力」那三句话的写法，现在看不懂没关系。）
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"为什么每层是这四步？""d 一般多大？""为什么先注意力、后 FFN，不能反过来？""按百分比抽一个，到底是怎么抽的？temperature、top_p 是什么？"<b>"这几十层用的是同一套权重吗？"</b>
+  </div>
+
+  <p class="next">
+    <b>同课进阶</b>：<a href="0001-from-token-to-next-token-deep.html">进阶版 · 九个问题</a><br>
+    <b>前置</b>：<a href="0000-how-models-learn.html">LLM 底层 · 第 0 课 · 模型是怎么学出来的</a><br>
+    <b>顺着往下</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · 一次请求的两段</a> · <a href="0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache 与缓存命中</a><br>
+    <b>主线</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么？</a><br>
+    术语表：<a href="../../reference/glossary.html#tensor">张量</a> · <a href="../../reference/glossary.html#vector">向量</a> · <a href="../../reference/glossary.html#token">token</a> · <a href="../../reference/glossary.html#attention">Attention</a> · <a href="../../reference/glossary.html#layer">层</a> · <a href="../../reference/glossary.html#logits">Logits / Softmax / 采样</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 1 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

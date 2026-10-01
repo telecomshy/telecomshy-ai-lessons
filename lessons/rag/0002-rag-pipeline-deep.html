@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 2 课（进阶版）· 切块到底切多大</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 2 课 · 进阶版</div>
+  <h1>切块到底切多大、重叠多少、按什么边界切</h1>
+  <p class="subtitle">初学版只说"切太大 / 切得不是地方都有坑"，这里给<b>该切多大</b>，以及<b>为什么这个数不用太纠结</b>。</p>
+
+  <div class="note">
+    <span class="label">怎么用这篇</span>
+    <p style="color:var(--muted)">只收读完初学版仍会冒出来的问题。<b>按需跳读</b>——每问都从初学版指过来。<br>
+    这一篇还在长：其他问题（顺序怎么排、rerank 补什么）等真问了再写。</p>
+    <p style="color:var(--muted)">先放一句话：<b>切块是整条链里最便宜的调优点</b>——改一次设置只花一次重建索引，不用动模型、不用动提示词。</p>
+  </div>
+
+  <h2 id="q1-chunk-size">Q1 · 块切多大、重叠多少、按什么边界切？</h2>
+  <p><b>对应初学版第 2 课第 ① 步「切块」。</b>那儿只给了两个坑（切太大被稀释、切得不是地方被切碎），没给"那到底切多大"。</p>
+
+  <h3>块大小：250～500 token 起步</h3>
+  <p>这个区间不是拍脑袋，几家独立基准给的是同一个量级：</p>
+  <ul>
+    <li><b>九种切块配置</b>跑同一批语料、同一批模型与查询，<b>最好与最差相差 8 个召回点</b>——所以这一项确实值得调。</li>
+    <li>但<b>朴素的递归切块（400 token）已经拿到 89.5%</b>；最好的语义切块只比它<b>多不到 2 个点</b>，而<b>最差的语义切块反而低于朴素法</b>。</li>
+    <li><b>NVIDIA 五个数据集基准</b>：<b>512～1024 token 最好</b>，按页切最稳定，<b>128 token 最差</b>。</li>
+    <li>反例也有：<b>OpenAI 默认那套（800 token + 400 重叠）低于平均</b>——"官方默认"不等于"最优"。</li>
+  </ul>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>所以：从 400 token、15% 重叠起步。</b>这个起点已经离最好不到 2 个点。</p>
+    <p><b>别一上来就上语义切块</b>——先确认朴素方法真的不够，再上复杂的。</p>
+  </div>
+
+  <h3>重叠：它在救什么，以及它救不了什么</h3>
+  <p><b>它救的是</b>：横跨切口的那句话。把上一段的尾巴复制到下一段开头，<b>那句话至少在某一段里是完整的</b>。</p>
+  <p><b>它救不了的是</b>：<b>块比答案本身还短</b>。这时候多重叠都塞不下一整句——所以<b>第一步是块要够长，第二步才是重叠</b>。</p>
+  <p>常用区间 <b>10%～20%</b>。但这里有一条反直觉的实测：</p>
+  <div class="note">
+    <span class="label">重叠未必有用</span>
+    <p>2026 年一项系统分析（SPLADE + Mistral-8B，在 Natural Questions 上）发现：<b>重叠没有可测的收益，只是增加了索引成本</b>。</p>
+    <p>多 15% 重叠 ＝ 多 15% 的向量要算、要存、要搜，而且<b>近似重复的段会互相抢 top-k 的位子</b>。</p>
+    <p><b>所以重叠要拿你自己的查询去量</b>：只有当评测里出现"答案被切碎"这类失败时，才往上加。</p>
+  </div>
+
+  <h3>按什么边界切：三档，从糙到细</h3>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">切法</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">干什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">什么时候用</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>固定长度</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">数够字数就切，不看内容</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">起步就用它；整齐、可预测</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>递归</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">先按<b>段落</b>切，太长再按<b>换行</b>，还不行按<b>句号</b>，最后才按字数</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>大多数文本的正解</b>；在"够长"和"不切碎"之间找平衡</td></tr>
+      <tr><td style="padding:0.45rem"><b>语义</b></td>
+          <td style="padding:0.45rem">把每句都变成向量，<b>相邻两句差得远就切</b>（＝换话题了）</td>
+          <td style="padding:0.45rem">确实不规则的文本；<b>代价是要对每句算一次向量</b></td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--muted)">（有个实测值得记住：在一个核工程文档集上，<b>朴素递归切块比"按章节切"高了近 7 个点</b>。"尊重文档结构"听起来更聪明，但未必更准。）</p>
+
+  <h3>动手：同一份文档，四种切法</h3>
+  <p>脚本在工作区：<code>exercises/rag/0002-chunking.py</code>。它把一份文档按 16 / 32 / 64 / 整篇切，<b>盯着一句标准答案看它在每种切法下活没活得完整</b>。</p>
+  <pre><code>python exercises/rag/0002-chunking.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是重叠那一节的输出摘录（跑了就有完整的）。</p>
+  <pre><code>[2] overlap（重叠）在救什么 —— 以及它救不了什么
+  ① 先看【救不了】的：切 16 字、重叠 8 字
+      → 答案仍然被切成三段。【因为块本身（16 字）比答案（24 字）还短】，
+        再多重叠也塞不下一整句。所以：【第一步是块要够长，第二步才是重叠】。
+
+  ② 块够长之后，重叠才开始起作用：切 30 字
+      切 30 字、不重叠  →  5 段
+      切 30 字、重叠 20 字  →  15 段
+      不重叠：答案完整的段数 = 0 段
+      重叠 20 字：答案完整的段数 = 1 段</code></pre>
+  <p><b>两处要看懂</b>：</p>
+  <ul>
+    <li><b>① 是很多人会犯的错</b>：看到"答案被切碎"就去加重叠。<b>但块本来就装不下那句话</b>，重叠是白加的——还多付了索引成本。</li>
+    <li><b>② 的代价也要看</b>：15 段 vs 5 段，<b>段数翻了 3 倍</b>。这就是"重叠涨成本"的字面意思。</li>
+    <li>再看 32 字那档：<b>答案刚好完整落在一段里</b>，而且那段不长——<b>这就是"够长但不臃肿"的甜点</b>。</li>
+  </ul>
+
+  <h3>带走三条</h3>
+  <ol>
+    <li><b>400 token、15% 重叠起步</b>——离最好不到 2 个点，别在这一项上耗太久。</li>
+    <li><b>先块够长，再谈重叠</b>；重叠只救"切口"，救不了"太小"。</li>
+    <li><b>这一项最便宜</b>：改一次设置 ＝ 重建一次索引。所以它是<b>第一个该试的调优点</b>，也是最容易量出效果的。</li>
+  </ol>
+
+  <h3>检查一下你懂了没</h3>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 答案那句 24 字，块切成 16 字还加了重叠，为什么还是碎的？</p>
+    <button class="quiz-option" data-correct="true">块本身装不下那一整句话</button>
+    <button class="quiz-option">因为重叠的字数给得太少了</button>
+    <button class="quiz-option">因为嵌入模型的维度不够高</button>
+    <button class="quiz-option">因为重叠只对英文文档有效果</button>
+    <p class="feedback"
+       data-ok="对。重叠救的是「切口」，救不了「块太小」——先把块做够长。"
+       data-no="块的长度是前提：装不下一整句，重叠多少都白搭。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 为什么说切块是「最便宜的调优点」？</p>
+    <button class="quiz-option" data-correct="true">改一次设置只花一次重建索引</button>
+    <button class="quiz-option">因为它完全不需要任何计算</button>
+    <button class="quiz-option">因为切块用的模型比较小</button>
+    <button class="quiz-option">因为切块对最终结果没影响</button>
+    <p class="feedback"
+       data-ok="对。不用换模型、不用改提示词，重建一次索引就能看到效果。"
+       data-no="它便宜在「代价小、可回滚」，不是因为它不重要。"></p>
+  </div>
+
+  <h3>一手资料</h3>
+  <div class="source">
+    <b>这一问的来源</b>：<br>
+    <a href="https://www.anthropic.com/engineering/contextual-retrieval">Anthropic — Introducing Contextual Retrieval（2024-09）</a>——工业界的切块基线与后续补救。<br>
+    <a href="https://www.pinecone.io/learn/chunking-strategies/">Pinecone — Chunking Strategies for LLM Applications</a>——固定 / 递归 / 语义三档的定义。<br>
+    <b>那组"九种配置相差 8 个点、朴素递归 89.5%"的对比</b>出自 Chroma 的 token 级评测（转引自公开综述，未读原始报告，标注为<b>二手</b>）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"中文要不要按词切？""表格和代码怎么办？""PDF 的版式怎么保留？""检索到的顺序到底怎么排？"——最后那个是下一篇。
+  </div>
+
+  <p class="next">
+    <b>回初学版</b>：<a href="0002-rag-pipeline.html">RAG · 第 2 课（初学版）· 一条 RAG 链长什么样</a><br>
+    <b>相关</b>：<a href="0004-two-failure-modes-deep.html">第 4 课进阶 · RAG 怎么评</a>（切块的好坏要靠它量）<br>
+    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 2 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

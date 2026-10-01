@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 4 课 · 一趟装满的卡车：批处理怎么救 decode</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 4 课 · 初学版</div>
+  <h1>一趟装满的卡车</h1>
+  <p class="subtitle">批处理（batching）怎么救 decode——以及为什么「吞吐」和「延迟」永远在打架。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你有没有想过：模型 API 按 token 卖，价格为什么能压这么低？要是你自己租一张显卡跑同一个模型，成本完全是另一个量级。</p>
+    <p>更怪的是——你发一个请求的时候，服务商其实正在<b>同时给几百个人算</b>。可你并没有等很久。</p>
+    <p style="margin-top:0.7rem">拆穿了就是一句大白话：<b>一趟车装满 N 个包裹。车程没变，货多了 N 倍。</b></p>
+    <p><b>学完这课，你能</b>：说清批处理为什么能大幅提升吞吐；看懂「吞吐 / 延迟」这笔账；并知道它的天花板卡在哪。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">承接第 2 课</span>
+    <p>第 2 课我们得出：decode 是<b>显存带宽受限</b>——它在"等数据"，不在"算"。这一课就问：<b>既然它在等，那能不能顺手多干点活？</b>答案就是批处理。</p>
+  </div>
+
+  <h2>1. 先看看 decode 在浪费什么</h2>
+  <p>第 2 课的类比还记得吗：显卡是个数学天才，但每做一道题都得跑去仓库搬书。他大部分时间在搬书。</p>
+  <p>这里有个关键细节：他每一步要搬的那本书，是<b>模型权重</b>——几亿到几千亿个参数，非常大的一块。而"每个请求自己的历史 KV"相比之下只是薄薄几页。</p>
+  <div class="note">
+    <span class="label">于是浪费出现了</span>
+    <p>如果一次只服务 <b>1 个请求</b>，那这趟车（搬模型权重）就只为了一个人跑一趟。<b>车大部分是空的。</b>而搬运时间，是省不掉的。</p>
+  </div>
+
+  <h2>2. 批处理：一趟车装满</h2>
+  <div class="note">
+    <span class="label">类比：送货卡车</span>
+    <p>仓库在城东，客户在城西。每送一趟货，卡车都得开完整的一趟。<br>
+       只送 1 个包裹，太亏了——油钱、司机时间，一样没少。<br>
+       <b>批处理 = 一趟车装满 N 个包裹。</b>车程没变，但送的货多了 N 倍。每个包裹分摊到的"车程成本"就降到了 1/N。</p>
+  </div>
+  <p>放到模型上就是：<b>把模型权重搬一次，同时服务 N 个请求。</b>那 N 个请求，"搬书"的钱被摊薄了 N 倍。</p>
+  <div class="note">
+    <span class="label">术语三连</span>
+    <p><b>批处理（batching）</b>：一次让多个请求并排前进一个 token，共用同一趟"搬权重"。<br>
+       <b>吞吐（throughput）</b>：整个系统每秒总共能产出多少 token。<br>
+       <b>延迟（latency）</b>：<b>单个</b>请求自己有多快（第 2 课的 TTFT、TPOT 就是在量它）。</p>
+  </div>
+
+  <h2>3. 动手：跑一遍看数字</h2>
+  <pre><code>python exercises/llm/0004-batching.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。仍是刻意简化的量级模型，重点看相对关系。</p>
+
+  <p>我实测的结果（模型权重 140GB，单请求 KV 0.5GB，可用显存 200GB）：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.86rem">
+    <thead><tr>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">批大小</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">每步耗时</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">吞吐 tok/s</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">单请求每 token</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">1</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">0.141s</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">7.1</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">0.141s</td></tr>
+      <tr><td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">8</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">0.144s</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">55.6</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">0.144s</td></tr>
+      <tr><td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">32</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">0.156s</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">205.1</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">0.156s</td></tr>
+      <tr><td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">120</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right">0.200s</td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right"><b>600.0</b></td>
+          <td style="padding:0.35rem;border-bottom:1px solid var(--rule);text-align:right"><b>0.200s</b></td></tr>
+    </tbody>
+  </table>
+
+  <p><b>批一变大，吞吐涨得飞快，而单请求只慢了一点。</b>这笔买卖实在太划算了——这就是为什么所有推理服务都在拼命凑批。<span style="color:var(--muted)">（本课实测：批 1 → 120，吞吐 84 倍，单请求慢 42%。）</span></p>
+
+  <h3>但天花板有两个</h3>
+  <ul>
+    <li><b>显存</b>：权重（140GB）已经占了大头，剩下的空间才能装各请求的 KV。本例里 <code>(200−140)/0.5 = 120</code>，批大小最多 120。</li>
+    <li><b>显存带宽</b>：当批大到"KV 的总量大过权重"时，瓶颈就从权重变成了 KV。吞吐的理论上限 ≈ <code>带宽 / 单请求 KV = 1000/0.5 = 2000 tok/s</code>。本例因为显存先卡住，到不了这个上限。</li>
+  </ul>
+
+  <h2>4. 于是有了「吞吐 vs 延迟」的权衡</h2>
+  <p>把上面的表画成曲线，就是一个经典的取舍：<b>批量越大，吞吐越高，但单个请求越慢。</b></p>
+  <p>真实世界的数字（Databricks 在 A100 上测 7B 模型）也一样：<b>批一大，吞吐和延迟一起涨。</b><span style="color:var(--muted)">（批大小 64 时：吞吐 14 倍、单请求延迟 4 倍。）</span>——和我们的玩具模型量级吻合。</p>
+  <div class="note">
+    <span class="label">谁在乎哪个？</span>
+    <p><b>聊天机器人 / 你的 agent</b>：在乎延迟（用户盯着看，卡了就骂）→ 批要小一点。<br>
+       <b>离线批处理（比如一次总结一万份文档）</b>：在乎吞吐（没人盯着）→ 批越大越好，慢没关系。</p>
+  </div>
+  <div class="note">
+    <span class="label">权衡有个硬边界</span>
+    <p>批大到一定程度后，decode 会从"显存带宽受限"变成"算力受限"。到那之后，<b>再加大批量，吞吐几乎不涨，延迟继续变差</b>——纯亏。所以生产环境要找一个"甜点批大小"。</p>
+    <p style="color:var(--muted)">（上面那张表只画了"搬运"那一半，所以它撞到的是显存的墙，<b>跑不出这个拐点</b>。真到拐点长什么样，看 Databricks 那个实测：批大小 64 时吞吐涨到 14 倍，可单请求延迟也涨到 4 倍——<b>再往上，吞吐就基本不涨了。</b><a href="0004-batching-deep.html#q1-knee">→ 这个拐点是怎么算出来的</a>）</p>
+  </div>
+
+  <h2>5. 工业界还在继续往这个方向榨</h2>
+  <p>批处理只是开头。工业界又补了三招：</p>
+  <ul>
+    <li><b>连续批处理</b>——让批每走一步就重排一次，短请求不用陪长请求干等。<span style="color:var(--muted)">（<a href="0004-batching-deep.html#q2-head-of-line">它解决的那个毛病叫"队头阻塞"，是什么？</a>）</span></li>
+    <li><b>PagedAttention</b>——把 KV 像操作系统管内存那样切页，不浪费显存，于是能开更大的批。<span style="color:var(--muted)">（<a href="0004-batching-deep.html#q3-pagedattention">它省的是哪一样？</a>）</span></li>
+    <li><b>分块预填充 / prefill-decode 分离</b>——让两段各用各的机器。<span style="color:var(--muted)">（<a href="0004-batching-deep.html#q4-chunked">这两件事是一回事吗？</a>）</span></li>
+  </ul>
+  <p>知道有这三招就够了——<b>对你写代码没有影响</b>，它们发生在服务商那边。</p>
+
+  <h2>6. 对你写 agent 的启示</h2>
+  <ul>
+    <li><b>并发能省钱</b>：你的请求会被塞进别人的批里，权重搬运费被分摊了——API 的输出价格能压下来，这是原因之一。</li>
+    <li><b>代价是你的请求可能变慢</b>：批大了，你单个请求的 TPOT 会变差。</li>
+    <li><b>你的 agent 很多时候在"排队"</b>：一个 agent 通常一次只发一个请求，得等服务端把它塞进某个批。<b>排队时间也算进 TTFT</b>。所以"agent 慢"有时不是模型慢，是你在排队。</li>
+  </ul>
+
+  <h2>7. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 批处理（batching）为什么能大幅提升吞吐？</p>
+    <button class="quiz-option" data-correct="true">一趟把模型权重搬给多个请求</button>
+    <button class="quiz-option">让每个请求的计算量变得更少</button>
+    <button class="quiz-option">把模型权重压缩得更小更快些</button>
+    <button class="quiz-option">让用户少发一些请求过来就行</button>
+    <p class="feedback"
+       data-ok="对。权重是每步必搬的大头，批处理把它摊薄到 N 个请求上。"
+       data-no="关键在「权重每步都要搬一次」——批处理就是让这一趟同时服务多个请求。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 加大批大小的代价是什么？</p>
+    <button class="quiz-option" data-correct="true">单个请求的延迟会变差一些</button>
+    <button class="quiz-option">模型回答的质量会变差一些</button>
+    <button class="quiz-option">显存占用会变得更加少一些</button>
+    <button class="quiz-option">吞吐会跟着一起掉下去一些</button>
+    <p class="feedback"
+       data-ok="对。吞吐上去，但每个请求要等更久——经典的吞吐/延迟权衡。"
+       data-no="批处理不加内容也不减显存，代价是「单个请求变慢」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 批处理的天花板主要由什么决定？</p>
+    <button class="quiz-option" data-correct="true">可用显存和显存带宽的大小</button>
+    <button class="quiz-option">用户的网速和客户端的性能</button>
+    <button class="quiz-option">模型有多少个参数和多少层</button>
+    <button class="quiz-option">同时在线提问的用户总人数</button>
+    <p class="feedback"
+       data-ok="对。显存决定能装多少请求，带宽决定 KV 摊薄后的上限。"
+       data-no="两个天花板：显存（能塞多少请求）和显存带宽（摊薄后的吞吐上限）。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices">Databricks — LLM Inference Performance Engineering</a>：第 4 节那个权衡的实测（A100、7B：批 64 → 吞吐 14×、单请求延迟 4×）。<br>
+    <a href="https://redis.io/blog/prefill-vs-decode/">Redis — Prefill vs Decode</a>：prefill 算力受限、decode 显存带宽受限这个分野。<br>
+    工业界那三招（连续批处理 / PagedAttention / 分块预填充与分离）——<a href="0004-batching-deep.html">进阶版</a>里逐条讲，资料也列在那里。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"排队时间到底算在哪一段？""为什么输出价格比输入贵好几倍，不是一样贵？""批大小的甜点我能不能自己量出来？"——直接问。前两个尤其值得深挖。
+  </div>
+
+  <p class="next">
+    <b>同课进阶</b>：<a href="0004-batching-deep.html">进阶版 · 拐点与工业界的招</a><br>
+    <b>相关</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · 为什么「读长文」快、「写长文」慢？</a>（这节的前置）· <a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a><br>
+    <b>主线</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么</a> → 下一步 工具调用（Tool Use）。<br>
+    术语表：<a href="../../reference/glossary.html#batching">批处理</a> · <a href="../../reference/glossary.html#throughput">吞吐</a> · <a href="../../reference/glossary.html#continuous-batching">连续批处理</a>。
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 4 课 · 风格与组件来自 <code>assets/base.css</code> · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

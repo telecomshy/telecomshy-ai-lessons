@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 4 课（初学版）· 两种典型翻车</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 4 课 · 初学版</div>
+  <h1>两种典型翻车</h1>
+  <p class="subtitle">RAG 上了，答案还是错。原因只有两类，<b>而且长得完全不一样</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>RAG 跑起来了，可答案还是不对。这时候大多数人的第一反应是"换个更大的模型"。</p>
+    <p><b>多半没用。</b>因为真正的原因只有两类，而且<b>解法正好相反</b>。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：RAG 答错时，一眼分清是哪一类，知道先查哪一步。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>① 该来的没来</b>——检索压根没找到那段。<b>问题在前五步。</b></p>
+    <p><b>② 来了但没用上</b>——检索到了、也塞了，模型没用它。<b>问题在最后一步。</b></p>
+    <p><b>这两类要分开诊断</b>，因为解法完全相反：一个要"找得更准"，一个要"用得更好"。</p>
+  </div>
+
+  <h2>1. 全部诊断方法就一句</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>把模型会看到的那一屏打出来，人眼看。</b></p>
+    <p>答案在里面吗？<b>不在 → 第一类</b>；<b>在 → 第二类</b>。</p>
+  </div>
+  <p>就这么简单，而且<b>不要跳过这一步</b>。绝大多数人是两头一起调（又调检索、又换模型、又改提示词），最后连自己改了什么都记不清。</p>
+
+  <h2>2. 第一类：该来的没来</h2>
+  <p><b>症状</b>：答案根本不在提示词里，模型只能编。</p>
+  <p><b>原因</b>（按常见程度排）：</p>
+  <ul>
+    <li><b>切块切坏了</b>——答案被切成两半，谁也看不懂（第 2 课见过）；</li>
+    <li><b>说法对不上</b>——你问"能休几天"，文档写的是"年假天数"，<b>按词匹配就漏</b>；</li>
+    <li><b>取少了</b>——<code>top-k</code> 取 1，正好卡在分界的问题就只有半套规则；</li>
+    <li><b>换了嵌入模型没重算</b>——老向量全作废，查出来的排序是乱的。</li>
+  </ul>
+  <p><b>解法</b>（Anthropic 实测，取前 20 段时没取到正确那段的比例）：</p>
+  <pre><code>普通 RAG                       5.7% 失败
+＋ 给每段补上一句「这段在讲什么」   3.7%
+＋ 再叠上关键词检索               2.9%
+＋ 再加一道重排序                 1.9%</code></pre>
+  <p><b>注意这几步没有一个是"换更强的模型"</b>——全是<b>前五步</b>的改进。</p>
+
+  <h2>3. 第二类：来了但没用上</h2>
+  <p><b>症状</b>：答案就在提示词里，模型还是答错、或者答了别的。</p>
+  <p><b>原因</b>：</p>
+  <ul>
+    <li><b>排在中间</b>——这是最隐蔽的一条，实测：</li>
+  </ul>
+  <div class="note">
+    <span class="label">"放中间比不给还差"</span>
+    <p>把正确答案那段放在一堆资料的<b>正中间</b>，模型的成绩会掉到<b>比完全不给资料还差</b>。</p>
+    <p>放开头或结尾才好使。<b>所以检索完还要管顺序</b>，不能随手排。<span style="color:var(--muted)">（出处：Liu et al. 2023《Lost in the Middle》）</span></p>
+  </div>
+  <ul>
+    <li><b>塞太多</b>——8 段里只有 2 段有用，另外 6 段是噪音，把答案淹了；</li>
+    <li><b>几段互相矛盾</b>——新旧版本都在里面，模型挑了旧的；</li>
+    <li><b>没要求"照资料回答"</b>——它就按自己"接得像"的习惯走了。</li>
+  </ul>
+  <p><b>解法</b>：管顺序（重要的放开头或结尾）、少而精、在提示词里写明"只根据下面的资料回答，资料里没有就说没有"。</p>
+
+  <h2>4. 一张表分清</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">你看到的症状</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">是哪一类</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">先查哪一步</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">答案压根没给</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">该来的没来</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">切块 / 变向量 / 取几段</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">答案给了却没用</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">来了但没用上</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">顺序 / 段数 / 提示词怎么写</td></tr>
+      <tr><td style="padding:0.45rem">答得模棱两可</td>
+          <td style="padding:0.45rem">两种都有可能</td>
+          <td style="padding:0.45rem">先打印提示词看一眼</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. 动手：看两种翻车长什么样</h2>
+  <p>脚本在工作区：<code>exercises/rag/0004-two-failure-modes.py</code>。<b>它不调任何模型</b>，只做一件事——<b>把模型会看到的那一屏打出来</b>。</p>
+  <pre><code>python exercises/rag/0004-two-failure-modes.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是第二类那段的输出摘录（跑了就有完整的）。</p>
+  <pre><code>[3] 场景 B · 来了但没用上（检索到了，模型没用）
+      ┌──────────────────────────────────────
+      │【资料 1】办公用品领用：每人每月限领签字笔 2 支、笔记本 1 本。
+      │【资料 2】会议室预约：提前 1 天在系统预约，超时 15 分钟自动释放。
+      │【资料 3】门禁卡办理：入职当天由行政统一办理，遗失补办 20 元。
+      │【资料 4】请假三天以内（含三天），向直属主管口头报备即可，事后补一条消息。 ◀◀ 答案在这儿
+      │【资料 5】请假三天以上，需在系统里提交申请单，附上证明材料，主管审批后生效。 ◀◀ 答案在这儿
+      │【资料 6】打印机使用：公共打印机在三楼东侧，故障报修走 IT 工单。
+      │【资料 7】快递收发：公司统一收发，个人快递请勿寄到前台。
+      │【资料 8】工位调整：每季度可申请一次，由部门助理统一报备。
+      │【问题】请三天假要走什么流程？
+      └──────────────────────────────────────</code></pre>
+  <p><b>看这一屏就够了</b>：答案确实在，但被<b>埋在正中间</b>，前后各压着三段无关内容。<b>一眼就能看出这是第二类</b>——不用跑模型、不用猜。</p>
+
+  <h2>6. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> RAG 答错了，第一件该做什么？</p>
+    <button class="quiz-option" data-correct="true">把提示词打出来看一眼</button>
+    <button class="quiz-option">立刻换个更大的模型</button>
+    <button class="quiz-option">先把 top-k 调大再说</button>
+    <button class="quiz-option">重新训练嵌入模型再说</button>
+    <p class="feedback"
+       data-ok="对。答案在不在那一屏里，直接决定该修哪一边。"
+       data-no="先诊断再动手。两头一起调，最后连自己改了什么都记不清。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 答案就在提示词里，模型还是答错，这是哪一类？</p>
+    <button class="quiz-option" data-correct="true">来了但没用上</button>
+    <button class="quiz-option">该来的没来</button>
+    <button class="quiz-option">检索器已经坏了</button>
+    <button class="quiz-option">嵌入模型已经过期</button>
+    <p class="feedback"
+       data-ok="对。这时该修「怎么用」——顺序、段数、提示词。"
+       data-no="既然已经在提示词里，问题就不在「找」，在「用」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 正确答案那段，应该排在提示词的哪里？</p>
+    <button class="quiz-option" data-correct="true">开头或结尾，别放中间</button>
+    <button class="quiz-option">正中间，那样最显眼</button>
+    <button class="quiz-option">越靠后越保险一些</button>
+    <button class="quiz-option">随便哪个位置都一样</button>
+    <p class="feedback"
+       data-ok="对。实测是 U 形：两端好，中间最差。"
+       data-no="位置很要命——放中间，成绩能掉到比不给资料还差。"></p>
+  </div>
+
+  <h2>7. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.anthropic.com/engineering/contextual-retrieval">Anthropic — Introducing Contextual Retrieval（2024-09）</a>——那组 5.7% → 3.7% → 2.9% → 1.9% 的数字。<br>
+    <a href="https://arxiv.org/abs/2307.03172">Liu et al., 2023 — Lost in the Middle</a>——"放中间比不给还差"的出处。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"重排序具体在做什么？""两段资料互相矛盾怎么办？""要不要让它给引用？""怎么知道我改了之后真的变好了？"——最后那个尤其值得问，见<a href="../practice/0002-evaluating-agents.html">技巧篇 · 第 2 课</a>。
+  </div>
+
+  <p class="next">
+    <b>回前三课</b>：<a href="0001-why-retrieval.html">第 1 课</a> · <a href="0002-rag-pipeline.html">第 2 课</a> · <a href="0003-when-not-to-use-rag.html">第 3 课</a><br>
+    <b>相关</b>：<a href="../practice/0001-context-engineering.html">技巧篇 · 第 1 课 · 上下文工程</a>（少而精、怎么裁）<br>
+    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 4 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

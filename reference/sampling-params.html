@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查 · 采样参数（temperature / top_p / top_k / seed）</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="lesson-meta">速查 / Reference</div>
+  <h1>采样参数：temperature、top_p、top_k、seed</h1>
+  <p class="subtitle">配模型的时候照着抄。机制在 <a href="../lessons/llm/0001-from-token-to-next-token-deep.html#q10-sampling">LLM 底层 · 第 1 课进阶 · Q10</a>，这里只放<b>怎么设、什么时候别设</b>。</p>
+
+  <h2>先划一条边界</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>这些旋钮一个都不改模型算出来的分（logits）。</b>它们只改"从分表里挑一个字"的规则。</p>
+    <p>所以调温度<b>不会让模型变聪明或变笨</b>。觉得答案不好，先改提示词或换模型，别指望拧温度。</p>
+  </div>
+
+  <h2>参数对照表</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">参数</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">调什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">常用值</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">什么时候动它</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>temperature</code><br>（温度）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">换算百分比前把原始分<b>除以 T</b>。T 小更尖，T 大更平</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">0～0.3 要准<br>0.7～1.0 要多样</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">结果太飘就降，太死板就升。<b>这是第一个该动的旋钮</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>top_p</code><br>（核采样）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">从高到低累加百分比，加够 p 就<b>砍掉剩下的</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">0.9～0.95<br>1.0 ＝ 不砍</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">明显开始胡说八道（小概率字冒出来）时</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>top_k</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">只留分数最高的 <b>k 个</b>，其余出局</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">40～100<br>0 ＝ 关掉</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">想要一个<b>固定个数</b>的候选上限时。多半保持关掉</td></tr>
+      <tr><td style="padding:0.45rem"><code>seed</code><br>（种子）</td>
+          <td style="padding:0.45rem">固定"抽"这一步的<b>运气</b></td>
+          <td style="padding:0.45rem">任意整数</td>
+          <td style="padding:0.45rem">要复现、要做对照实验时。想每次不同就<b>别设</b></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.9rem;color:var(--muted)">同一个参数表里还有几个邻居：<code>max_tokens</code>（最多生成多少）、<code>frequency_penalty</code> / <code>presence_penalty</code>（压住复读）、<code>logit_bias</code>（直接给某个词加减分）。它们管的是<b>生成多少 / 别重复</b>，不是"怎么挑"。</p>
+
+  <h2>场景 → 怎么设</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">场景</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">怎么设</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">理由</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">agent 工具调用 / 结构化输出（JSON）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">温度 0～0.3，<code>top_p</code> = 1.0</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一个参数写错、一个括号没闭合，整条链就歪了</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">评估 / 回归测试</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">温度 0 + 固定 <code>seed</code>，<b>并且跑多遍</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">单次结果不代表能力；而且 T = 0 也不保证逐字一样</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">创意写作 / 头脑风暴</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">温度 0.8～1.2，<code>top_p</code> = 0.9～0.95</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">要的是"第二个想法"，不是"最像的那个"</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">总结 / 抽取 / 翻译</td>
+          <td style="padding:0.45rem">温度 0～0.3</td>
+          <td style="padding:0.45rem">要忠于原文，不要自己发挥</td></tr>
+    </tbody>
+  </table>
+
+  <h2>三条别死记的（理由 + 反例 + 什么时候不适用）</h2>
+  <ul>
+    <li><b>「温度越低越好」是错的。</b>理由：低温＝每一步都挑最像的那个，长文本会一路滑向重复和套话——Holtzman 那篇论文的结论正是"<b>拿最大值当生成目标，对开放式写作不合适</b>"。<b>反例</b>：让它写十个不一样的标题，温度 0 会给你十个几乎一样的。<b>不适用</b>：任务本身有唯一正确答案（工具参数、JSON、抽取）。</li>
+    <li><b>「温度 = 0 就能复现」是错的。</b>理由：服务端把多条请求拼在一起算、浮点加法顺序不固定，都可能差上一两个字。<b>反例</b>：同一个请求连发两次，结论等价但字不全同。<b>不适用</b>：真需要逐字一致（哈希比对、快照测试）——那种场景得改用"结果等价"来判分，见 <a href="../lessons/practice/0002-evaluating-agents.html">技巧篇 · 第 2 课</a>。</li>
+    <li><b>「<code>top_p</code> 和 <code>top_k</code> 一起设更保险」多半是错的。</b>理由：两把刀叠着用，起作用的是更紧的那把，另一个等于没设。<b>反例</b>：<code>top_k</code> = 5 配 <code>top_p</code> = 0.95，实际由 <code>top_k</code> 说了算。<b>不适用</b>：确实要同时卡两个上限（少见）。</li>
+  </ul>
+
+  <h2>带走这张清单</h2>
+  <ul>
+    <li><b>没想法</b> → 先全用默认（温度 1.0、<code>top_p</code> = 1.0、<code>top_k</code> = 0）跑一遍再说。</li>
+    <li><b>结果太飘</b> → 先降温度，别急着动 <code>top_p</code>。</li>
+    <li><b>结果太死板</b> → 先升温度，还不够再 <code>top_p</code> = 0.95。</li>
+    <li><b>开始胡说</b> → <code>top_p</code> = 0.9 砍尾巴。</li>
+    <li><b>要复现</b> → 温度 0 + <code>seed</code>，<b>并接受可能差一两个字</b>。</li>
+    <li><b>要 JSON / 工具调用稳</b> → 温度低 + 让接口帮你约束格式（结构化输出），别只靠调温度。</li>
+    <li><b>harness 在替你设</b> → 它藏起来了不等于不存在。想知道默认值是什么，去看你那个 harness 的配置项。</li>
+  </ul>
+
+  <div class="source">
+    <b>来源</b>：<br>
+    <a href="https://arxiv.org/abs/1904.09751">Holtzman et al. — The Curious Case of Neural Text Degeneration（ICLR 2020）</a>——<code>top_p</code>（核采样）的原始出处。<br>
+    <a href="https://huggingface.co/blog/how-to-generate">HuggingFace — How to generate text: using different decoding methods</a>——几种挑法的完整对照。<br>
+    <a href="https://docs.vllm.ai/en/latest/api/vllm/sampling_params.html">vLLM — SamplingParams</a>——推理引擎里的采样参数全表。
+  </div>
+
+  <p class="next">
+    机制：<a href="../lessons/llm/0001-from-token-to-next-token-deep.html#q10-sampling">LLM 底层 · 第 1 课进阶 · Q10 ·「按百分比抽一个」到底是怎么抽的</a><br>
+    相关：<a href="glossary.html#temperature">温度</a> · <a href="glossary.html#top-p">Top-p / Top-k</a> · <a href="glossary.html#logits">Logits / Softmax / 采样</a>
+  </p>
+</div>
+</body>
+</html>

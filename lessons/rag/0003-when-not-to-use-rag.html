@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 3 课（初学版）· 什么时候不该上 RAG</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 3 课 · 初学版</div>
+  <h1>什么时候不该上 RAG</h1>
+  <p class="subtitle">"我有文档 → 上 RAG"这个反应，<b>一半时候是错的</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>RAG 现在很热，很多人一有文档就想到它。</p>
+    <p>但有些场景上 RAG 是<b>纯亏</b>：更慢、更贵，还更容易错。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：面对一个具体需求，说清该不该上 RAG、不上该用什么。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>RAG 解决的只有一个问题：模型手上没有那份资料。</b></p>
+    <p>别的问题——要精确值、要实时、要推理——<b>它解决不了，甚至会更糟</b>。</p>
+  </div>
+
+  <h2>1. 先问一句：你到底在解决什么问题？</h2>
+  <p>用户说"它答不准"，可能是三种完全不同的毛病：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">症状</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">真正的原因</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">该用什么</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">答案在<b>你的私有资料</b>里，模型没见过</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">信息不在它手边</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>✅ 这才是 RAG</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">要<b>精确的数</b>或<b>此刻的状态</b>（余额、库存、今天几号）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">资料会变，存起来就过期</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>用工具查</b>，不是检索</td></tr>
+      <tr><td style="padding:0.45rem">要<b>推理、对比、总结、改写</b></td>
+          <td style="padding:0.45rem">这是模型本身的能力</td>
+          <td style="padding:0.45rem">换更强的模型，或把活拆细</td></tr>
+    </tbody>
+  </table>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>只有第一行该上 RAG。</b>后两行上了只会更糟。</p>
+  </div>
+
+  <h2>2. 四种不该上的场景</h2>
+  <ul>
+    <li><b>文档很短。</b>500 字整个塞进提示词就行。<b>切块只会额外引入两种新毛病</b>（切碎、检索不到）——你为了省事，反而买了两个麻烦。</li>
+    <li><b>要精确值。</b>检索回来的是"相关的几段"，模型可能顺手把 2107 总结成 2100。<b>要精确，就让它去调工具拿原文那一行。</b></li>
+    <li><b>要实时数据。</b>向量库里存的是<b>建库那天的快照</b>。余额、天气、今天的汇率——查出来必错，而且错得很有说服力。</li>
+    <li><b>要跨段推理。</b>"三份合同的付款条款有什么差异"——检索只能各给你"相关的几段"，<b>做不了对比</b>，还可能漏掉某一份。</li>
+  </ul>
+  <p style="color:var(--muted)">（RAG 还有个成本：每次请求多几步、多几段 token。<b>能不用就不用。</b>）</p>
+
+  <h2>3. 带走一句口诀</h2>
+  <pre><code>第一问：模型手上有没有这份资料？
+        没有 → 往下问；有 → 别上 RAG。
+
+第二问：我要的是【查得到的事实】，还是【要推理】？
+        事实、会变 / 很精确 → 用工具查，别用检索
+        事实、稳定、量大    → 这才是 RAG 的地盘
+        要推理              → RAG 只当资料入口，别指望它给结论</code></pre>
+
+  <h2>4. 动手：判 6 个场景</h2>
+  <p>脚本在工作区：<code>exercises/rag/0003-when-not-to-use-rag.py</code>。<b>它不调任何模型</b>，就是一个判断练习——<b>先自己想，再看答案</b>。</p>
+  <pre><code>python exercises/rag/0003-when-not-to-use-rag.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是其中两条的答案（跑了就有全部六条）。</p>
+  <pre><code>  场景 2：一份 500 字的产品说明书，用户会围绕它提问。
+    → 不该上，直接塞
+    理由：500 字整个塞进提示词就行。切块只会额外引入「切碎 / 检索不到」两种新毛病。
+
+  场景 6：查错误码 E-2107 是什么意思。文档里有 3000 个错误码。
+    → 该上，但要用「按词匹配」
+    理由：错误码是精确编号，语义相似度反而抓不准（它连 2107 和 2108 都分不太清）。</code></pre>
+  <p><b>场景 6 值得多看一眼</b>：它是"该上 RAG"，但<b>要换一种比法</b>（按词匹配的稀疏检索）——见<a href="0001-why-retrieval.html">第 1 课</a>动手那节。<b>"该不该上"和"怎么上"是两个问题。</b></p>
+
+  <h2>5. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 用户问「我账户里还有多少钱」，该用什么？</p>
+    <button class="quiz-option" data-correct="true">用工具去实时查，别用检索</button>
+    <button class="quiz-option">上 RAG 把余额存进向量库</button>
+    <button class="quiz-option">让模型自己估算一下数额</button>
+    <button class="quiz-option">把余额写进系统提示里去</button>
+    <p class="feedback"
+       data-ok="对。余额每分钟都在变，向量库里是建库那天的快照。"
+       data-no="会变的数据不能存起来查——要用工具拿「此刻」的值。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 一份 500 字的说明书，用户会围绕它提问，怎么办？</p>
+    <button class="quiz-option" data-correct="true">整个塞进提示词，别上 RAG</button>
+    <button class="quiz-option">切成十个小段再上 RAG</button>
+    <button class="quiz-option">专门训练一个问答模型</button>
+    <button class="quiz-option">让用户自己去翻那份文档</button>
+    <p class="feedback"
+       data-ok="对。短就直接塞——切块只会额外引入两种新毛病。"
+       data-no="RAG 是为「塞不进去」准备的；塞得进去就别绕这一圈。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 哪一种才是 RAG 真正的地盘？</p>
+    <button class="quiz-option" data-correct="true">量大、稳定、模型没见过的资料</button>
+    <button class="quiz-option">每分钟都在变的实时数字</button>
+    <button class="quiz-option">需要跨文档推理和对比的活</button>
+    <button class="quiz-option">需要模型自己发挥的创意活</button>
+    <p class="feedback"
+       data-ok="对。模型手上没有、又塞不进去、且内容稳定——这才轮到 RAG。"
+       data-no="会变的用工具，要推理的靠模型本身，创意活跟检索无关。"></p>
+  </div>
+
+  <h2>6. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/2005.11401">Lewis et al., NeurIPS 2020 — Retrieval-Augmented Generation</a>——RAG 原论文。它给 RAG 划的范围就是<b>知识密集型</b>任务，不是所有任务。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"那文档一万多字怎么办？""能不能先检索再用工具？""多模态的（图片、表格）算哪一类？""我不确定我这场景，能描述给你听吗？"
+  </div>
+
+  <p class="next">
+    <b>顺着往下</b>：<a href="0004-two-failure-modes.html">RAG · 第 4 课 · 两种典型翻车</a><br>
+    <b>回前两课</b>：<a href="0001-why-retrieval.html">第 1 课 · 为什么得"先查资料再回答"</a> · <a href="0002-rag-pipeline.html">第 2 课 · 一条 RAG 链长什么样</a><br>
+    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 3 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

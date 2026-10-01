@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查 · 上下文预算与排座次</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="lesson-meta">速查 / Reference</div>
+  <h1>上下文预算与排座次</h1>
+  <p class="subtitle">照着改就行。想懂理由，回 <a href="../lessons/practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>。</p>
+
+  <h2>① 排座次：什么放哪</h2>
+  <p>原则：<b>越靠前越稳定，越靠后越爱变</b>。缓存只认"开头一字不差"。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">顺序</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">放什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">稳定性</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">1</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">系统提示</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">几乎不变 ✅</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">2</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">工具清单（顺序、文案固定）</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">几乎不变 ✅</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">3</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">skill 的 description</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">几乎不变 ✅</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">4</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">历史（对话 + 工具结果）</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">越滚越长 ⚠️</td></tr>
+      <tr><td style="padding:0.5rem">5</td><td style="padding:0.5rem">当前输入</td><td style="padding:0.5rem">每轮都变 ❌</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <span class="label">别放最前面的东西</span>
+    <p>用户名、当前时间、随机数、请求 ID——<b>开头一变，后面全部缓存作废</b>。要放就放末尾，或按用户分组复用前缀。</p>
+    <p><b>什么时候不适用</b>：一次性短对话（没下一轮可命中），别为缓存扭曲 prompt 可读性。</p>
+  </div>
+
+  <h2>② 预算：心里要有这张表</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">要盯的数</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">怎么算</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">健康线</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">历史占比</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">历史 ÷ 每轮上下文</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>&lt; 60%</b>，超了该清理</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">稳定前缀占比</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">(系统提示+工具清单+skill) ÷ 每轮上下文</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>&gt; 40%</b>，否则工具清单该瘦身</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">窗口峰值</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">跑满任务时最长那一轮</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>&lt; 70%</b>，留白防腐烂</td></tr>
+      <tr><td style="padding:0.5rem">总账</td><td style="padding:0.5rem"><b>轮数 × 每轮上下文</b></td><td style="padding:0.5rem">这才是真实成本</td></tr>
+    </tbody>
+  </table>
+  <p>用 <code>exercises/practice/0001-context-budget.py</code> 算，改几个常量就出结果。</p>
+
+  <h2>③ 历史太长：三种压缩的取舍</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">做法</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">丢什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">什么时候用</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">什么时候<b>别</b>用</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>截断</b><br>丢最老几轮</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">早期指令、细节</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">前面已不重要，只要"最近在干嘛"</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">早期有约束条件（会忘掉）</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>压缩</b><br>几轮合成一句</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">细节，留进度</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">只需知道"做到哪一步"</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">需要引用具体数字/原文</td></tr>
+      <tr><td style="padding:0.5rem"><b>摘要</b><br>生成总结替换</td>
+          <td style="padding:0.5rem">原文；多一次调用</td>
+          <td style="padding:0.5rem">结论比过程重要</td>
+          <td style="padding:0.5rem">要求"一字不差"的场合</td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <span class="label">要精确引用原文时</span>
+    <p><b>任何压缩都会丢原文。</b>要么不压（砍工具结果、保留原文），要么把关键原文<b>另存成文件</b>，用到再读——比全塞进上下文便宜。</p>
+  </div>
+
+  <h2>④ 工具结果：先裁再塞</h2>
+  <ul>
+    <li><b>只返回需要的字段</b>——别 <code>SELECT *</code>，别返回整份文件</li>
+    <li><b>设上限</b>——单个工具返回不超过 N token，超了就截断并标注"（已截断）"</li>
+    <li><b>分页</b>——要全量就分批给，别一次塞</li>
+    <li><b>转成人话</b>——返回"模型用得上的结论"，不是原始 JSON</li>
+    <li><b>错误信息也要写清楚</b>——模型能不能自救，全看它读不读得懂这个错</li>
+  </ul>
+  <div class="note">
+    <span class="label">什么时候别裁</span>
+    <p>模型确实需要<b>完整原文</b>时（逐行审代码、全文找模式）。这时<b>分批给</b>，而不是裁掉。</p>
+  </div>
+
+  <h2>⑤ 三条原则（记这个就够）</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>1. 稳定的放前面，易变的放后面</b>　→ 吃缓存<br>
+       <b>2. 别用满，留白</b>　　　　　　　　→ 防上下文腐烂<br>
+       <b>3. 工具结果先裁再塞</b>　　　　　　→ 防止单次吃掉半张桌子</p>
+  </div>
+
+  <p class="next">
+    <b>讲理由的课</b>：<a href="../lessons/practice/0001-context-engineering.html">Agent 技巧篇 · 0001 · 上下文工程</a><br>
+    <b>原理</b>：<a href="../lessons/llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache</a> · <a href="../lessons/agent/0006-harness.html">Agent 原理篇 · 第 6 课 · Harness</a><br>
+    <b>其他速查</b>：<a href="glossary.html">术语表</a> · <a href="prompt-caching.html">KV Cache 与缓存命中</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · 速查 · 上下文预算与排座次</footer>
+</div>
+</body>
+</html>

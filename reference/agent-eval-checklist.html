@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查 · 试一个 agent 该问什么</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="lesson-meta">速查 / Reference</div>
+  <h1>试一个 agent 该问什么</h1>
+  <p class="subtitle">照着做就行。想懂理由，回 <a href="../lessons/practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>。</p>
+
+  <h2>① 挑任务</h2>
+  <ul>
+    <li><b>用你真实的活</b>，不要用 demo 里的例子——别人的场景跟你的不是一回事</li>
+    <li><b>3～5 个就够</b>先看苗头；要认真评估，官方建议 20～50 个</li>
+    <li>覆盖<b>不同的活</b>：简单的、稍复杂的、要调工具的、要几步才能完的</li>
+    <li>先把<b>"算成功"的标准</b>写清楚（一个别人也能照着判的标准）</li>
+  </ul>
+
+  <h2>② 每个任务跑 3～5 遍</h2>
+  <div class="note">
+    <span class="label">为什么不能只跑一遍</span>
+    <p>agent 是<b>不确定</b>的——同样的输入，两次结果可能不一样。跑一次等于掷一次骰子。</p>
+  </div>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">单次成功率</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.5rem">连做 3 次全对</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.5rem">连做 5 次全对</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.5rem">连做 8 次全对</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">95%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">86%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">77%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">66%</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">90%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">73%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">59%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">43%</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">75%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">42%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">24%</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule);text-align:right">10%</td></tr>
+      <tr><td style="padding:0.5rem">60%</td><td style="padding:0.5rem;text-align:right">22%</td><td style="padding:0.5rem;text-align:right">8%</td><td style="padding:0.5rem;text-align:right">2%</td></tr>
+    </tbody>
+  </table>
+  <p>用 <code>exercises/practice/0002-agent-scorecard.py</code> 填数就出这张表。</p>
+
+  <h2>③ 看"真实结果"，别看它的话</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">别只看</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">要去查</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">它说"已为您预订"</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">系统里<b>到底有没有</b>这条记录</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">它说"文件已修改"</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">文件<b>真的变了没</b>、内容对不对</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">界面显示"成功"</td><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">真实状态（数据库 / 邮件 / 工单）</td></tr>
+      <tr><td style="padding:0.5rem">它给的数字和结论</td><td style="padding:0.5rem">抽几个<b>关键事实核对一遍</b></td></tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <span class="label">为什么容易骗过你</span>
+    <p>工具可能只返回了"<b>部分成功</b>"，agent 却当成成功报了；界面也照样告诉你成功。</p>
+  </div>
+
+  <h2>④ 顺手记两个数</h2>
+  <ul>
+    <li><b>它走了几步 / 调了几次工具</b>——同样的结果，步数可能差好几倍</li>
+    <li><b>每次大概花多少</b>——同样的成功率，成本能差几十倍</li>
+  </ul>
+  <p>做法很简单：<b>同一个任务跑两次，比这两个数。</b></p>
+
+  <h2>⑤ 四条永远适用的提醒</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>1. 跑一次不算数</b>　→ 多跑几遍，看稳不稳<br>
+       <b>2. 它说成了 ≠ 成了</b>　→ 查真实状态<br>
+       <b>3. 别只问对不对，也问绕了多大圈</b>　→ 代价是要付钱的<br>
+       <b>4. 别信宣传里的分数</b>　→ 信你自己试出来的</p>
+  </div>
+
+  <h2>什么时候这些不适用</h2>
+  <ul>
+    <li><b>任务每次都不一样</b>（研究类）→ 没法重复跑，改成"多试几个不同任务"</li>
+    <li><b>纯问答、没有外部状态</b> → 没有"真实结果"可查，改成"核对它说的关键事实"</li>
+    <li><b>一次性的大活</b> → 成本不敏感，不用纠结步数</li>
+  </ul>
+
+  <h2>两个词，知道就行</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">指标</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">意思</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">什么场景看它</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>pass@k</b></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">k 次里<b>至少成功一次</b></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">"多试几次总行"（出方案让你挑）</td></tr>
+      <tr><td style="padding:0.5rem"><b>pass^k</b></td>
+          <td style="padding:0.5rem">k 次<b>全部成功</b></td>
+          <td style="padding:0.5rem"><b>"每次都必须对"</b>（自动处理真事）</td></tr>
+    </tbody>
+  </table>
+  <p style="color:var(--muted)">做使用者，你要盯的是<b>后面那个</b>。</p>
+
+  <p class="next">
+    <b>讲理由的课</b>：<a href="../lessons/practice/0002-evaluating-agents.html">Agent 技巧篇 · 0002 · 怎么判断一个 agent 好不好用</a><br>
+    <b>一手资料</b>：<a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic — Demystifying evals for AI agents</a> · <a href="https://arxiv.org/abs/2406.12045">τ-bench（pass^k 的出处）</a><br>
+    <b>其他速查</b>：<a href="context-budget.html">上下文预算与排座次</a> · <a href="glossary.html">术语表</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · 速查 · 试一个 agent 该问什么</footer>
+</div>
+</body>
+</html>

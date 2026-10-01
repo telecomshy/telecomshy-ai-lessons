@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 1165" width="900" height="1165" role="img" aria-label="从文字到下一个 token 的完整流水线全景图。框左边一列是每一步的术语，右边一列是每一步手里东西的形状。底色深的那一段是模型本体，从查嵌入表到打分；左边分词和查词表是门外的程序，右边换算和挑字也不是模型干的">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="1165" fill="#fdfcf8"/>
+
+  <!-- ===== 模型本体：底色带（从「查嵌入表」到「打分结束」），只留底色不加边框 ===== -->
+  <rect x="170" y="324" width="710" height="594" fill="#e9eef2"/>
+
+  <!-- ===== 左列抬头（竖排） ===== -->
+  <text transform="rotate(-90, 18, 600)" x="18" y="600" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#6c675e">手里东西的形状</text>
+
+  <!-- ===== ① 文字 ===== -->
+  <text x="145" y="107" text-anchor="end" font-family="sans-serif" font-size="13" fill="#6c675e">一整句话</text>
+  <rect x="270" y="10" width="550" height="74" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="292" y="34" font-family="sans-serif" font-size="13.5" fill="#8a2b06">文字（你输入的）</text>
+  <text x="292" y="64" font-family="serif" font-size="19" fill="#1b1a17">「天气很」</text>
+
+  <line x1="180" y1="88" x2="180" y2="116" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="107" font-family="sans-serif" font-size="14" fill="#8a2b06">① 分词 tokenizer</text>
+
+  <!-- ===== ② token ===== -->
+  <text x="145" y="217" text-anchor="end" font-family="sans-serif" font-size="13" fill="#6c675e">3 个零件</text>
+  <rect x="270" y="120" width="550" height="74" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="292" y="144" font-family="sans-serif" font-size="13.5" fill="#8a2b06">token（切成的零件）</text>
+  <text x="292" y="176" font-family="serif" font-size="19" fill="#1b1a17">「天」　　「气」　　「很」</text>
+
+  <line x1="180" y1="198" x2="180" y2="226" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="217" font-family="sans-serif" font-size="14" fill="#8a2b06">② 查词表 vocabulary</text>
+
+  <!-- ===== ③ 编号（门外的最后一步） ===== -->
+  <text x="145" y="327" text-anchor="end" font-family="sans-serif" font-size="13" fill="#6c675e">3 个编号</text>
+  <rect x="270" y="230" width="550" height="74" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="292" y="254" font-family="sans-serif" font-size="13.5" fill="#8a2b06">编号 ID（在词表里排第几）</text>
+  <text x="292" y="286" font-family="monospace" font-size="18" fill="#1b1a17">312　　　　1092　　　　55</text>
+
+  <line x1="180" y1="308" x2="180" y2="336" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="327" font-family="sans-serif" font-size="14" fill="#8a2b06">③ 查嵌入表 embedding（词嵌入）</text>
+  <text x="470" y="327" font-family="sans-serif" font-size="12.5" fill="#5d7486">← 从这步起是模型，前面那两步是门外的程序</text>
+
+  <!-- ===== ④ 向量表 ===== -->
+  <text x="145" y="485" text-anchor="end" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a2b06">3 行 × d 列</text>
+  <rect x="270" y="340" width="550" height="122" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="292" y="364" font-family="sans-serif" font-size="13.5" fill="#8a2b06">向量 —— 注意：是 3 串，不是 1 串</text>
+  <text x="292" y="394" font-family="monospace" font-size="15.5" fill="#1b1a17">「天」  [1.0, 0.0, 0.0, 0.5]</text>
+  <text x="292" y="420" font-family="monospace" font-size="15.5" fill="#1b1a17">「气」  [0.8, 0.6, 0.0, 0.4]</text>
+  <text x="292" y="446" font-family="monospace" font-size="15.5" fill="#1b1a17">「很」  [0.2, 0.1, 1.0, 0.0]</text>
+
+  <line x1="180" y1="466" x2="180" y2="494" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="485" font-family="sans-serif" font-size="14" fill="#8a2b06">④ 一层 = 注意力 → 残差 → FFN → 残差，重复几十遍</text>
+
+  <!-- ===== ⑤ 这一摞：文本框在最前，后面几张完全相同尺寸的往上右错位叠着 ===== -->
+  <text x="145" y="719" text-anchor="end" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a2b06">还是 3 行 × d 列</text>
+  <rect x="312" y="508" width="550" height="136" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <rect x="298" y="522" width="550" height="136" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <rect x="284" y="536" width="550" height="136" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <rect x="270" y="550" width="550" height="136" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="292" y="570" font-family="sans-serif" font-size="13.5" fill="#8a2b06">一层长这样：3 行并排过同一套规则</text>
+  <text x="292" y="598" font-family="monospace" font-size="15" fill="#1b1a17">位置1  [ . . . . ]  →→  位置1  [ . . . . ]</text>
+  <text x="292" y="622" font-family="monospace" font-size="15" fill="#1b1a17">位置2  [ . . . . ]  →→  位置2  [ . . . . ]</text>
+  <text x="292" y="646" font-family="monospace" font-size="15" fill="#1b1a17">位置3  [ . . . . ]  →→  位置3  [ . . . . ]</text>
+  <text x="292" y="672" font-family="sans-serif" font-size="13" fill="#6c675e">每个位置只能看「自己及之前」；出来还是 3 行 × d 列</text>
+  <text x="834" y="624" font-family="sans-serif" font-size="13" fill="#8a2b06">× 几十</text>
+
+  <line x1="180" y1="700" x2="180" y2="728" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="719" font-family="sans-serif" font-size="14" fill="#8a2b06">⑤ 只取最后 1 串（其它两串的猜测没人用）</text>
+
+  <!-- ===== ⑥ 最终向量 ===== -->
+  <text x="145" y="829" text-anchor="end" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a2b06">1 行 × d 列</text>
+  <rect x="270" y="732" width="550" height="74" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="292" y="756" font-family="sans-serif" font-size="13.5" fill="#8a2b06">位置3 的最终向量</text>
+  <text x="292" y="786" font-family="monospace" font-size="17" fill="#1b1a17">[1.264, 0.715, 1.558, 0.346]</text>
+
+  <line x1="180" y1="810" x2="180" y2="838" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="829" font-family="sans-serif" font-size="14" fill="#8a2b06">⑥ 打分（logits）：去词表逐个对分</text>
+
+  <!-- ===== ⑦ 打分：模型交出的最后一件东西 ===== -->
+  <text x="145" y="931" text-anchor="end" font-family="sans-serif" font-size="13" fill="#6c675e">词表那么多个</text>
+  <rect x="270" y="842" width="550" height="62" rx="8" fill="#fff" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="292" y="866" font-family="sans-serif" font-size="13.5" fill="#8a2b06">原始分（logits）</text>
+  <text x="292" y="891" font-family="monospace" font-size="16.5" fill="#1b1a17">好 2.469　　差 0.796　　冷 1.595</text>
+
+  <line x1="180" y1="912" x2="180" y2="940" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="931" font-family="sans-serif" font-size="14" fill="#8a2b06">⑦ softmax 换算成百分比</text>
+  <text x="430" y="931" font-family="sans-serif" font-size="12.5" fill="#5d7486">← 到这里交完：换算和挑字都不是模型干的</text>
+
+  <!-- ===== ⑧ 百分比 ===== -->
+  <text x="145" y="1029" text-anchor="end" font-family="sans-serif" font-size="13" fill="#6c675e">一样多个</text>
+  <rect x="270" y="944" width="550" height="62" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="292" y="968" font-family="sans-serif" font-size="13.5" fill="#8a2b06">百分比（加起来 = 100%）</text>
+  <text x="292" y="993" font-family="monospace" font-size="16.5" fill="#1b1a17">好 62.3%　　差 11.7%　　冷 26.0%</text>
+
+  <line x1="180" y1="1010" x2="180" y2="1038" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="198" y="1029" font-family="sans-serif" font-size="14" fill="#8a2b06">⑧ 采样（按百分比抽一个）</text>
+
+  <!-- ===== ⑨ 结果 ===== -->
+  <text x="145" y="1093" text-anchor="end" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a2b06">1 个 token</text>
+  <rect x="270" y="1042" width="550" height="62" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="292" y="1066" font-family="sans-serif" font-size="13.5" fill="#8a2b06">下一个 token</text>
+  <text x="292" y="1093" font-family="serif" font-size="20" fill="#1b1a17">「好」</text>
+
+  <!-- 底注 -->
+  <text x="55" y="1128" font-family="sans-serif" font-size="13" fill="#6c675e">左右两列＝这一步叫什么（术语）、手里东西是什么形状。d（每串多长）从头到尾固定；n（几行）由句长决定。</text>
+  <text x="55" y="1149" font-family="sans-serif" font-size="13" fill="#6c675e">↻ 把「好」接到句子上面，整条流水线重来一遍 —— 这就是「一个字一个字蹦出来」的原因。</text>
+</svg>

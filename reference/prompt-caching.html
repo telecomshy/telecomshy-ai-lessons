@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查 · KV Cache 与「缓存命中」</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="lesson-meta">速查 / Reference</div>
+  <h1>KV Cache 与「缓存命中」</h1>
+  <p class="subtitle">两个被混为一谈的「缓存」。分清了，agent 的成本账才算得清。</p>
+
+  <h2>先分清两个东西</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"></th>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">KV Cache</th>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">前缀缓存 Prompt Cache</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">范围</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">单次请求<b>内部</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>跨</b>多次请求</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">目的</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">逐字生成时不重算前面的词</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">复用多次请求相同<b>开头</b>的算力</td></tr>
+      <tr><td style="padding:0.4rem">「命中」</td>
+          <td style="padding:0.4rem">自动生效，<b>没有</b>命中概念</td>
+          <td style="padding:0.4rem">开头一字不差才<b>命中</b></td></tr>
+    </tbody>
+  </table>
+
+  <h2>KV Cache（同一次生成内）</h2>
+  <ul>
+    <li>Attention 里，每个词会算出三个向量：<b>Query</b>（去找别人）、<b>Key</b>（被别人比对）、<b>Value</b>（被取走）。三者都来自同一个词，是<b>三种用途</b>，不是三种信息。</li>
+    <li>生成是「一次一个词」。写第 N 个词，要用前 N−1 个词的 K/V。</li>
+    <li>把算过的 K/V 存下来 → 下一个词只算新词的，旧的直接接上。</li>
+    <li>代价：<b>显存</b>。每个词都要存一对 K/V，随序列长度线性增长。</li>
+  </ul>
+
+  <h2>前缀缓存 / 缓存命中（跨请求）</h2>
+  <ul>
+    <li>服务商把「多次请求里开头完全相同的那段」的 KV 张量存起来复用。</li>
+    <li>缓存的是 <b>KV 张量，不是 token 文本本身</b>（OpenAI 官方文档原话）。</li>
+    <li>顺序：<b>tools → system → messages</b>，严格<b>前缀匹配</b>。</li>
+    <li>某一处不同 → 从该点往后的缓存<b>全部失效</b>。</li>
+    <li>计费：cache <b>read</b>（命中读取）≈ <b>0.1×</b> 输入价；cache <b>write</b>（首次写入）Anthropic 约 1.25×，OpenAI 新版也可能收费。</li>
+    <li>OpenAI：前缀 ≥ 1024 token 才可缓存，命中按 128-token 粒度；可用 <code>prompt_cache_key</code> 影响路由。</li>
+    <li>Anthropic：用 <code>cache_control</code> 显式标断点；缓存有 TTL（默认约 5 分钟，可延长）。</li>
+  </ul>
+
+  <h2>对 agent 的工程结论（重点）</h2>
+  <ul>
+    <li><b>稳定的放前面</b>：系统提示、工具定义、少样本示例、长文档 → 提高命中率。</li>
+    <li><b>易变的放后面</b>：用户当前这句话、新的工具结果 / 观察。</li>
+    <li>别动态改系统提示、别动态增删工具定义、别往中间插内容 —— 都会把前缀打断。</li>
+  </ul>
+
+  <div class="source">
+    <b>来源</b>：<br>
+    <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a> ·
+    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching</a> ·
+    <a href="https://magazine.sebastianraschka.com/p/coding-the-kv-cache-in-llms">Sebastian Raschka — Understanding and Coding the KV Cache</a> ·
+    <a href="https://huggingface.co/blog/not-lain/kv-caching">HuggingFace — KV Caching Explained</a>
+  </div>
+
+  <p class="next">
+    进阶阅读：<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic — Effective context engineering for AI agents</a>（讲"把上下文当稀缺资源"，本页的工程结论在那里有更完整的展开）。<br>
+    相关：<a href="glossary.html#context">上下文工程</a> · <a href="glossary.html#tool">工具</a>
+  </p>
+</div>
+</body>
+</html>

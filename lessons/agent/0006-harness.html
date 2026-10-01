@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 原理篇 · 第 6 课（初学版）· Harness：你天天在用，却没分清的那个词</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 原理篇 · 第 6 课 · 初学版</div>
+  <h1>Harness：你天天在用，却没分清的那个词</h1>
+  <p class="subtitle"><b>Agent = Model + Harness</b>。一个公式，把三样东西的边界划清楚。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>腾讯 WorkBuddy、中国电信 TeleAgent、字节 TraeWork——这些都常被叫作"agent"。</p>
+    <p>但严格说，<b>它们是 harness</b>。</p>
+    <p>你现在跟我说话用的这套软件（OpenCode / Claude Code / Cursor 之类），也是 <b>harness</b>。</p>
+    <p style="margin-top:0.7rem">听着像抠字眼，其实不是：<b>模型、agent、harness 是三个不同的东西</b>，混了就会在后面踩坑——比如"换个模型怎么就不行了"，多半是你动错了那一层。</p>
+    <p><b>学完这课，你能</b>：说清三者的区别，并且把前面五课学的东西，全部对号入座到 harness 的零件上。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>整个领域最好记的一条公式：</p>
+    <div class="goal" style="background:#fff;border-color:var(--ink);margin:0.7rem 0">
+      <p style="text-align:center;font-size:1.15rem"><b>Agent ＝ Model ＋ Harness</b></p>
+    </div>
+    <p>这一课就是把公式右边的两样东西讲清楚，顺便看明白"agent"到底指的是什么。</p>
+  </div>
+
+  <h2>1. 先看那个容易混的地方</h2>
+  <p>日常我们会说"我装了一个 agent"。但你从网上下载下来的、双击打开的那个软件——</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p>它<b>不是 agent</b>，它是<b>承载 agent 的那套软件</b>，名字叫 <b>harness</b>。</p>
+    <p>而 "agent" 指的是<b>这套东西表现出来的行为</b>：会自己决定下一步、会动手、会看结果再决定。</p>
+  </div>
+  <p>类比：<b>你不会"下载一个厨师"</b>，你下载的是<b>厨房</b>；厨师是厨房运转起来之后呈现出来的那个人。</p>
+  <p><b>所以</b>：agent 是"怎么做"，harness 是"在什么里面做"。</p>
+
+  <h2>2. 三样东西各是什么</h2>
+
+  <h3>模型（Model）</h3>
+  <p>一堆权重。它<b>只会一件事</b>：给定输入，输出下一个 token。它自己不会挑工具、不会执行、不会记事。</p>
+
+  <h3>Harness（运行外壳 / 脚手架）</h3>
+  <p>套在模型外面的<b>那套软件</b>。它的活儿包括：</p>
+  <ul>
+    <li>拼 prompt（系统提示 + 工具清单 + 历史）；</li>
+    <li>执行工具，把结果塞回去；</li>
+    <li>管理上下文（多长、怎么截、怎么吃缓存）；</li>
+    <li>施加护栏（最大步数、权限、沙箱）；</li>
+    <li>加载能力（skill）、接外部工具（MCP）；</li>
+    <li>以及界面、状态保存、日志。</li>
+  </ul>
+
+  <h3>Agent（智能体）</h3>
+  <p><b>不是软件，是行为。</b>当 harness 把"模型 + 工具 + 循环"组织起来之后，这套东西<b>表现出来</b>的那种"会自己决定下一步"的能力，就叫 agent。</p>
+
+  <div class="note">
+    <span class="label">术语：三个词的边界</span>
+    <p><b>模型</b>＝只会算的那个零件。<br>
+       <b>harness</b>＝套在它外面的软件。<br>
+       <b>agent</b>＝两者合起来表现出的<b>行为</b>。</p>
+    <p><b>口语里"agent"常被借去指那个软件</b>——这就是混淆的来源。严格说法是"<b>agent harness</b>"或"<b>agent 框架/产品</b>"。</p>
+  </div>
+
+  <h2>3. 把前面五课，全部对号入座</h2>
+  <p>这一步最爽：你已经学的东西，其实<b>全是 harness 的零件</b>。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">你学过的</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">在 harness 里是哪一块</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">工具调用（tool_use / tool_result）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>工具执行层</b>——真的去动手的那部分</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">工具清单（名字 + 说明 + 参数）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>prompt 组装</b>——harness 每轮都要拼进去</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">KV Cache / 稳定前缀</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>上下文管理</b>——决定什么放前面、什么能省</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">最大步数 / 工具白名单 / 人审</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>护栏与权限</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">Skill（按需加载）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>能力加载层</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">MCP（发现、即插即用）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>外部接入层</b></td></tr>
+      <tr><td style="padding:0.45rem">推理 → 行动 → 观察</td>
+          <td style="padding:0.45rem"><b>主循环</b>——harness 里最核心的那个 <code>while</code></td></tr>
+    </tbody>
+  </table>
+  <p><b>看到没</b>：你一直在学"agent 是什么"，其实一直在学"harness 里都有什么"。</p>
+
+  <h2>4. 现实中都有谁</h2>
+  <p>两类，别混：</p>
+
+  <h3>你举的那几个：面向办公的 agent 产品</h3>
+  <ul>
+    <li><b>腾讯 WorkBuddy</b>——个人 AI 工作台。腾讯云官方称它是"中国 DAU 最高的生产力 agent 工具之一"，还开了 SkillHub 生态；</li>
+    <li><b>中国电信 TeleAgent</b>——桌面办公 Agent，官方定位就是"对标 WorkBuddy"；</li>
+    <li><b>字节 TraeWork</b>——同赛道的 AI 办公产品。</li>
+  </ul>
+  <p>它们都套着自己的模型 + 自己的工具 + 自己的界面，<b>整套就是 harness</b>。叫它"agent"是口语，指的是它能干 agent 干的事。</p>
+
+  <h3>面向开发者的 agent harness</h3>
+  <p>Claude Code、OpenAI Codex CLI、OpenCode、Cursor、Devin……你现在用的这套就属于这一类。</p>
+
+  <div class="note">
+    <span class="label">一个反直觉但很实用的点</span>
+    <p><b>同一个模型，换个 harness，表现差很多。</b></p>
+    <p>因为 prompt 怎么拼、工具怎么给、上下文怎么管、护栏怎么设——<b>全是 harness 说了算</b>。模型只是被它喂的那个零件。</p>
+    <p>所以"某某模型不行"这个结论，得先问一句：<b>是在哪个 harness 里试的？</b></p>
+  </div>
+
+  <h2>5. 三个必须记住的画面</h2>
+
+  <div class="note">
+    <span class="label">① Agent 是行为，Harness 是软件</span>
+    <p>你"装"的是 harness，"看到"的是 agent 行为。<b>两者不是一回事</b>，混了就会在换模型、换产品时困惑。</p>
+  </div>
+  <div class="note">
+    <span class="label">② 模型只负责"想"，harness 负责"能"</span>
+    <p>能不能动手、能不能记事、能不能被拦住——<b>全是 harness 的活</b>。模型永远只在吐字。</p>
+  </div>
+  <div class="note">
+    <span class="label">③ 前面五课＝harness 的零件清单</span>
+    <p>工具执行、prompt 组装、上下文管理、护栏、skill、MCP、主循环——<b>你已经把 harness 的骨架学完了</b>。</p>
+  </div>
+
+  <h2>6. 动手：盘点你正在用的那个 harness</h2>
+  <p>脚本在工作区，纯离线、不读你任何文件。它问 8 个问题，然后给你一张零件表：</p>
+  <pre><code>python exercises/agent/0006-harness-checklist.py</code></pre>
+  <pre><code>你要盘点的是哪个软件？ > OpenCode
+
+  它能真的动手吗？（读文件、跑命令、调 API）  [y/n] y
+  它会「推理→行动→观察」反复转吗？          [y/n] y
+  ...
+──────────────────────────────────
+盘点结果：OpenCode
+有的零件（8 个）：
+  [有] 工具执行层   ← Agent 第 2 课 · 工具调用
+  [有] 循环         ← Agent 第 1、3 课 · 循环
+  ...</code></pre>
+  <p><b>重点看"没有的零件"那一栏</b>：那正是不同 harness 拉开差距的地方。</p>
+  <p style="font-size:0.9rem;color:var(--muted)">脚本里还写了两句提示：<b>零件不是越多越好</b>（每个都在吃 token、加延迟）；真正的分水岭是<b>工具执行</b>和<b>循环</b>——少了它俩，它只是个聊天框。</p>
+
+  <h2>7. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 从网上下载安装的那个软件，严格说是什么？</p>
+    <button class="quiz-option" data-correct="true">是 harness，不是 agent</button>
+    <button class="quiz-option">是 agent，不是别的东西</button>
+    <button class="quiz-option">就是一个大号的语言模型</button>
+    <button class="quiz-option">是一整套训练好的权重</button>
+    <p class="feedback"
+       data-ok="对。Agent = Model + Harness，你装的是后面那一项。"
+       data-no="agent 是「行为」，harness 是「软件」。装下来的是软件。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 「能不能动手调工具」这件事，由谁决定？</p>
+    <button class="quiz-option" data-correct="true">由 harness 决定</button>
+    <button class="quiz-option">由模型的权重决定</button>
+    <button class="quiz-option">由上下文长度来决定</button>
+    <button class="quiz-option">由提示词的语气来决定</button>
+    <p class="feedback"
+       data-ok="对。模型只会吐字，动手能力全是 harness 给的。"
+       data-no="模型不执行任何东西。工具执行是 harness 的零件。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 同一个模型，换一个 harness，会发生什么？</p>
+    <button class="quiz-option" data-correct="true">表现可能差很多</button>
+    <button class="quiz-option">表现会完全一模一样</button>
+    <button class="quiz-option">模型的能力会直接被提高</button>
+    <button class="quiz-option">模型的知识会被直接更新</button>
+    <p class="feedback"
+       data-ok="对。所以「某某模型不行」得先问：是在哪个 harness 里试的？"
+       data-no="prompt、工具、上下文、护栏都是 harness 说了算——换了当然不一样。"></p>
+  </div>
+
+  <h2>8. 下一步</h2>
+  <p>harness 这条线一收，agent 工程的<b>全景就闭合了</b>。剩下两个方向：</p>
+  <ul>
+    <li><b>工具设计</b>：名字、描述、参数怎么写，模型才调得准；</li>
+    <li><b>怎么知道它变好了</b>：怎么评估一个 agent（这块资料还缺，是公认的难点）。</li>
+  </ul>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://martinfowler.com/articles/harness-engineering.html">Martin Fowler — Harness engineering for coding agent users</a>：那个公式的出处——"harness 指 agent 里除模型之外的一切，<b>Agent = Model + Harness</b>"。<br>
+    <a href="https://www.langchain.com/blog/the-anatomy-of-an-agent-harness">LangChain — The Anatomy of an Agent Harness</a>：同一公式，拆解 harness 的组成（代码、配置、执行逻辑）。<br>
+    <a href="https://www.databricks.com/blog/ai-harness">Databricks — What is an AI Agent Harness?</a>：白话定义——"围在语言模型外面的软件脚手架：工具、记忆、沙箱、反馈回路，<b>把模型变成 agent</b>"。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"harness 好坏怎么比？""为什么有的 harness 特别吃 token？""我该自建还是用现成的？""多 agent 是 harness 的功能还是另一回事？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0005-mcp-and-skills.html">Agent 原理篇 · 第 5 课 · MCP 与 Skill</a> · <a href="0004-real-model-agent.html">第 4 课 · 换上真模型</a> · <a href="0003-mini-agent.html">第 3 课 · 把零件装起来</a> · <a href="0002-tool-use.html">第 2 课 · 工具调用</a> · <a href="0001-what-is-an-agent.html">第 1 课 · Agent 到底是什么？</a><br>
+    <b>LLM 底层</b>：<a href="../llm/0001-from-token-to-next-token.html">第 1 课</a> · <a href="../llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache</a> · <a href="../llm/0002-prefill-vs-decode.html">第 2 课 · prefill / decode</a> · <a href="../llm/0004-batching.html">第 4 课 · 批处理</a><br>
+    术语表：<a href="../../reference/glossary.html#harness">Harness</a> · <a href="../../reference/glossary.html#agent">Agent</a> · <a href="../../reference/glossary.html#tool">工具</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 6 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>术语表 · AI Agent 原理与工程</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="lesson-meta">速查 / Reference</div>
+  <h1>术语表</h1>
+  <p class="subtitle">全课程统一使用这里的说法。课里出现的词，回来这里对一遍。</p>
+
+  <dl>
+    <dt id="agent"><strong>Agent（智能体）</strong></dt>
+    <dd>一个以 LLM 为"大脑"、能围绕一个目标<b>反复决策并采取行动</b>的系统。关键不在"会回答问题"，而在"会自己决定下一步做什么"。</dd>
+
+    <dt id="llm-call"><strong>单次 LLM 调用</strong></dt>
+    <dd>输入 prompt、输出文本，一问一答，结束。没有循环、没有工具、没有状态。它是 agent 的零件，不是 agent 本身。</dd>
+
+    <dt id="loop"><strong>Agent 循环（Agent loop）</strong></dt>
+    <dd>本课程的核心：<b>推理 → 行动 → 观察 → 再推理</b>，直到任务完成或触发停止条件。见第 1 课。</dd>
+
+    <dt id="tool"><strong>Tool（工具）</strong></dt>
+    <dd>agent 能对"外部世界"做的事：查数据库、调 API、算数、读文件。模型不直接执行，而是<b>输出一个结构化的调用意图</b>，由程序去执行。</dd>
+
+    <dt id="function-calling"><strong>Function calling（函数调用）</strong></dt>
+    <dd>让模型按约定格式输出"要调用哪个工具、参数是什么"的机制。是 tool use 的工程实现方式。</dd>
+
+    <dt id="mcp"><strong>MCP（Model Context Protocol，模型上下文协议）</strong></dt>
+    <dd>一套<b>开放标准</b>，让"提供工具的一方"和"用工具的一方"说同一种话。类比<b>插座标准</b>：写一次，到处能用，不用为每家 API 重写适配。关键是<b>能被发现（discovery）</b>——先问"你能干什么"，再决定用哪个。server 一般公布 <b>tools / resources / prompts</b> 三样。</dd>
+
+    <dt id="skill"><strong>Skill（技能）</strong></dt>
+    <dd>不是"一个函数"，是<b>"做某一类事的完整做法"</b>：一个目录，装着<b>指令 + 可能的脚本 + 参考资料</b>（核心是 <code>SKILL.md</code>）。类比<b>菜谱</b>：工具是厨具，skill 是"这类菜该怎么做、翻车怎么救"。靠<b>渐进式加载</b>省上下文。</dd>
+
+    <dt id="progressive-disclosure"><strong>渐进式加载（progressive disclosure）</strong></dt>
+    <dd>不把所有东西一次性塞进上下文：先给<b>一句说明</b>，用得上才展开正文，正文里提到的资料再按需打开。理由是<b>上下文是稀缺资源</b>——进上下文的东西都要花钱、占位置、互相干扰。</dd>
+
+    <dt id="harness"><strong>Harness（运行外壳 / 脚手架）</strong></dt>
+    <dd>套在模型外面的<b>那套软件</b>：拼 prompt、执行工具、管上下文、施加护栏、加载 skill、接 MCP、做界面、存状态。<b>Agent ＝ Model ＋ Harness</b>（Martin Fowler / LangChain 的说法）。<br><b>注意</b>：agent 是「<b>行为</b>」，harness 是「<b>软件</b>」——你下载安装的其实是 harness，agent 是它跑起来后表现出的能力。<b>同一个模型换 harness，表现会差很多</b>。</dd>
+
+    <dt id="observation"><strong>Observation（观察）</strong></dt>
+    <dd>工具执行后返回的结果。它被喂回给模型，成为下一轮推理的输入——这是循环得以"感知环境"的方式。</dd>
+
+    <dt id="trace"><strong>Trace / Trajectory（轨迹）</strong></dt>
+    <dd>一次任务中，所有"推理—行动—观察"步骤的完整记录。调试 agent 时，看 trace 是第一步。</dd>
+
+    <dt id="pass-k"><strong>pass@k / pass^k</strong></dt>
+    <dd>评测 agent 的两个指标。<b>pass@k</b> ＝ k 次里<b>至少成功一次</b>（能力）；<b>pass^k</b> ＝ k 次<b>全部成功</b>（一致性）。因为"每次都成"是连乘，单次 90% 连着做 8 次全对只剩约 43%。<b>做使用者要盯 pass^k。</b></dd>
+
+    <dt id="outcome"><strong>结果（outcome）vs 轨迹（transcript / trajectory）</strong></dt>
+    <dd>评 agent 的两个对象。<b>结果</b>＝跑完之后环境的<b>真实状态</b>（数据库里到底有没有那条订单）；<b>轨迹</b>＝它走过的<b>完整记录</b>（调了哪些工具、参数是什么、什么时候停）。<br>别只看结果——它会掩盖绕路和违规；也别只看轨迹——路走得漂亮不等于真做成了。</dd>
+
+    <dt id="react"><strong>ReAct</strong></dt>
+    <dd>一种让模型交替产生"推理轨迹"和"动作"的范式（Reason + Act）。现代 agent 循环的理论来源。<a href="https://arxiv.org/abs/2210.03629">原论文</a>。</dd>
+
+    <dt id="planning"><strong>Planning（规划）</strong></dt>
+    <dd>把一个大目标拆成可执行的子步骤的能力。agent 三大支柱之一。</dd>
+
+    <dt id="memory"><strong>Memory（记忆）</strong></dt>
+    <dd>短时记忆＝当前上下文窗口里的内容；长时记忆＝跨会话持久化存储、需要时检索回来。agent 三大支柱之一。</dd>
+
+    <dt id="context"><strong>Context / 上下文工程</strong></dt>
+    <dd>模型这一次能看到的所有内容。它有硬上限，叫<b>上下文窗口（context window）</b>：<b>输入的 token + 已写出来的 token</b> 加起来不能超过它。它是<b>稀缺且昂贵</b>的资源，往里塞什么、丢掉什么，直接决定 agent 表现。</dd>
+
+    <dt id="workflow"><strong>Workflow（工作流）</strong></dt>
+    <dd>由<b>代码</b>预先编排好的固定步骤。可靠、可控。与 agent 的区别：agent 让<b>模型</b>动态决定流程。Anthropic 建议：能用工作流解决就别上 agent。</dd>
+
+    <dt id="guardrail"><strong>Guardrail（护栏）</strong></dt>
+    <dd>限制 agent 行为的边界：最大步数、允许的工具白名单、需要人工批准的动作等。</dd>
+
+    <dt id="hitl"><strong>Human-in-the-loop（人在环中）</strong></dt>
+    <dd>在关键节点插入人工确认。高风险动作（转账、删数据）的常见保险。</dd>
+
+    <dt id="multi-agent"><strong>Multi-agent（多智能体）</strong></dt>
+    <dd>多个 agent 分工协作（如"编排者 + 工作者"）。更强也更难调试，通常不是起点。</dd>
+
+    <dt id="token"><strong>Token（词元）/ 分词器（tokenizer）</strong></dt>
+    <dd>模型处理文字的<b>最小单位</b>，由<b>分词（tokenization）</b>切出来，干这件事的组件叫<b>分词器（tokenizer）</b>——它<b>不等于</b>自然语言的"词"。中文一个词可能切成多个 token，英文生僻词可能被切成子串（如 <code>un / happi / ness</code>），空格与标点也可能是独立 token。<b>token 是文本片段，不是数字</b>；它接着会在<b>词表</b>里拿到一个<b>编号（ID）</b>。</dd>
+
+    <dt id="vector"><strong>向量（vector）/ 词嵌入（token embedding）</strong></dt>
+    <dd>"一个 token 在数字世界里的样子"：<b>一串固定长度的数字</b>（真实模型几千个，本课程的玩具模型只有 4 个）。做法是拿 token 的<b>编号去「嵌入表」里查第 N 行</b>——<b>嵌入表就是一张大数字表，词表多大就有多少行，一行 d 个数</b>，所以<b>这一步只是照抄，不用算</b>；这个查表动作叫<b>词嵌入</b>。<b>嵌入表是模型的第一层</b>，里面的数字是训练学出来的（会被梯度更新），<b>训好后固定不动</b>——同一个字什么时候查都是同一串数字，会变的是它进模型之后被改写成什么样。数字本身没有可读含义，但<b>两串数字越接近，说明两个 token 关系越近</b>——模型靠这个判断相关性。<br><b>注意</b>：一次送进模型的是 <b>n 串向量</b>（每个 token 一串），不是把整句压成一串。<b>把整句压成一根向量的是另一个模型</b>，叫<b>文本嵌入</b>，用途完全不同——见 <a href="#text-embedding">文本嵌入</a>。</dd>
+
+    <dt id="text-embedding"><strong>文本嵌入（text embedding）/ 向量检索</strong></dt>
+    <dd>把<b>一整段文字</b>（一句、一段、一页）压成<b>一根向量</b>，用的是<b>另一个模型</b>（embedding 模型），跟上面那个"词嵌入"是两回事。<b>用途只有一个：比相似度</b>——两段文字压出来的向量越接近，越相关。<b>RAG 里"查资料"的底层动作就是它。</b><br>
+      <b>容易混的三点</b>：① 词嵌入是<b>语言模型的第一层</b>，一个 token 一根；文本嵌入是<b>独立的小模型</b>，整段一根。② 词嵌入会被上下文<b>反复改写</b>；文本嵌入算完就<b>固定下来存好</b>，等着被查。③ 词嵌入<b>喂给模型当输入</b>；文本嵌入<b>不喂给模型</b>，只用来排序、挑出该给哪几段。<br>
+      <b>代价</b>：它只比"像不像"，不懂对错。名字像不等于内容相关——这是 RAG 最常见的翻车点。</dd>
+
+    <dt id="sparse-dense"><strong>稀疏检索（sparse）/ 稠密检索（dense）</strong></dt>
+    <dd>检索资料的两种比法。<b>稀疏</b>＝按<b>字面</b>匹配（数两段共有多少个词 / 字组合，像关键词搜索）；<b>专有名词、编号、型号</b>抓得准，但<b>换个说法就漏</b>。<b>稠密</b>＝按<b>语义</b>匹配（把整段压成向量比远近，见 <a href="#text-embedding">文本嵌入</a>）；<b>换个说法也能找到</b>，但对<b>精确字面反而迟钝</b>。<br>
+      记法：<b>稀疏看"字面撞没撞"，稠密看"意思近不近"。</b><b>各有各的失手</b>——查"RFC 7230"这种编号，稀疏赢；查"心梗"要它找出写"心肌梗死"的那页，稠密赢。<b>所以很多系统两个一起用。</b></dd>
+
+    <dt id="neural-network"><strong>神经网络（neural network）</strong></dt>
+    <dd>大模型里那副<b>人写的骨架</b>——程序员真正手写出来的那部分。一句话：<b>一大堆"乘加"操作一层层摞起来</b>，上一层的输出按一批权重重新配比，得出新输出交给下一层。今天大模型用的具体摞法是 <a href="#layer">Transformer</a>（层 = 注意力 + FFN）。<br>
+      <b>骨架里那几百亿个权重，一个都不是人填的</b>——那是<a href="#training">训练</a>阶段磨出来的。所以"大模型是人写的程序"和"它不是人写出来的"两句话都对：<b>结构是人写的，内容是学出来的。</b></dd>
+
+    <dt id="emergence"><strong>涌现（emergence）／ 量变到质变</strong></dt>
+    <dd>规模（参数量 × 数据 × 算力）涨到某个程度后，能力突然"冒出来"的现象：同一个任务、同一个目标，参数少时看起来很笨，参数多时却"好像懂了"。经典例子是小模型完全不会的算术，大模型突然就会。<br>
+      <b>所以别用"它只是瞎猜下一个字"去否认它真的会做对事</b>——任务从没变过，变的是规模。但反过来也成立：<b>涌现的是"表现"，不是"对错判断"</b>。既然评价标准只有"接得像"，那么<b>一段胡话只要够像就同样高分</b>——<a href="#training">训练</a>里从来没有"真假"这一项打分。</dd>
+
+    <dt id="tensor"><strong>张量（tensor）/ 矩阵（matrix）</strong></dt>
+    <dd>就是<b>"一张数字表"</b>。二维的张量也叫矩阵。LLM 的输入是一张 <b>n 行 × d 列</b>的表：<b>宽度 d 固定</b>（每串向量的长度），<b>长度 n 随 token 数变</b>。注意：<b>一张表 = 一次请求（API 调用）的全部内容</b>（你输入的 + 它已写出的，全在里面）。一次请求里模型会<b>连着蹦出很多个字</b>，每蹦一个字表就多一行；而<b>一次任务</b>又会发出很多次请求。</dd>
+
+    <dt id="qkv"><strong>Query / Key / Value（Q/K/V）</strong></dt>
+    <dd>Attention 里每个词会算出三个向量：<b>Query</b> 负责"我要找什么"，<b>Key</b> 负责"我容不容易被别人对上"，<b>Value</b> 负责"对上之后交出什么"。三者都来自同一个词，是<b>三种用途</b>，不是三种信息。</dd>
+
+    <dt id="dot-product"><strong>点积（dot product）/ 加权求和 / 加权平均</strong></dt>
+    <dd><b>点积</b>：两串数字逐位相乘再加起来，用来比"像不像"——越大越像。<br><b>加权求和</b>：每串数字乘上自己的比重，再加起来。当比重加起来正好是 1 时，也就是<b>加权平均（weighted average）</b>（如"平时 30% + 期末 70%"）。</dd>
+
+    <dt id="attention"><strong>Attention（注意力）</strong></dt>
+    <dd>用当前 token 的 <b>Query</b> 去比所有已有 token 的 <b>Key</b>（用<b>点积</b>比相似度），把分数经 <b>softmax</b> 换算成百分比当权重，再对它们的 <b>Value</b> 做<b>加权求和</b>。候选名单<b>包括当前 token 自己</b>。输出是一个"看过前文之后"的向量（还不是字）。</dd>
+
+    <dt id="logits"><strong>Logits / Softmax / 采样（sampling）</strong></dt>
+    <dd>模型最后把向量投影成"词表里每个 token 各得多少原始分"（<b>logits</b>），经 <b>softmax</b> 归一成概率分布，再<b>采样</b>挑出一个——那就是下一个 token。<b>「怎么挑」是另一套旋钮</b>，见 <a href="#temperature">温度</a> 与 <a href="#top-p">Top-p / Top-k</a>。</dd>
+
+    <dt id="lm-head"><strong>LM Head（语言模型头 / 输出层）</strong></dt>
+    <dd>整摞层<b>外面</b>挂着的最后一张表，把一根向量摊成"词表里每个 token 各得多少分"。<b>通常和嵌入表是同一张表</b>（权重共享），所以不少小模型不单独训练它。<b>基础课不要求记住这个名字</b>——知道"最后拿一根向量去词表逐个对分"这件事就够了，见 <a href="#logits">Logits</a>。</dd>
+
+    <dt id="temperature"><strong>温度（temperature）</strong></dt>
+    <dd>挑字前的一个旋钮：<b>换算百分比之前，把所有原始分除以 T</b>。T = 1 原样；<b>T 越小百分比越尖</b>（几乎只挑最高的那个），<b>T 越大越平</b>（小概率的字也有机会）；T 推向 0 就退化成<b>贪心</b>。它<b>不改模型算出来的分</b>，只改"怎么挑"——所以调它<b>不会让模型变聪明或变笨</b>。</dd>
+
+    <dt id="top-p"><strong>Top-p（核采样 nucleus sampling）/ Top-k</strong></dt>
+    <dd>挑字前砍尾巴的两把刀。<b>top_k</b>：只留分数最高的 <b>k 个</b>，按<b>个数</b>砍。<b>top_p</b>：从高到低<b>累加百分比</b>，加够 p 就停，留下的那一批叫<b>核（nucleus）</b>，按<b>攒够多少</b>砍——分布尖就少留几个，分布平就多留几个。两把叠着用时，起作用的是更紧的那把。</dd>
+
+    <dt id="ffn"><strong>FFN / MLP（前馈网络）</strong></dt>
+    <dd>Transformer 每层里紧跟注意力之后的子层。<b>不跨 token</b>，只对每个位置各自改写一次。<b>不是"检查"</b>——预测还没发生。研究发现它像一张<b>"模式 → 补充信息"的查找表</b>：出现某种模式就往向量里推对应的词（如"埃菲尔铁塔位于" → 把「Paris」的分往上推）。</dd>
+
+    <dt id="padding"><strong>填充（padding）/ 掩码（masking）</strong></dt>
+    <dd>批量算多条长短不一的句子时，短的会被补上假 token（<b>填充</b>）凑齐长度；补的部分会被<b>遮住（掩码）</b>——模型看不见，也不参与计算。<b>空位上本来就没有东西。</b></dd>
+
+    <dt id="causal-mask"><strong>因果掩码（causal mask）</strong></dt>
+    <dd>一条硬规定：<b>每个位置只能看到自己和它之前的 token，看不到后面</b>。因为任务是"猜下一个字"，能看到后面就成了抄答案。</dd>
+
+    <dt id="weight-sharing"><strong>权重共享（weight sharing）</strong></dt>
+    <dd>n 个位置用的是<b>同一套换算规则</b>，不是 n 套。更像"一个老师同时批改 n 份卷子，用同一把尺子"。</dd>
+
+    <dt id="layer"><strong>层（layer）</strong></dt>
+    <dd>Transformer 的基本积木：<b>一层 = 注意力 + FFN</b>（各自配一次残差）。真实模型叠几十层（原始论文只有 6 层），层层打磨对"下一个 token"的预测。<b>每层的步骤一样，但每层自己的权重不同</b>——同一个模子压出来的饼干，形状相同、花纹各不相同。<br><b>⚠ 别跟「一轮」混</b>：<b>层是"竖着叠"，轮是"往下走"</b>，两个垂直方向。→ <a href="#round">「一轮 / 层」这条</a></dd>
+
+    <dt id="round"><strong>一轮（one pass）· 层 · 一次请求：两个垂直的轴</strong></dt>
+    <dd><b>把全课最容易混的三个数一次钉死</b>（<b>配图见 <a href="../lessons/llm/0002-prefill-vs-decode-deep.html#q11-axes">第 2 课（进阶版）· Q11</a></b>）：<br>
+      <b>层</b> ＝ 四个小步（注意力 → 残差 → FFN → 残差）｜几十层｜<b>横着走</b>穿过它＝同一个字往下钻<br>
+      <b>一轮</b> ＝ 一个 token <b>从第 1 层走到最后一层、完整一遍</b>｜一次请求里有很多轮｜<b>竖着加</b>一轮＝多吐一个字<br>
+      <b>一次请求</b> ＝ 一次 API 调用｜<b>1 次 prefill（把所有行填满）＋ 若干次 decode（一轮加一行）</b><br>
+      <b>最容易错的一处：一轮 ≠ 一层，一轮 = 走完全部层。</b>「把流程走完算出一个字」是<b>一轮</b>；「再走一遍」是<b>第二轮</b>，<b>不是第二层</b>。<br>
+      网格图里：<b>一列 = 一层</b>，<b>一行 = 一个字走完一轮的路径</b>。</dd>
+
+    <dt id="residual"><strong>残差连接（residual connection）</strong></dt>
+    <dd>每做完一步，都把"原来的向量"也<b>加回来</b>（<code>新结果 = 旧向量 + 这一步算出的东西</code>），防止改着改着把原有信息弄丢。</dd>
+
+    <dt id="vocabulary"><strong>词表（vocabulary）</strong></dt>
+    <dd>一张<b>清单</b>（不是解释意思的词典）：模型认识的每一个 token 都列上，每条配一个<b>编号</b>。规模几万到二十万条（GPT-2 约 5 万、GPT-4 约 10 万、GPT-4o 约 20 万）。<b>跟分词器绑死</b>，换模型就对不上。词表外的内容只能切成词表里有的小块拼出来。<br>打分时逐个对分的对象就是它——<b>词表多大，logits 就有多少个数</b>。</dd>
+
+    <dt id="autoregressive"><strong>自回归生成（autoregressive generation）</strong></dt>
+    <dd>"一次蹦一个 token、接上再蹦下一个"的生成方式。注意两件事：<b>每次是把整句一起送进去</b>（不是一个个送），并且<b>只听最后一个位置</b>的猜测——前面每个位置也都算了一遍、也各自猜了一个字，但没人用。</dd>
+
+    <dt id="hidden-state"><strong>hidden state（隐状态）／ hidden 向量</strong></dt>
+    <dd>每一层里、每个位置那根向量（长度 <code>d</code>，比如 4096）——就是第 1 课那张"n 行 × d 列"表里的<b>一行</b>，每过一层被改写一次。<b>它不被缓存</b>：要缓存的是从它投影出来的、每层注意力的 <b>K/V</b>。因为算下一个字时，新 token 只用 Q 去查历史的 K/V，历史 hidden 后面再也用不到。</dd>
+
+    <dt id="request"><strong>一次任务 / 一次请求 / 一轮 decode</strong></dt>
+    <dd>三个容易混的层次。<b>一次任务</b>＝用户发起的一件事；<b>一次请求</b>＝一次 API 调用（<b>一次往返</b>：你发过去 ＋ 它把答案回过来）；<b>一轮 decode</b>＝模型内部每蹦一个字走一遍流水线。<br>单轮聊天 ≈ 1 任务 = 1 请求（里面几百轮 decode）；<b>agent ＝ 1 任务会发出十几次甚至几十次请求</b>（每调一次工具就是一次新请求）。<b>「缓存命中」只在请求之间才有意义。</b></dd>
+
+    <dt id="training"><strong>训练（training）／ 损失（loss）／ 反向传播（backpropagation）</strong></dt>
+    <dd><b>训练</b>＝ 出题（文本<b>自带答案</b>，不用人标）→ 作答 → 算<b>损失</b> → 从出口<b>往回追责</b>，把所有权重朝"少扣分"的方向拧极小一步 → 重复几百亿次。<b>损失（扣分）</b>＝ 答案那个字拿到的百分比越低、扣得越多（<code>−log(百分比)</code>），所以是个可以算出来的数。<b>反向传播</b>＝ 算账的顺序：做题<b>从前往后</b>，追责<b>从后往前</b>，一次算出几十亿个权重各该往哪拧。<br>
+      <b>扣分不会降到 0</b>：语料里同一处本来就有几种答案时，按比例猜已经是最优——那部分扣不掉，是<b>数据本身的不确定性</b>，不是模型笨。同理，<b>模型给的从来不是答案，是一张百分比表</b>。</dd>
+
+    <dt id="weights"><strong>权重（weights）／ 参数（parameters）</strong></dt>
+    <dd><a href="#training">训练</a>学出来的、<b>固定不变</b>的那些数——就是第 1 课说的"同一把尺子"。它<b>不参与被算</b>，它<b>参与算</b>。例：<code>W_q</code> / <code>W_k</code> / <code>W_v</code>、输出投影、FFN 的两层。<br>
+      <b>K/V 不是权重</b>——K/V 是根据输入<b>算出来的中间结果</b>：<code>k = 这一行的向量 × W_k</code>，<code>v = 这一行的向量 × W_v</code>。<b>同一把尺子，量出来的数每个 token 都不同。</b></dd>
+
+    <dt id="kv-cache"><strong>KV Cache（键值缓存）</strong></dt>
+    <dd>模型生成文字时，把每个词算过的 Key/Value 向量留下来复用，避免重复计算。<b>只存 K/V、不存 Q</b>——Query 只属于"当前这一位置"，用完即弃；K/V 则要被之后所有新 token 反复读取。<b>每层各有一份</b>（<b>只有注意力</b>产生 K/V，FFN 不产生），也<b>不存 hidden 向量</b>。只影响速度，不影响答案。详见 <a href="prompt-caching.html">速查：KV Cache 与「缓存命中」</a>。</dd>
+
+    <dt id="prefix-cache"><strong>前缀缓存 / 缓存命中</strong></dt>
+    <dd>跨请求复用<b>前缀</b>的 KV。<b>前缀</b> ＝ 一次请求从第一个 token 起的那一段，按 <b>工具定义 → 系统提示 → 消息</b> 的顺序拼成——日常说"提示词 + 对话记录"基本就是它。必须<b>从第一个 token 起连续、一字不差</b>才叫<b>命中</b>；中间断一处，从那儿往后全部重算。命中读取约 0.1× 价格。详见 <a href="prompt-caching.html">速查</a>。</dd>
+
+    <dt id="prefill"><strong>Prefill（预填充）</strong></dt>
+    <dd>一次请求的第一段：对整段输入做<b>一次完整前向</b>（每层都走注意力 + FFN），输入 token 可以<b>并行</b>处理，所以是「算力受限」、决定<b>首字延迟</b>。跑完有<b>两个产出</b>：<b>第 1 个回复 token</b>，以及每层注意力的 <b>K/V</b>（后面 decode 要反复读的那个货架）。<b>注意</b>：<b>每个位置的注意力都要算、一个都不少</b>（含输入的那些位置），只是因为 k、v 各算各的、不依赖别人，所以能一次算完——既不是"逐个字排队算"，也不是"只算 k、v 不算注意力"。</dd>
+
+    <dt id="incremental-prefill"><strong>增量 prefill（incremental / partial prefill）</strong></dt>
+    <dd><b>前缀缓存命中</b>时，只对<b>新增的那一段</b>做 prefill，老前缀的 KV 直接复用。判断标准不是"从第 1 个 token 开始算"，而是"对一段<b>已知输入</b>做并行前向、算出 K/V 填进缓存"——新增提问符合这个标准，所以它归 prefill，不归 decode。</dd>
+
+    <dt id="decode"><strong>Decode（解码）</strong></dt>
+    <dd>第二段：处理模型<b>自己蹦出来的</b>那个 token（走的是和 prefill <b>同一套流水线</b>，只是每次只喂 1 个）。<b>只能串行</b>；每写一个都要把<b>全部历史 KV ＋ 模型权重</b>从显存搬一遍，所以是「显存带宽受限」。它决定<b>打字速度</b>。</dd>
+
+    <dt id="arithmetic-intensity"><strong>算术强度（arithmetic intensity）</strong></dt>
+    <dd>量"值不值得算"的一把尺子：<b>干了多少次运算 ÷ 搬了多少字节</b>。prefill 一次算一大批（≈ <code>L</code> 倍），decode 一次只算一个（≈ <code>1</code> 倍，这是理想化下限）。而显卡的"算力 ÷ 带宽"通常有<b>上百到几百 FLOPs/Byte</b>——真实模型实测 decode 约 60–80 ops/byte，<b>离那个比值仍差着一个数量级上下</b>。所以喂不饱计算单元，卡在带宽。</dd>
+
+    <dt id="ttft"><strong>TTFT（首字延迟）</strong></dt>
+    <dd>Time To First Token，从发出请求到看见<b>第一个</b> token 的时间，主要由 prefill 决定。</dd>
+
+    <dt id="tpot"><strong>TPOT（每 token 耗时）</strong></dt>
+    <dd>Time Per Output Token，开始输出之后<b>每个</b> token 花的时间，由 decode 决定。读者感受到的"打字速度"就是它。</dd>
+
+    <dt id="batching"><strong>批处理（batching）</strong></dt>
+    <dd>一次让多个请求并排前进一个 token，共用同一趟"把模型权重搬进计算单元"的开销。用<b>一点点延迟</b>换<b>巨大吞吐</b>。</dd>
+
+    <dt id="throughput"><strong>吞吐（throughput）</strong></dt>
+    <dd>整个系统每秒总共产出多少 token。与<b>延迟</b>（单个请求自己多快）是一对互相拉扯的指标。</dd>
+
+    <dt id="continuous-batching"><strong>连续批处理（continuous batching）</strong></dt>
+    <dd>不等一整批跑完：每一步都重新组批，谁结束谁让位、空位立刻塞新请求。避免"短请求陪长请求干等"。vLLM 的核心优化之一。</dd>
+  </dl>
+
+  <p class="next"><a href="../lessons/agent/0001-what-is-an-agent.html">← 回到 Agent 原理篇 · 第 1 课</a></p>
+</div>
+</body>
+</html>

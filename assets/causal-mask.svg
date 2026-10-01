@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 268" width="720" height="268" role="img" aria-label="因果掩码：每个位置只能看到自己和它之前的 token">
+  <rect x="0" y="0" width="720" height="268" fill="#fdfcf8"/>
+
+  <!-- 三个位置 -->
+  <rect x="30" y="46" width="180" height="66" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="52" y="70" font-family="sans-serif" font-size="12" fill="#8a2b06">位置 1</text>
+  <text x="52" y="97" font-family="serif" font-size="17" fill="#1b1a17">「天」</text>
+
+  <rect x="228" y="46" width="180" height="66" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="250" y="70" font-family="sans-serif" font-size="12" fill="#8a2b06">位置 2</text>
+  <text x="250" y="97" font-family="serif" font-size="17" fill="#1b1a17">「气」</text>
+
+  <rect x="426" y="46" width="180" height="66" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="448" y="70" font-family="sans-serif" font-size="12" fill="#8a2b06">位置 3（当前）</text>
+  <text x="448" y="97" font-family="serif" font-size="17" fill="#1b1a17">「很」</text>
+
+  <!-- 看不到右边 -->
+  <line x1="614" y1="79" x2="686" y2="79" stroke="#9b1c1c" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#x)"/>
+  <defs>
+    <marker id="x" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9b1c1c"/>
+    </marker>
+  </defs>
+  <text x="614" y="62" font-family="sans-serif" font-size="11.5" fill="#9b1c1c">✗ 看不到</text>
+  <text x="614" y="98" font-family="sans-serif" font-size="11" fill="#9b1c1c">（还没写出来）</text>
+
+  <!-- 标题 -->
+  <text x="30" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">因果掩码（causal mask）：每个位置只能看「自己及之前」</text>
+
+  <!-- 能看范围条 -->
+  <text x="30" y="152" font-family="sans-serif" font-size="11.5" fill="#6c675e">位置 1 能看</text>
+  <rect x="150" y="141" width="180" height="12" rx="6" fill="#8a2b06" opacity="0.75"/>
+
+  <text x="30" y="188" font-family="sans-serif" font-size="11.5" fill="#6c675e">位置 2 能看</text>
+  <rect x="150" y="177" width="378" height="12" rx="6" fill="#8a2b06" opacity="0.75"/>
+
+  <text x="30" y="224" font-family="sans-serif" font-size="11.5" fill="#6c675e">位置 3 能看</text>
+  <rect x="150" y="213" width="576" height="12" rx="6" fill="#8a2b06" opacity="0.75"/>
+
+  <!-- 说明 -->
+  <text x="30" y="252" font-family="sans-serif" font-size="11.5" fill="#6c675e">越往后的位置，能看的范围越大；但谁也看不到右边（未来）—— 否则就成了抄答案。</text>
+</svg>

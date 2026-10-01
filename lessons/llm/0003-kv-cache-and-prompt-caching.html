@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」是两回事</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 3 课 · 初学版</div>
+  <h1>KV Cache 与「缓存命中」是两回事</h1>
+  <p class="subtitle">一个决定你的 agent 花多少钱的小机关。先把"请求"这个词钉死，后面全通。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>跟模型聊久了，有没有觉得它<b>变慢、变贵</b>？更怪的是——你在提示词里改一个标点，<b>账单能翻好几倍</b>。</p>
+    <p>拆穿了其实很朴素：有一套"<b>算过的别重算</b>"的机制在省钱，而它认的是"<b>开头一字不差</b>"。你动了开头，它就罢工。</p>
+    <p>但这套机制有两个，被混为一谈。<b>这一课先分清它们。</b></p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：说清两个机制各管哪一层；看一眼 prompt 就判断会不会命中；并且不再被"请求"这个词绊倒。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>两个机制，管的是<b>不同层</b>的事：</p>
+    <p><b>KV Cache</b>　＝ <b>一次请求内部</b>，算过的别重算。<b>总是发生</b>，没有"命中/不命中"。<br>
+       <b>缓存命中</b>　＝ <b>跨多次请求</b>，上次算的这次接着用。<b>要条件满足</b>，才有"命中/不命中"。</p>
+    <p>所以——<b>先得知道"请求"是哪一层。</b></p>
+  </div>
+
+  <h2>1. 前置：三个层次</h2>
+  <p>先把三个容易混的层次放这儿：<b>一次任务</b>（用户发起的一件事）、<b>一次请求</b>（一次 API 调用）、<b>一轮 decode</b>（模型内部每蹦一个字）。</p>
+  <p><b>本课所有"请求内 / 跨请求"，说的都是「一次请求」这一层。</b></p>
+  <p style="color:var(--muted)">（这一条在<a href="../../reference/glossary.html#request">术语表</a>里也有；<a href="0002-prefill-vs-decode.html">第 2 课</a>开头会把「一轮」和「一次请求」钉死。）</p>
+
+  <h2>2. 请求内：算过的别重算（KV Cache）</h2>
+  <p><b>先把"请求内复用"这句话说白：</b>decode 这一步读的 K/V，是<b>前面（prefill ＋ 更早的 decode 步）算好留下的</b>——不是重新算的。这就是"复用"。<br>
+     一句话对照：<b>请求内复用 ＝ 后面每一步，接着用这一步之前算好的</b>；<b>跨请求复用 ＝ 这一次请求，接着用上一次请求算好的</b>（那是有条件的，见第 3 节）。</p>
+  <p>你的直觉是对的：<b>输入那部分是一次性算完的</b>。先把一次请求拆成两段，这事立刻就清楚了。</p>
+
+  <div class="note">
+    <span class="label">一次请求 ＝ 两段</span>
+    <p><b>前段 · prefill（预填充）</b>：你输入的那张表（n 行），<b>一次性、并行</b>算完。每个位置的 K/V 都到手了，顺手也蹦出第一个新字。</p>
+    <p><b>后段 · decode（解码）</b>：之后<b>每蹦一个字，只喂这一个新的（1 行）</b>，前面的 K/V 从缓存里读。</p>
+    <p><b>所以"一个一个来"只发生在后段——也就是输出。输入那段从来不会重算。</b></p>
+    <p style="color:var(--muted)">（这两段脾气完全不同：一个算力受限、一个带宽受限。第 2 课专门讲。）</p>
+  </div>
+
+  <p>那 KV Cache 省的是什么？<b>省的是后段的重算</b>。假设没有它，decode 每一步都得把前面的全部重新算一遍：</p>
+  <ul>
+    <li>蹦第 1 个字 → 把前面的重算 <b>1</b> 遍；</li>
+    <li>蹦第 2 个字 → 重算 <b>2</b> 遍（第 1 个又算了一遍）；</li>
+    <li>蹦第 3 个字 → 重算 <b>3</b> 遍；</li>
+    <li>……蹦第 100 个字 → 重算 <b>100</b> 遍。</li>
+  </ul>
+  <p>加起来：<code>1 + 2 + 3 + … + 100 = 5050</code>。<b>只蹦了 100 个字，却做了 5050 次重算</b>——平均每个字被重算约 50 遍。</p>
+  <p>再看谁被重算得最多：第 1 个被算 <b>100</b> 遍、第 2 个 <b>99</b> 遍……<b>越靠前越惨</b>。这就是"<b>平方级浪费</b>"：总量不是随长度线性涨，而是像 <code>1+2+3+…</code> 那样垒起来，约与长度的<b>平方</b>成正比。</p>
+  <p style="color:var(--muted)">（上面这个 5050 只算了"重算"那一部分。如果你还输入了一段长提示——比如 2000 个 token——没有缓存的话，每一步还要额外把这两千个一起重算。所以<b>长提示 + 长输出 = 双重贵</b>。）</p>
+
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>KV Cache 就是：算过的 K/V 向量别扔，留着。</b>这样蹦下一个字时，前面的直接拿现成，<b>只算新蹦出来的那 1 个</b>。100 个字的计算量，从 5050 次降到约 100 次。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">注意：这一层没有「命中 / 不命中」</span>
+    <p><b>在一次请求内部，KV Cache 是必然生效的</b>——算过的就留着，这是模型天生的做法，不是"看运气"。</p>
+    <p>所以那句话真正的意思是：<b>"KV cache 命中"这种说法，本身就不成立</b>。"命中"是下面那一层的词。</p>
+    <p>代价呢？这些 K/V 要占<b>显存</b>。序列越长占得越多——这就是长上下文又慢又贵、且有上限的物理原因之一。</p>
+  </div>
+
+  <h2>3. 跨请求：要条件满足才叫「命中」</h2>
+  <p>现在看<b>请求之间</b>。你发的第 2 次请求，开头很可能和第 1 次一模一样（系统提示、工具定义、前面的对话）。</p>
+  <p>那这些算过的 K/V，能不能<b>跨请求</b>接着用？</p>
+  <p><b>能——但有条件。</b>服务商会把上次算的 K/V 存起来，下次谁的开头跟它<b>一字不差</b>，就直接捡现成的用。这件事成功发生，才叫<b>命中（cache hit）</b>。</p>
+
+  <div class="note">
+    <span class="label">术语四连</span>
+    <p><b>前缀（prefix）</b>：一次请求<b>从第一个 token 开始</b>的那一段。按官方的拼装顺序，它就是 <b>工具定义 → 系统提示 → 消息（历史 + 这一句）</b>——所以日常说"我的对话记录 + 提示词"，基本就是它。<br>
+       <b>命中（cache hit）</b>：你的开头和缓存里某段对上了，白捡。<br>
+       <b>cache write / cache read</b>：第一次写进缓存 / 命中读取（约 <b>0.1×</b> 价格，便宜约 10 倍）。<br>
+       <b>TTL（存活时间）</b>：缓存不是永久的，几分钟没人用就过期。</p>
+  </div>
+  <p style="color:var(--muted)">（顺带说清"缓存什么时候没"：一次请求的 K/V，通常<b>在请求结束时就被释放</b>——显存要腾出来给下一个请求。只有服务商特意开的<b>前缀缓存</b>，才会把"前缀那一段"多留一会儿；而且它<b>会过期</b>（TTL），也<b>只认一字不差的前缀</b>。）</p>
+  <p style="color:var(--muted)">（写入为什么还要加钱？前缀越长越好吗？<a href="0003-kv-cache-and-prompt-caching-deep.html#q3-write">→ 进阶版 Q3 / Q4</a>）</p>
+
+  <h3>为什么必须是「前缀」，而且一断就全废</h3>
+  <p>用<b>接龙</b>来想：缓存只能顺着最前面<b>连续地</b>往后延。因为第 5 个 K/V 是依赖前 4 个算出来的。<b>你在前 4 个里改一个标点，第 5 个的结果就完全不同</b>——从改动的位置往后，全部作废。</p>
+
+  <div class="loop" style="gap:0.25rem">
+    <div class="loop-node" style="border-color:var(--ok);background:var(--ok-soft)">工具定义<small>不变</small></div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-node" style="border-color:var(--ok);background:var(--ok-soft)">系统提示<small>不变</small></div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-node" style="border-color:var(--ok);background:var(--ok-soft)">历史对话<small>缓慢增长</small></div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-node" style="border-color:var(--bad);background:var(--bad-soft)">用户这一句<small>每次都变</small></div>
+    <div class="loop-back">绿色是「共享前缀」——它越稳定、越长，每次能省的就越多；红色的部分每次都得重算。</div>
+  </div>
+
+  <h2>4. 输出的字，有缓存吗？</h2>
+  <p>好问题，容易糊。<b>答案分两半</b>——机制和账单不是一回事。</p>
+
+  <div class="note">
+    <span class="label">机制上：不分输入输出</span>
+    <p>缓存里存的是<b>K/V 向量</b>，它不关心这段文字是"用户给的"还是"模型写的"。</p>
+    <ul style="margin:0.5rem 0 0">
+      <li><b>同一次请求内</b>：模型刚蹦出来的字，它的 K/V <b>立刻被复用</b>——不然 decode 就退化成平方级重算。<b>这就是 KV Cache 的本义。</b></li>
+      <li><b>跨请求</b>：上一次的输出，要等到<b>下一次它变成输入前缀的一部分</b>，才能被复用。（多轮对话就是这样——上一轮模型的回答，这一轮成了"历史"。）</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <span class="label">账单上：只对输入打折</span>
+    <p>缓存折扣（那个 0.1×）<b>只作用于输入 token</b>。输出 token 是<b>另一个更贵的价</b>，不享受折扣。</p>
+    <p>所以你的直觉"<b>缓存只针对输入</b>"——<b>账单上对，机制上不完全对</b>。输出的 K/V 照样在缓存里、照样被复用，只是<b>不体现在折扣上</b>。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">那「工具结果」算哪一侧？（agent 场景一定会问）</span>
+    <p>答案是：<b>算输入</b>。</p>
+    <p>工具结果虽然不是你打的字，但它是<b>在下一次请求里</b>、作为 prompt 的一部分送进去的——所以按输入计价，也能命中缓存。</p>
+    <p>而且它在对话<b>末尾追加</b>，下一轮就变成了前缀的一部分。所以 agent 越跑，可命中的前缀越长（前提是前面的都没动）。<span style="color:var(--muted)">（为什么说"末尾追加"这么重要？<a href="0003-kv-cache-and-prompt-caching-deep.html#q2-tool">→ 进阶版 Q2</a>）</span></p>
+    <p style="color:var(--muted)">（那"上一轮模型的回答"呢？<a href="0003-kv-cache-and-prompt-caching-deep.html#q1-multiturn">→ 进阶版 Q1</a>，有张官方给的时序表）</p>
+  </div>
+
+  <h2>5. 三条铁律</h2>
+  <ol>
+    <li><b>稳定的放最前面</b>：系统提示、工具定义、长文档。</li>
+    <li><b>易变的放最后面</b>：用户当前这一句、新拿到的观察结果。</li>
+    <li><b>别做这三件事</b>：动态改系统提示、临时增删工具定义、往对话中间插内容。<b>开头多一个空格，后面整段就报销。</b></li>
+  </ol>
+  <p style="color:var(--muted)">（典型应用：<b>RAG 检索回来的那几段，就属于"易变的放最后面"</b>——问题不同、检索到的段也不同，所以它们每次都变，必须排在稳定前缀之后。见 <a href="../rag/0002-rag-pipeline.html">RAG · 第 2 课</a>。）</p>
+  <div class="note">
+    <span class="label">为什么这对 agent 特别要命</span>
+    <p>因为 agent <b>一次任务 = 十几次请求</b>，每次请求都要重发「系统提示 + 一堆工具定义 + 完整历史 + 新观察」。</p>
+    <p>开头不变 → 每次都命中 → 又快又省。为了"精炼"每轮重写系统提示 → 每次都归零 → 账单翻倍，<b>而且是十几倍地翻</b>。</p>
+  </div>
+
+  <h2>6. 动手：亲眼看看差几倍</h2>
+  <p>脚本在工作区：<code>exercises/llm/0003-cache-hit-simulator.py</code>。它模拟"前缀匹配"，对比两种结构的命中率和成本。</p>
+  <pre><code>python exercises/llm/0003-cache-hit-simulator.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。</p>
+
+  <p>核心逻辑就这几行——注意那个 <code>break</code>：</p>
+  <pre><code>hit = 0
+for a, b in zip(cached, prompt):
+    if a == b:
+        hit += 1
+    else:
+        break        # 一旦对不上，从这里往后全部作废</code></pre>
+
+  <p>我实测的结果（6 次请求）：</p>
+  <ul>
+    <li><b>A. 前缀稳定</b>：命中率 <b>96%</b>，合计等效成本 <b>45</b>；</li>
+    <li><b>B. 把用户名塞进系统提示开头</b>：命中率 <b>0%</b>，合计等效成本 <b>168</b>；</li>
+    <li>结论：<b>B 明显比 A 贵，差距不是一点半点</b>——而你只改了开头一个细节。<span style="color:var(--muted)">（本课实测约 3.7 倍。）</span></li>
+  </ul>
+
+  <h3>挑战（选一个，5 分钟）</h3>
+  <ol>
+    <li>把 <code>questions</code> 从 6 个加到 20 个，看 A/B 的倍数怎么变（提示：第一次请求永远是冷的，请求越多，差距越大）。</li>
+    <li>试着把变化的东西挪到<b>更靠后的位置</b>，看命中率能救回来多少。</li>
+  </ol>
+
+  <h2>7. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span>「KV cache」和「缓存命中」最大的区别是什么？</p>
+    <button class="quiz-option" data-correct="true">一个在请求内一个在跨请求</button>
+    <button class="quiz-option">一个是免费的一个是收费的</button>
+    <button class="quiz-option">一个管输入一个管输出的</button>
+    <button class="quiz-option">一个管速度一个管答案质量</button>
+    <p class="feedback"
+       data-ok="对。KV cache 是请求内部「算过就留着」；缓存命中是跨请求捡现成。"
+       data-no="关键在范围：前者一次请求内部，后者跨多次请求。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 为什么"KV cache 命中了"这种说法不成立？</p>
+    <button class="quiz-option" data-correct="true">请求内必然生效，没有命中不命中</button>
+    <button class="quiz-option">因为 KV cache 根本就没有被使用</button>
+    <button class="quiz-option">因为 KV cache 只保存输入的内容</button>
+    <button class="quiz-option">因为 KV cache 只在训练时起作用</button>
+    <p class="feedback"
+       data-ok="对。它总是发生。「命中」是跨请求那一层的词。"
+       data-no="请求内的复用是必然的，谈不上运气；「命中」只在跨请求时才有意义。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 模型自己写出来的字，有缓存吗？</p>
+    <button class="quiz-option" data-correct="true">机制上有，账单上不打折</button>
+    <button class="quiz-option">完全没有任何缓存可言</button>
+    <button class="quiz-option">机制上没有但账单上打折</button>
+    <button class="quiz-option">和输入一样享受同样的折扣</button>
+    <p class="feedback"
+       data-ok="对。K/V 不分输入输出；但 0.1× 那个折扣只作用于输入。"
+       data-no="机制与账单是两回事：K/V 都缓存，折扣只给输入。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 下面哪种做法会「破坏缓存」？</p>
+    <button class="quiz-option" data-correct="true">把用户名写进系统提示开头</button>
+    <button class="quiz-option">把稳定的工具定义放前面</button>
+    <button class="quiz-option">把用户这一句放在最后面</button>
+    <button class="quiz-option">把长文档放在对话的前面</button>
+    <p class="feedback"
+       data-ok="对。前缀里塞进每次都变的东西，从那里往后全部作废。"
+       data-no="要小心「每次都变」的内容混进前缀。稳定的放前面、易变的放后面。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a>：一句话说清最关键的事——缓存里存的是 <b>KV 张量，不是 token 文本</b>；并且<b>整个前缀必须完全一致</b>才算命中。<br>
+    想再深一层：<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic — Effective context engineering for AI agents</a>（讲"把上下文当稀缺资源"）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"KV 向量到底存在哪？""为什么便宜 10 倍不是免费？""多轮对话里上一轮的回答会不会命中？""工具结果算输入还是输出？"——直接问。这份内容也压缩成了速查页：<a href="../../reference/prompt-caching.html">速查 · KV Cache 与「缓存命中」</a>。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="0001-from-token-to-next-token.html">LLM 底层 · 第 1 课 · 从「token」到「下一个 token」</a>（整条流水线；本课只用到其中"注意力"那一环）。<br>
+    <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · 一次请求的两段：prefill 与 decode</a>——本课讲的"请求内重算"，就发生在那两段的后一段。<br>
+    <b>Agent 侧</b>：<a href="../practice/0001-context-engineering.html">Agent 技巧篇 · 0001 · 上下文工程</a>——这条规矩怎么落地。<br>
+    术语表：<a href="../../reference/glossary.html#kv-cache">KV Cache</a> · <a href="../../reference/glossary.html#prefix-cache">前缀缓存</a>。
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 3 课 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

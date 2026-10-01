@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 2 课 · 为什么「读长文」快、「写长文」慢？</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 2 课 · 初学版</div>
+  <h1>为什么「读长文」快、「写长文」慢？</h1>
+  <p class="subtitle">同一条流水线，两种完全相反的跑法：<b>prefill</b> 与 <b>decode</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>同样是跟模型打交道：让它<b>读</b>一篇长文档，几秒钟就"看完"了；让它<b>写</b>一篇同样长的文章，慢得让人想砸键盘。</p>
+    <p>更怪的是——读长文档明明是更多的字，为什么反而快？</p>
+    <p style="margin-top:0.7rem">拆穿了很简单：<b>模型跑的始终是同一条流水线，但"跑法"分两段</b>。第一段一次能跑一大批字，第二段一次只能跑一个字。</p>
+    <p><b>学完这课，你能</b>：说清这两段各在干嘛、为什么要这么分；判断一个请求是"读长文型"还是"写长文型"，谁更慢、谁更贵；并且能回答"为什么首字等了很久、后面却唰唰地出"。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">一条主线，记住它就不会晕</span>
+    <p><b>第一轮跑这条流水线 ＝ prefill（预填充）；后面每一轮 ＝ decode（解码）。</b></p>
+    <p>本课所有结论（谁快谁贵、TTFT、TPOT）都从这一句推出来。</p>
+  </div>
+
+  <h2>1. 先回顾：模型这条流水线</h2>
+  <p>第 1 课我们完整走过一遍，这里只把最关键的一行复述一下：</p>
+  <pre><code>文字 → token 编号 →（查表）→ 向量
+     → 穿过 N 层（每层都是：注意力 → 残差 → FFN → 残差）
+     → 打分 → 采样（挑一个）→ 下一个字</code></pre>
+  <p>三件事记住就够了：</p>
+  <ul>
+    <li><b>入口</b>：字先变成<b>向量</b>（查嵌入表）。</li>
+    <li><b>中间</b>：向量要<b>一层一层往上走</b>——几十层，每层都在那根向量上改写一次，<b>每层都有自己的权重</b>。</li>
+    <li><b>出口</b>：最后那根向量拿去<b>打分</b>，再<b>挑出</b>一个字。<span style="color:var(--muted)">（挑出来的其实是<b>编号</b>，要变回向量还得再查一次嵌入表——见下面第 3 节）</span></li>
+  </ul>
+  <p style="color:var(--muted)">（这条链是<a href="0001-from-token-to-next-token.html">第 1 课</a>的内容，本课<b>不重讲</b>。想重看就回去点那一课。）</p>
+
+  <div class="note">
+    <span class="label">但复述到这儿，有个第 1 课故意没讲的东西</span>
+    <p><b>上面那条链，是"跑一趟"的配方。</b>第 1 课当时只关心一趟怎么走完——走完，一个字就出来了。</p>
+    <p>可<b>一次请求，要把这条流水线跑很多趟</b>。而且——<b>第一趟和后面几趟，跑法不一样</b>：</p>
+    <p>第一趟，你给的那一整段是<b>一起跑</b>的；后面几趟，每次只补<b>一个新字</b>，<b>前面那批字不再重新处理</b>（它们的 k、v 已经存在显存里，直接拿来用）。</p>
+    <p><b>这个差别，就是本课的全部内容。下一节展开。</b></p>
+  </div>
+
+  <h2>2. 一次请求，要把这条流水线跑很多轮</h2>
+  <p>关键在这儿：<b>这条流水线一次只吐出一个字。</b>所以要写出一整段话，得把它跑很多轮。</p>
+  <pre><code>你的输入（系统提示 + 历史 + 这一句）
+   —— 拿「你好，请」→ 回「很高兴」举例 ——
+        │
+        ▼
+第 1 轮：把「你」「好」「请」一起喂进去跑完 → 挑出「很」
+        │
+        ▼
+第 2 轮：把「很」补进去，再跑一轮 → 挑出「高」
+        │
+        ▼
+第 3 轮：把「高」补进去，再跑一轮 → 挑出「兴」
+        │
+        ▼
+   ……一直跑到结束（遇到结束符，或到长度上限）</code></pre>
+
+  <div class="note">
+    <span class="label">看清第 1 轮和第 2 轮的差别——这就是全课的钥匙</span>
+    <p><b>第 1 轮</b>：喂进去的是<b>你给的一整段</b>——里面<b>一个</b>模型产的字都没有。而且这些字<b>全是已知的</b>，所以能<b>一起</b>跑。</p>
+    <p><b>第 2 轮起</b>：只补<b>刚刚挑出来的那一个字</b>。为什么不多补几个？因为再往后的字，得等它先被挑出来，才知道是什么。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">先把两个最容易混的词钉死：「层」和「轮」</span>
+    <p><b>层</b>（第 1 课那个）＝ 四个小步：<b>注意力 → 残差 → FFN → 残差</b>。真实模型有<b>几十层</b>，一层叠一层。</p>
+    <p><b>轮</b>（这一节的）＝ <b>一个 token 从第 1 层走到最后一层，完整走一遍</b>。<b>所以一轮 = 几十层，不是一层。</b></p>
+    <p>它们是<b>垂直的两个方向</b>：<b>往下走是"轮"（往外多吐一个字）</b>，<b>横着走是"层"（同一个字往下钻）</b>。原始论文只有 6 层，今天的大模型几十层——所以"跑一遍"听着像一步，其实是几十步。<span style="color:var(--muted)">（<a href="0002-prefill-vs-decode-deep.html#q11-axes">两个方向画成一张网格图，长什么样？</a>）</span></p>
+  </div>
+
+  <p style="color:var(--muted)">（顺带钉另外两个词：<b>「一次请求」＝ 你发一次、它回一次</b>，也就是一次 API 调用；一次请求里有 1 次 prefill ＋ 若干次 decode。<b>「一次任务」＝ 你要模型干的整件事</b>，可能要发出好几次请求。三个层次见<a href="../../reference/glossary.html#request">术语表</a>。）</p>
+
+  <h2>3. 于是分了两段——为什么第一轮叫「预填充」？</h2>
+  <p>这两轮干的事不一样，名字也不一样：</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>第 1 轮 ＝ prefill（预填充）</b>　·　<b>第 2 轮起 ＝ decode（解码）</b></p>
+    <p style="color:var(--muted)">分界线只有一条：<b>这次喂进去的，是你给的字，还是模型自己刚蹦出来的字。</b></p>
+  </div>
+
+  <p>那为什么第一轮叫「<b>预填充</b>」？得先看<b>注意力那一步</b>在干嘛（每层里都有这么一步）。</p>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p>每个字都会算出自己的三样东西：<b>q</b>（我要找什么）、<b>k</b>（我是谁）、<b>v</b>（我能提供什么）。<br>
+       然后拿自己的 <b>q</b>，去跟<b>前面所有字的 k</b> 比一遍；再按比出来的比例，把<b>它们的 v</b> 取过来、汇总。</p>
+  </div>
+  <p>所以你看：<b>要算任何一个字的注意力，都得用到前面所有字的 k 和 v。</b>那模型就得把它们<b>存起来</b>（存在显存里，正式名字叫 <b>KV cache</b>）。</p>
+  <p><b>每个字的注意力都要算，一个都不少</b>——但这一批可以<b>一次算完</b>，不用排队。因为算某个字的 k、v <b>只用到它自己那一行</b>，谁也不依赖谁。<span style="color:var(--muted)">（为什么"看前面"不等于"等前面"？<a href="0002-prefill-vs-decode-deep.html#q9-parallel">→ 进阶版 Q9</a>；<b>那"一个都不少"是为什么？</b><a href="0002-prefill-vs-decode-deep.html#q10-why-all">→ Q10</a>）</span></p>
+  <p>于是第 1 轮跑完，有<b>两个产出</b>：<b>摆满 k、v 的货架</b>，和<b>第一个字</b>。<b>pre</b>（预先）＋ <b>fill</b>（填充），名字就是这么来的。</p>
+  <p>之后每一轮就轻松了：<b>拿刚挑出来的那个字，重新变成一根向量</b>（<b>编号 → 查嵌入表 → 一根新向量</b>），只算<b>它这一行</b>的 q、k、v；前面所有字的 k、v <b>直接从显存取</b>，不用再算。<span style="color:var(--muted)">（注意是<b>从嵌入表重新查</b>，不是接着上一轮那根——细节见<a href="0002-prefill-vs-decode-deep.html#q8-output">进阶版 Q8</a>）</span></p>
+  <p><b>一句话：KV cache 省的是"重算"，不是"重读"。</b>——旧的不用重算，但每次还是得把整份读一遍。</p>
+  <p style="color:var(--muted)">（换个说法：那排存下来的 k、v 就像一排<b>货架</b>——每个字在每层留下一张<b>标签</b> k ＋ 一个<b>货箱</b> v。<a href="../../reference/one-request-end-to-end.html">可点着一步步走的那张图</a>里就是这么画的。）</p>
+  <p style="color:var(--muted)">（顺带答一个早晚会冒出来的问题：<b>FFN 也有 K/V 吗？</b>没有——K/V 只属于注意力。展开在<a href="0002-prefill-vs-decode-deep.html#q4-ffn">进阶版 Q4</a>）</p>
+
+  <h2>4. 两段的脾气完全相反</h2>
+  <div class="note">
+    <span class="label">术语：算力受限 / 显存带宽受限</span>
+    <p><b>算力（compute）</b>：显卡"会算"的能力。<b>显存带宽（memory bandwidth）</b>：数据从显存"搬进"计算单元的传送速度。<br>
+    <b>算力受限（compute-bound）</b>：瓶颈是"算得不够快"。<br>
+    <b>显存带宽受限（memory-bandwidth-bound）</b>：瓶颈是"数据搬得不够快"。</p>
+  </div>
+
+  <h3>Prefill：一大堆乘法一起做 → 算力受限</h3>
+  <p>同一条流水线，方法一模一样，<b>变的只是"一次喂几行"</b>：prefill 一次喂 2 万行，decode 一次只喂 1 行。</p>
+  <p>而矩阵乘法有个特点：<b>计算量随行数涨，但权重那张表，不管几行都得整张读一遍。</b>所以 prefill 把"读权重"这份固定开销<b>摊到 2 万行上</b>，decode 只摊到 <b>1 行</b>上——这就是两段分野的根。</p>
+  <div class="note">
+    <span class="label">类比：数学天才与仓库</span>
+    <p>把显卡的计算单元想成一个<b>数学天才</b>。他做题飞快，但每做一道题之前，都得跑去仓库把<b>整本书</b>搬过来。</p>
+    <p><b>prefill ＝ 他一次接了 2 万道题</b>：搬一趟书，一口气做完 → 时间几乎全在<b>做题</b>。<br>
+       <b>decode ＝ 他一次只做 1 道题</b>：还是得搬<b>同一整本书</b>过来 → 时间几乎全在<b>搬书</b>。</p>
+  </div>
+
+  <h3>Decode：每吐一个字，都要把存下的 K/V 整份读一遍 → 带宽受限</h3>
+  <p>写一个字时，<b>要算的其实很少</b>（就一行），但前面所有字的 K/V 得<b>从显存整份读上来</b>。所以卡的不是算，是搬。</p>
+  <p><b>算一笔账。</b>假设 32 层、每层的向量长 4096、已经攒了 1 万个字，那每吐一个字要搬的数大约是 <code>2（k 和 v）× 32 层 × 10000 个位置 × 4096 ≈ 26 亿</code>——而这一步真正要"算出来"的，只有<b>一个字</b>。</p>
+  <p>数据也印证了：decode 时 GPU 的利用率会掉到 <b>20–40%</b>（大部分计算单元在干等数据）；prefill 时能跑到接近满载。</p>
+  <p style="color:var(--muted)">（"必须把整份读一遍"有没有例外？有，但那是细节 → <a href="0002-prefill-vs-decode-deep.html#q7-window">进阶版 Q7</a>）</p>
+  <div class="note">
+    <span class="label">别急着记「decode 就慢在搬 KV」</span>
+    <p>这一步要搬的其实有<b>两样</b>：<b>模型权重</b>（每步都要搬，非常大）＋ <b>K/V</b>（每个请求自己那一份）。本课盯 K/V，是因为<b>只有它会随上下文变长</b>——正好回答"<b>为什么长上下文让每一步都更慢</b>"。权重那半截在 <a href="0004-batching.html">第 4 课</a>。</p>
+  </div>
+
+  <h2>5. 于是有了两个不同的「延迟」</h2>
+  <p>因为两段脾气不同，你感受到的"慢"其实是两种慢：</p>
+  <div class="note">
+    <span class="label">术语：TTFT 与 TPOT</span>
+    <p><b>TTFT（首字延迟）</b>＝ Time To First Token。从你按回车，到看见<b>第一个</b>字。它由 <b>prefill</b> 决定——输入越长，等得越久。<br>
+       <b>TPOT（每 token 耗时）</b>＝ Time Per Output Token。开始输出之后，<b>每个</b>字花多久。它由 <b>decode</b> 决定——这就是你感觉到的"打字速度"。</p>
+  </div>
+  <p>一条真实的时间线长这样：</p>
+  <pre><code>t = 0–50ms   网络 + 排队
+t =  50ms    prefill：3200 个输入字一次跑完（顺手把 K/V 填好）
+t = 400ms    ── 第一个字出来了        ← TTFT = 400ms
+t = 400ms+   decode：每 ~30ms 蹦一个字  ← TPOT
+t = 12.7s    第 410 个字，结束         ← 端到端延迟</code></pre>
+  <p>看到没：<b>首字只等了 400ms，但全文写了 12 秒多。</b>两段完全是两种体验。</p>
+
+  <h2>6. 动手：亲手看清两种请求</h2>
+  <p>脚本在工作区：<code>exercises/llm/0002-prefill-vs-decode.py</code>。</p>
+  <pre><code>python exercises/llm/0002-prefill-vs-decode.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。数字是刻意简化的，重点看<b>相对关系</b>。</p>
+
+  <p>我实测的结果：<span style="color:var(--muted)">（数字都是相对值，<b>看谁大谁小就够，不用记具体数</b>。）</span></p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.86rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">场景</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">TTFT</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">生成耗时</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">总耗时</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">相对成本</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">读长文（20k 进 / 50 出）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">1.000 s</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">1.001 s</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">2.001 s</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">20250</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">写长文（500 进 / 2000 出）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">0.025 s</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right"><b>21.499 s</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right"><b>21.524 s</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">10500</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">agent 一轮 · 无缓存</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">1.000 s</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">1.602 s</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">2.602 s</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">20400</td></tr>
+      <tr><td style="padding:0.4rem">agent 一轮 · 命中前缀缓存</td>
+          <td style="padding:0.4rem;text-align:right"><b>0.025 s</b></td>
+          <td style="padding:0.4rem;text-align:right">1.602 s</td>
+          <td style="padding:0.4rem;text-align:right">1.627 s</td>
+          <td style="padding:0.4rem;text-align:right"><b>2850</b></td></tr>
+    </tbody>
+  </table>
+
+  <p><b>两个反直觉的结论</b><span style="color:var(--muted)">（看粗体就够，括号里的数字只是证据）</span>：</p>
+  <ol>
+    <li><b>"花钱最多"和"最慢"不是同一种请求——钱和时间是两笔账。</b><span style="color:var(--muted)">（读长文最贵，却 2 秒就跑完；写长文便宜一半，却要 21.5 秒。）</span></li>
+    <li><b>前缀缓存让首字几乎立刻出来、总花费砍掉一大截，但生成耗时一动不动。</b><span style="color:var(--muted)">（TTFT 1.000s → 0.025s，成本降到约 1/7，生成耗时还是 1.602s。）</span>因为缓存只帮 prefill，<b>帮不了 decode</b>。</li>
+  </ol>
+
+  <h2>7. 这对 agent 意味着什么</h2>
+  <p>agent 的典型请求长这样：<b>输入巨大</b>（系统提示 + 一堆工具定义 + 完整历史 + 新观察），<b>输出很小</b>（通常就是"调用某个工具"或一句话）。</p>
+  <p>所以 agent 是标准的<b>"读长文型"</b>：</p>
+  <ul>
+    <li>痛点在<b>首字延迟</b>和<b>输入成本</b>——这正是<b>前缀缓存</b>发威的地方（<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>讲它怎么运作，"什么该稳定放前面"的规矩在<a href="../practice/0001-context-engineering.html">技巧篇 0001</a>）；</li>
+    <li>但 decode 那段省不掉：如果 agent 要写长输出（比如生成一份报告），那时间就是要付的；</li>
+    <li>也解释了一个体感：agent 常常"卡在第一下"，然后才开始流畅地蹦字。</li>
+  </ul>
+
+  <h2>8. 三个常见误解</h2>
+  <ol>
+    <li><b>"输入和输出的 token 一样贵。"</b> 不一样。<b>输出贵得多</b>——因为 decode 串行又慢慢吞吞。<span style="color:var(--muted)">（各家价目不同，大致是输入的几倍。）</span></li>
+    <li><b>"上了缓存 agent 就全面变快。"</b> 只快在 prefill / TTFT。<b>decode 不受影响。</b></li>
+    <li><b>"上下文长只是更贵。"</b> 还更慢——每吐一个字都要把更长的 K/V 读一遍。</li>
+  </ol>
+
+  <h2>9. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 一次请求内部，通常分成哪两个阶段？</p>
+    <button class="quiz-option" data-correct="true">预填充，然后逐 token 解码</button>
+    <button class="quiz-option">先微调模型，然后再推理</button>
+    <button class="quiz-option">先解码，然后回头做预填充</button>
+    <button class="quiz-option">两段同时进行不分先后顺序</button>
+    <p class="feedback"
+       data-ok="对。先 prefill 把输入那批一次跑完（顺手把 K/V 填好），再 decode 逐字输出。"
+       data-no="顺序是：先 prefill（读输入），再 decode（逐字写）。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 解码（decode）阶段为什么慢？</p>
+    <button class="quiz-option" data-correct="true">它要反复把存下的 K/V 整份读出来</button>
+    <button class="quiz-option">它要反复重新训练模型权重</button>
+    <button class="quiz-option">它要等用户把答案敲进去</button>
+    <button class="quiz-option">它要联网去查资料再回答</button>
+    <p class="feedback"
+       data-ok="对。要算的很少，但要搬的数据很多，瓶颈是显存带宽。"
+       data-no="decode 每一步真正要算的只有一行，慢在「把整份 K/V 从显存搬一遍」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 首字延迟（TTFT）主要由哪一段决定？</p>
+    <button class="quiz-option" data-correct="true">主要由预填充阶段决定</button>
+    <button class="quiz-option">主要由解码阶段决定</button>
+    <button class="quiz-option">主要由网络传输决定</button>
+    <button class="quiz-option">主要由输出长度决定</button>
+    <p class="feedback"
+       data-ok="对。TTFT 由 prefill 决定，所以输入越长等得越久。"
+       data-no="TTFT 卡在 prefill：得把整段输入跑完，才能蹦出第一个字。"></p>
+  </div>
+
+  <h2>10. 想深挖？进阶版在等你</h2>
+  <p>上面这些够你看懂全貌了。读的过程中如果冒出疑问，点对应的链接就行——<b>不用从头看进阶版</b>。</p>
+  <ul>
+    <li><a href="0002-prefill-vs-decode-deep.html#q1-hidden">Q1 · 「hidden 向量」是什么？为什么存的是 K/V，不是它？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q2-overlap">Q2 · 「搬」和「算」是两个阶段，还是同一个过程？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q3-intensity">Q3 · 「算力受限 / 带宽受限」是怎么算出来的？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q4-ffn">Q4 · FFN 也有 K/V 吗？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q5-incremental">Q5 · 缓存命中时，「计算」具体指什么？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q6-preflight">Q6 · 多轮对话、agent 跑起来，prefill 会反复发生吗？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q7-window">Q7 · 「必须全部读一遍」有没有例外？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q8-output">Q8 · 模型最后吐出来的，是「字」还是「向量」？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q9-parallel">Q9 · 为什么第 1 轮那一整批字可以一起算，不用排队等前面？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q10-why-all">Q10 · 前缀里的字自己也要算注意力吗？（一个很容易想歪的地方）</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q11-axes">Q11 · 「层」和「轮」到底是什么关系？一张图钉死</a></li>
+  </ul>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://redis.io/blog/prefill-vs-decode/">Redis — Prefill vs Decode: LLM Inference Phases Explained</a>：讲清两段的瓶颈差异，还给了"输入越长、TTFT 越高"的实测数字。<br>
+    <a href="https://clickhouse.com/resources/engineering/llm-inference-latency">ClickHouse — LLM inference latency</a>：第 5 节那条时间线（3200 字输入 → 400ms 首字 → 410 字输出 → 12.7s）出自这里。<br>
+    <a href="https://www.weka.io/learn/ai-ml/prefill-and-decode/">Weka — Prefill and Decode</a>：decode 的算术强度 60–80 ops/byte、GPU 利用率 20–40% 出自这里。<br>
+    <a href="https://arxiv.org/abs/2211.05102">Pope et al. — Efficiently Scaling Transformer Inference（2022）</a>：处理输入时 MFU 76%、生成时 29ms/token 的硬件画像。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"显存带宽具体是多少？""为什么输出比输入贵好几倍，不是一样贵？""那批处理是怎么救 decode 的？"——直接问。后一个问题其实很值得深挖。
+  </div>
+
+  <p class="next">
+    <b>本课引出</b>：<a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a>——本课说的"存下 K/V"，那一课讲它什么时候能跨请求复用。<br>
+    <b>顺着往下</b>：<a href="0004-batching.html">LLM 底层 · 第 4 课 · 一趟装满的卡车（批处理怎么救 decode）</a>——既然 decode 在"等数据"，能不能顺手多干点活？<br>
+    <b>可点着走一遍</b>：<a href="../../reference/one-request-end-to-end.html">图 · 一次请求，从头到尾</a><br>
+    术语表：<a href="../../reference/glossary.html#prefill">Prefill</a> · <a href="../../reference/glossary.html#decode">Decode</a> · <a href="../../reference/glossary.html#ttft">TTFT</a> · <a href="../../reference/glossary.html#tpot">TPOT</a> · <a href="../../reference/glossary.html#request">一轮 / 一次请求</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 2 课 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

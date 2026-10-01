@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 原理篇 · 第 1 课 · Agent 到底是什么？</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 原理篇 · 第 1 课 · 初学版</div>
+  <h1>Agent 到底是什么？</h1>
+  <p class="subtitle">从「一次 LLM 调用」到「一个会循环决策的系统」</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你有没有想过："用 AI"和"用 agent"，到底差在哪？</p>
+    <p>同一个模型，套上不同的壳——一个只会一问一答；另一个却能自己查资料、读文件、一步步把活干完，中间不用你盯着。</p>
+    <p style="margin-top:0.7rem">差别<b>不在模型，在外面那层结构</b>：一个"决定了做、做了再看、看了再决定"的循环。</p>
+    <p><b>学完这课，你能</b>：亲手跑通一个最小循环，并指着它的输出说清每一步在干什么、为什么最后会停。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>agent 的全部秘密就是<b>一个循环</b>：<b>推理 → 行动 → 观察 → 再推理</b>，直到任务完成、或者撞上护栏。</p>
+    <p>本课先把循环跑通；后面每一课，都是往这个循环里加零件。</p>
+  </div>
+
+  <h2>1. 一次调用 ≠ 一个 agent</h2>
+  <p>大多数人第一次接触 LLM 时的模型是这样：<b>输入一段 prompt，输出一段文本，结束</b>。这很好用，但它没有"手"，也没有"下一步"——它不知道世界上发生了什么，也没法改变什么。</p>
+  <p>一个 <a href="../../reference/glossary.html#agent">agent</a> 不一样。你给它一个<b>目标</b>，它会自己决定：现在该做什么？做完看到结果后，再决定下一步做什么。这个"决定了做、做了再看、看了再决定"的反复过程，就叫 <a href="../../reference/glossary.html#loop">agent 循环</a>。</p>
+
+  <div class="note">
+    <span class="label">一句话抓住区别</span>
+    <p>单次调用里，"下一步做什么"是<b>你</b>在 prompt 里写死的；在 agent 里，"下一步做什么"是<b>模型在循环里反复决定</b>的。</p>
+  </div>
+
+  <h2>2. 核心循环</h2>
+  <p>整门课都会围绕这张图展开。先把它刻进脑子：</p>
+
+  <div class="loop">
+    <div class="loop-node">推理 / 规划<small>Reason：下一步做什么？</small></div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-node">行动<small>Act：调用工具</small></div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-node">观察<small>Observe：拿到结果</small></div>
+    <div class="loop-back">↺ 把观察结果喂回去，继续下一轮推理</div>
+  </div>
+
+  <p>循环只有一个出口：模型认为任务完成了，输出最终答案。如果它一直不认为完成，就会<b>卡死在循环里</b>——所以工程上一定要有 <a href="../../reference/glossary.html#guardrail">护栏</a>，最常见的就是「最大步数」。</p>
+
+  <h2>3. 这个循环靠三根柱子撑着</h2>
+  <p>顺着这个循环往下钻，会分出 agent 的三大支柱。这是本课程的主线骨架，后面每一课基本都在补其中一根：</p>
+
+  <div class="pillars">
+    <div class="pillar">
+      <h3>① 规划 Planning</h3>
+      <p>怎么把大目标拆成能一步步执行的子任务？怎么在失败后改主意？</p>
+    </div>
+    <div class="pillar">
+      <h3>② 记忆 Memory</h3>
+      <p>当前上下文里放什么？跨会话的东西怎么存、怎么取回来？</p>
+    </div>
+    <div class="pillar">
+      <h3>③ 工具 Tool Use</h3>
+      <p>如何让模型"伸出手"去调 API、查库、改文件，并把结果读回来？</p>
+    </div>
+  </div>
+
+  <p>还有一个重要的边界概念：<b>能用固定 <a href="../../reference/glossary.html#workflow">workflow</a> 解决的事，就别上 agent</b>。agent 的代价是不确定性——它灵活，也因此难预测、难调试。这是 Anthropic 在那篇必读文章里的核心建议，我们下一课会细讲。</p>
+
+  <h2>4. 动手：跑一个最小循环</h2>
+  <p>下面的脚本实现了这节课的循环。<b>它不需要 API key</b>——里面用了一个 <code>fake_model</code> 假装是模型，这样你能把注意力全放在循环机制上。等你看懂了循环，把 <code>fake_model</code> 换成一次真实 LLM 调用，你就拥有了一个（极其简陋的）真 agent。</p>
+
+  <p>脚本已存到工作区：<code>exercises/agent/0001-minimal-agent.py</code>。运行：</p>
+  <pre><code>python exercises/agent/0001-minimal-agent.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code> 切换成 UTF-8。</p>
+
+  <p>任务设定为：<em>把 "hello" 反转，再拼上它的长度</em>。脚本里只有一个循环、两个工具、一个模型桩：</p>
+
+  <pre><code># ---- 工具：agent 能对外做的事 ----
+def reverse_string(s): return s[::-1]
+def string_length(s):  return len(s)
+
+TOOLS = {"reverse_string": reverse_string, "string_length": string_length}
+
+# ---- 假模型：真实世界里，这里是一次 LLM 调用 ----
+def fake_model(trace):
+    used = {s["tool"] for s in trace if s["type"] == "action"}
+    if "reverse_string" not in used:
+        return {"tool": "reverse_string", "args": {"s": "hello"}}
+    rev = next(s["result"] for s in trace if s["tool"] == "reverse_string")
+    if "string_length" not in used:
+        return {"tool": "string_length", "args": {"s": rev}}
+    n = next(s["result"] for s in trace if s["tool"] == "string_length")
+    return {"final": rev + str(n)}
+
+# ---- 循环：agent 的心脏 ----
+def run_agent(task, max_steps=8):
+    trace = []
+    for step in range(1, max_steps + 1):
+        action = fake_model(trace)          # ① 推理
+        if "final" in action:
+            return action["final"]          # 出口：模型认为完成了
+        result = TOOLS[action["tool"]](**action["args"])   # ② 行动
+        trace.append({"type": "observation", "tool": action["tool"], "result": result})  # ③ 观察
+    raise RuntimeError("达到最大步数仍未完成 —— 死循环")   # 护栏
+</code></pre>
+
+  <div class="note">
+    <span class="label">看输出的时候，重点看三件事</span>
+    <p>① 模型<b>从来不会</b>一次就给出完整答案，它是一步一步来的；<br>
+       ② 每一步它都只拿到了"到目前为止的轨迹"（<code>trace</code>），没有别的信息；<br>
+       ③ 停下来的唯一原因是模型自己说"完成了"——不是代码知道答案。</p>
+  </div>
+
+  <h2>5. 挑战（选一个做，5 分钟）</h2>
+  <ol>
+    <li><b>改任务</b>：把 <code>"hello"</code> 换成别的字符串，让它照样能算对。</li>
+    <li><b>加工具</b>：加一个 <code>to_upper(s)</code>，让 agent 先反转、再转大写、最后拼长度。</li>
+    <li><b>制造失败</b>：把 <code>max_steps</code> 改成 <code>2</code>，跑一遍，观察"死循环"是怎么被护栏拦下的。这一步最重要——它让你亲眼看到 agent 的失败长什么样。</li>
+  </ol>
+
+  <h2>6. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> Agent 与单次 LLM 调用最本质的区别是什么？</p>
+    <button class="quiz-option" data-correct="true">会循环地做决策并调用工具</button>
+    <button class="quiz-option">使用了参数规模更大的模型</button>
+    <button class="quiz-option">总是需要联网才能正常工作</button>
+    <button class="quiz-option">必须由多个模型协同来完成</button>
+    <p class="feedback"
+       data-ok="对。区别在「循环 + 行动」，不在模型大小或联网与否。"
+       data-no="关键在：它会反复决策、并调用外部的工具。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 在核心循环中，一次「行动」之后紧接着发生什么？</p>
+    <button class="quiz-option" data-correct="true">把结果作为观察喂回给模型</button>
+    <button class="quiz-option">把模型的权重按结果来调整</button>
+    <button class="quiz-option">把整个任务从头重新做一遍</button>
+    <button class="quiz-option">把结果直接当成答案来返回</button>
+    <p class="feedback"
+       data-ok="对。行动的结果变成观察，回喂给模型，开始下一轮推理。"
+       data-no="结果不会直接变成答案，也不会改模型权重——它作为「观察」回喂，再推理。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 为什么循环要设一个最大步数上限？</p>
+    <button class="quiz-option" data-correct="true">防止智能体陷入死循环卡住</button>
+    <button class="quiz-option">为了让模型的推理速度更快</button>
+    <button class="quiz-option">为了减少需要调用的工具数</button>
+    <button class="quiz-option">为了让答案长度保持得一致</button>
+    <p class="feedback"
+       data-ok="对。模型不会自己保证停下来，护栏必须由工程来兜底。"
+       data-no="护栏的作用是兜底：模型可能一直不认为任务完成，必须有东西强制它停。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料（必读）</b>：<br>
+    <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — "Building effective agents"</a>。
+    只用读开头到 "When to use agents" 那一段。读的时候带着一个问题：作者为什么反复劝你别急着上 agent？
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>任何一步不清楚——比如"工具到底是谁执行的？""trace 为什么重要？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>下一课</b>：工具调用（Tool Use）—— 模型是怎么"决定调用哪个工具、参数填什么"的？我们会把一个真实模型接进来。<br>
+    <b>LLM 底层轨道</b>：先看基石课 <a href="../llm/0001-from-token-to-next-token.html">从「token」到「下一个 token」</a>（整条流水线怎么走），再看 <a href="../llm/0003-kv-cache-and-prompt-caching.html">大模型为什么"记得快"？KV Cache 与「缓存命中」</a>。<br>
+    顺手翻一下 <a href="../../reference/glossary.html">术语表</a>，本课的词都在里面。
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 1 课 · 风格与组件来自 <code>assets/base.css</code> · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>课程目录 · AI Agent 原理与工程</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">目录 / Index</div>
+  <h1>课程目录</h1>
+  <p class="subtitle">一个 mission，三条轨道。各轨独立编号，可以分开翻。</p>
+
+  <div class="note">
+    <span class="label">怎么读这个目录</span>
+    <p>本工作区只有<b>一个目标</b>：搞懂 AI Agent 的原理与工程。但课程分成三条轨道——</p>
+    <p><b>Agent 原理篇</b>直接服务这个目标（是什么、为什么）；<b>LLM 底层</b>只讲"影响 agent 成本 / 延迟 / 设计"的机制；<b>Agent 技巧篇</b>讲"怎么做、怎么不翻车"（上下文工程、工具设计、失败模式）。</p>
+    <p>三条轨道<b>各自从 0001 编号</b>，所以提课号时要说清轨道，例如「LLM 底层第 3 课」。轨道之间用超链接互相打通。</p>
+  </div>
+
+  <h2>Agent 原理篇</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">是什么、<b>为什么</b>：怎么让模型自己决定下一步、动手、看结果。教材放在 <code>lessons/agent/</code>。</p>
+  <div class="pillars">
+    <div class="pillar">
+      <h3><a href="agent/0001-what-is-an-agent.html">0001 · Agent 到底是什么？</a></h3>
+      <p>用一个<b>假模型</b>跑通最小循环：推理 → 行动 → 观察 → 再推理。</p>
+      <p><code>exercises/agent/0001-minimal-agent.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0002-tool-use.html">0002 · 模型只能吐字，它怎么「伸手」做事？</a></h3>
+      <p><b>工具调用（Tool Use）</b>：模型只"说要调"，动手的是你的程序。</p>
+      <p><code>exercises/agent/0002-tool-call-roundtrip.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0003-mini-agent.html">0003 · 把零件装起来：一个真的 agent</a></h3>
+      <p><b>推理 → 行动 → 观察</b>，转起来就是 agent。全部核心代码十几行。</p>
+      <p><code>exercises/agent/0003-mini-agent.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0004-real-model-agent.html">0004 · 换上真模型，假的骗了你哪些地方</a></h3>
+      <p>骨架<b>一行没改</b>，只换一个函数。真模型要花钱、会犯错、会绕圈。</p>
+      <p><code>exercises/agent/0004-real-model-agent.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0005-mcp-and-skills.html">0005 · 工具长出两个新形状：MCP 与 Skill</a></h3>
+      <p><b>MCP</b> 管「怎么接」，<b>Skill</b> 管「怎么做」。动手写你自己的 skill。</p>
+      <p><code>exercises/agent/0005-make-a-skill.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0006-harness.html">0006 · Harness：你天天在用，却没分清的那个词</a></h3>
+      <p><b>Agent ＝ Model ＋ Harness</b>。模型、agent、harness 三者的边界。</p>
+      <p><code>exercises/agent/0006-harness-checklist.py</code></p>
+    </div>
+    <div class="pillar planned">
+      <h3>0007 · 工具设计</h3>
+      <p>名字、描述、参数怎么写，模型才调得准。下一步开。</p>
+    </div>
+  </div>
+
+  <h2>Agent 技巧篇</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">怎么做、<b>怎么不翻车</b>。每条技巧都带「理由 + 反例 + 什么时候不适用」。教材放在 <code>lessons/practice/</code>，贴墙清单在 <code>reference/</code>。</p>
+  <div class="pillars">
+    <div class="pillar">
+      <h3><a href="practice/0001-context-engineering.html">0001 · 上下文工程</a></h3>
+      <p>放什么、放哪、什么时候丢。<b>上下文腐烂</b>、稳定前缀、工具结果先裁再塞。</p>
+      <p><code>exercises/practice/0001-context-budget.py</code>　·　速查：<a href="../reference/context-budget.html">预算与排座次</a></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="practice/0002-evaluating-agents.html">0002 · 怎么判断一个 agent 好不好用</a></h3>
+      <p><b>使用者视角</b>：跑多遍、看真实结果、盯代价。单次 90% 连做 8 次只剩 43%。</p>
+      <p><code>exercises/practice/0002-agent-scorecard.py</code>　·　速查：<a href="../reference/agent-eval-checklist.html">该问什么</a></p>
+    </div>
+    <div class="pillar planned">
+      <h3>0003 · 工具设计</h3>
+      <p>名字、描述、参数、<b>返回值</b>、错误信息怎么写。下一步开。</p>
+    </div>
+    <div class="pillar planned">
+      <h3>0004 · 失败模式与自救</h3>
+      <p>agent 会怎么翻车，翻了怎么救。</p>
+    </div>
+  </div>
+  <h2>LLM 底层</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲影响 agent 成本 / 延迟 / 设计的机制，<b>以及能力与失效的来源</b>。教材放在 <code>lessons/llm/</code>。<b>基础课给初学者和业务人员，进阶版给技术读者。</b></p>
+  <div class="pillars">
+    <div class="pillar">
+      <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a></h3>
+      <p><b>先导课，先读这个</b>：大模型作为程序为什么多一个训练阶段，那些数字是哪来的、怎么被调的，以及为什么它天生只会「接下一个字」。</p>
+      <p>动手：<code>exercises/llm/0000-how-models-learn.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a></h3>
+      <p><b>基石课</b>：文字 → token → 向量 → 注意力 → FFN → 采样，看懂全貌。</p>
+      <p>进阶：<a href="llm/0001-from-token-to-next-token-deep.html">九个追问</a>　·　<code>exercises/llm/0001-tiny-attention.py</code>　·　<code>exercises/llm/0001-sampling-params.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0002-prefill-vs-decode.html">0002 · 一次请求的两段：prefill 与 decode</a></h3>
+      <p>为什么「读长文」快、「写长文」慢。顺带钉死<b>一次任务 / 一次请求 / 一轮 decode</b>。</p>
+      <p>进阶：<a href="llm/0002-prefill-vs-decode-deep.html">十一个追问</a>　·　<code>exercises/llm/0002-prefill-vs-decode.py</code>　·　<code>exercises/llm/0002-why-all-positions.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0003-kv-cache-and-prompt-caching.html">0003 · KV Cache 与「缓存命中」是两回事</a></h3>
+      <p>请求内算过的别重算，跨请求捡现成。本课实测：<b>只改开头一处，成本差 3.7 倍</b>。</p>
+      <p>进阶：<a href="llm/0003-kv-cache-and-prompt-caching-deep.html">五个绕人的细节</a>　·　<code>exercises/llm/0003-cache-hit-simulator.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a></h3>
+      <p>批处理怎么救 decode：用一点点延迟，换几十倍吞吐。</p>
+      <p>进阶：<a href="llm/0004-batching-deep.html">拐点与工业界的招</a>　·　<code>exercises/llm/0004-batching.py</code></p>
+    </div>
+  </div>
+
+  <h2>RAG</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲<b>机制与取舍</b>：为什么要检索、一条链六步各在干什么、什么时候不该上。<b>不讲向量库选型 / 产品对比</b>（会烂，也超出本工作区的使命）。教材放在 <code>lessons/rag/</code>。</p>
+  <div class="pillars">
+    <div class="pillar">
+      <h3><a href="rag/0001-why-retrieval.html">0001 · 为什么得"先查资料再回答"</a></h3>
+      <p>模型不知道你的数据，是因为<b>信息不在它手边</b>，不是因为它笨。RAG ＝ 先替它翻书。</p>
+      <p>进阶：<a href="rag/0001-why-retrieval-deep.html">稀疏和稠密各自在哪翻车</a>　·　动手：<code>exercises/rag/0001-why-retrieval.py</code> · <code>0001-sparse-vs-dense.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="rag/0002-rag-pipeline.html">0002 · 一条 RAG 链长什么样</a></h3>
+      <p>切块 → 变向量 → 存 → 查 → 塞进提示词 → 生成。<b>六步里只有最后一步是模型</b>。</p>
+      <p>进阶：<a href="rag/0002-rag-pipeline-deep.html">切块到底切多大</a>　·　动手：<code>exercises/rag/0002-rag-pipeline.py</code> · <code>0002-chunking.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="rag/0003-when-not-to-use-rag.html">0003 · 什么时候不该上 RAG</a></h3>
+      <p>「我有文档 → 上 RAG」这个反应，<b>一半时候是错的</b>。要精确值、要实时、要推理，都别上。</p>
+      <p>动手：<code>exercises/rag/0003-when-not-to-use-rag.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="rag/0004-two-failure-modes.html">0004 · 两种典型翻车</a></h3>
+      <p><b>该来的没来</b> vs <b>来了但没用上</b>——解法正好相反，先分清再动手。</p>
+      <p>进阶：<a href="rag/0004-two-failure-modes-deep.html">RAG 到底怎么评</a>　·　动手：<code>exercises/rag/0004-two-failure-modes.py</code> · <code>0004-rag-eval.py</code></p>
+    </div>
+  </div>
+
+  <h2>速查 / Reference</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">课会很少回看，速查会。放在 <code>reference/</code>。</p>
+  <div class="pillars">
+    <div class="pillar">
+      <h3><a href="../reference/glossary.html">术语表</a></h3>
+      <p>全课程统一用词。课里出现的词，回来这里对一遍。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="../reference/prompt-caching.html">KV Cache 与「缓存命中」速查</a></h3>
+      <p>LLM 底层第 3 课的压缩版，方便随时回看。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="../reference/one-request-end-to-end.html">图 · 一次请求，从头到尾</a></h3>
+      <p>prefill ＋ decode 全过程的<b>可点逐步版</b>——看货架（KV cache）怎么一点点变满。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="../reference/sampling-params.html">采样参数速查</a></h3>
+      <p>temperature / top_p / top_k / seed：<b>怎么设、什么时候别设</b>。配模型的时候照着抄。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="../reference/canonical-diagrams.html">权威架构图 · 对照</a></h3>
+      <p>英文资料里那几张图认得出是哪一块。<b>当对照，不当教材</b>；附中英认词表。</p>
+    </div>
+  </div>
+
+  <h2>学习记录 / Learning records</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">你已建立的、会影响后续教学的节点（跨三条轨道）。放在 <code>learning-records/</code>。</p>
+  <ul>
+    <li><b>0001</b> · 「缓存命中率」是 agent 成本结构的第一杠杆</li>
+    <li><b>0002</b> · 能独立推导无缓存时的重复计算量（<code>N(N+1)/2</code>）</li>
+    <li><b>0003</b> · 能独立说清注意力的不对称：Query 一次性，Key/Value 可复用</li>
+    <li><b>0004</b> · 能区分两种「键值」：注意力的 K/V（可缓存）与 FFN 的键值记忆（是比喻）</li>
+    <li><b>0005</b> · 追问的是「谁在什么时候用上它」，不是「这一步算不算」</li>
+  </ul>
+
+  <div class="ask-teacher">
+    <b>不知道从哪开始？</b>如果只挑一样，就从 <a href="agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a>开始；如果想先看懂成本，从 <a href="llm/0001-from-token-to-next-token.html">LLM 底层第 1 课</a>（基石）顺着往下。随时问我"下一课学什么"。
+  </div>
+
+  <footer>AI Agent 原理与工程 · 课程目录 · 一个 mission，三条轨道</footer>
+</div>
+</body>
+</html>

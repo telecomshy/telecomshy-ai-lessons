@@ -1,0 +1,10 @@
+# 个人学习记录，不对外公开
+learning-records/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# 编辑器 / 系统
+.DS_Store
+Thumbs.db

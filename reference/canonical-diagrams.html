@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查 · 现成的权威架构图（对照用）</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="lesson-meta">速查 / Reference</div>
+  <h1>现成的权威架构图（对照用）</h1>
+  <p class="subtitle">本课的图都是<b>自己画的</b>——为白话主线定制的切面。这一页放<b>别人画的权威图</b>，帮你去英文资料里认出同一块东西。<b>当对照，不当教材。</b></p>
+
+  <h2>怎么用这一页</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p>权威图<b>不适合当入门图</b>：它一上来就是 <code>d_model</code>、<code>Add &amp; Norm</code>、<code>Multi-Head</code>，对初学者是噪音。</p>
+    <p><b>用法是反过来的</b>：先在我们的课里把主线走完，再拿权威图<b>对一遍你已经懂的是它图里的哪一块</b>。这样下次在英文论文里撞见它，不至于发懵。</p>
+  </div>
+
+  <h2>三张对照</h2>
+
+  <h3>① 整体架构 —— 论文原图</h3>
+  <p><b>它画的是什么</b>：Vaswani et al. 2017 的<b>图 1</b>，Transformer 的"官方"架构图。左边是编码器、右边是解码器，框里写着 <code>Multi-Head Attention</code>、<code>Add &amp; Norm</code>、<code>Feed Forward</code>、<code>Masked Multi-Head Attention</code>。</p>
+  <p><b>我们讲的是哪一块</b>：<b>只讲右边那半</b>——今天的大模型是 <b>decoder-only</b>，编码器那半已经不用了。<a href="../assets/llm-architecture.svg">这张对照图</a>画的「N 个 Block 一个叠一个」，就是它右半那一大块重复的部分；<a href="../lessons/llm/0001-from-token-to-next-token.html#fig-pipeline">第 1 课</a>的<a href="../assets/llm-pipeline.svg">流程图</a>把那一块摊开成九站来看。</p>
+
+  <h3>② 注意力内部 —— 图解版</h3>
+  <p><b>它画的是什么</b>：Jay Alammar《The Illustrated Transformer》把注意力拆成 Q/K/V 矩阵、多头切分、掩码、softmax、加权求和一张图讲完。</p>
+  <p><b>我们讲的是哪一块</b>：就是它拆开的那条链，但我们<b>只讲了一个头</b>（多头 <code>Multi-Head</code> 我们没讲），也<b>没讲 <code>Add &amp; Norm</code> 里的 Norm</b>。跑一遍 <code>exercises/llm/0001-tiny-attention.py</code>，打出来的 [1]～[9] 跟它那张图的顺序是一一对应的。</p>
+
+  <h3>③ 训练与采样 —— 能上手拧的交互版</h3>
+  <p><b>它画的是什么</b>：Georgia Tech 的 <b>Transformer Explainer</b>，浏览器里跑着一个真的 GPT-2（1.24 亿参数）。能看文字怎么变向量、注意力怎么流动、最后怎么变成概率。</p>
+  <p><b>我们讲的是哪一块</b>：最后那两步就是第 1 课第 3 节⑤和<a href="../lessons/llm/0001-from-token-to-next-token-deep.html#q10-sampling">进阶版 Q10</a>。<b>它有 temperature / top-k / top-p 三个滑块</b>——亲手拖一次，比读十行字管用。顺带一提，它给的词表大小 50,257、MLP 768→3072 的四倍扩展，跟我们<a href="glossary.html#vocabulary">术语表</a>里的数字对得上，可以当第三方佐证。</p>
+
+  <h2>认词对照表（这一页最值钱的一张）</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">英文图里的词</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">我们课里的说法</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">在哪讲的</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>Input / Token Embedding</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">查<b>嵌入表</b> → 向量</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">LLM 底层 · 第 1 课 §1</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>Masked Self-Attention</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">注意力 ＋ <b>看不到后面</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">第 1 课 §4① · 进阶 Q4</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>Add</code>（在 <code>Add &amp; Norm</code> 里）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>残差</b>：把原来的也留一份</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">第 1 课 §4②</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>Feed Forward</code> / <code>MLP</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>FFN</b>：补充知识、推动概念</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">第 1 课 §4③ · 进阶 Q5</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>N×</code> / <code>Nx</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>N 个 Block</b> 一个叠一个（步骤一样、每层参数不同）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">第 1 课 §2 / §4④</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>Linear</code> ＋ <code>Softmax</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">打分（<b>logits</b>）→ 百分比 → 采样</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">第 1 课 §4⑤ · 进阶 Q9</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>Decoder-only</code></td>
+          <td style="padding:0.45rem">我们整门课讲的<b>就是它</b></td>
+          <td style="padding:0.45rem">—</td></tr>
+      <tr><td style="padding:0.45rem"><code>KV Cache</code></td>
+          <td style="padding:0.45rem">KV Cache（同一个词）</td>
+          <td style="padding:0.45rem">LLM 底层 · 第 3 课</td></tr>
+    </tbody>
+  </table>
+
+  <h2>权威图里有、我们没讲的（撞见了别慌）</h2>
+  <ul>
+    <li><b><code>Positional Encoding</code>（位置编码）</b>——字的"第几个"是怎么塞进向量里的。我们只说了"一个 token 一行"。</li>
+    <li><b><code>Layer Norm</code>（层归一化）</b>——把每层数字的幅度按住，训练才稳。我们只讲了 <code>Add &amp; Norm</code> 里的 Add。</li>
+    <li><b><code>Multi-Head</code>（多头）</b>——注意力并排跑好几套，各看各的关系。我们只讲了其中一套。</li>
+    <li><b><code>Dropout</code> / 优化器 / 初始化</b>——纯训练期的事，推理时看不到。</li>
+  </ul>
+  <p style="font-size:0.9rem;color:var(--muted)">这些都是<b>训练期才需要懂</b>的东西。等「模型是怎么学出来的」那一课定了要不要开，再决定要不要讲它们。</p>
+
+  <h2>版权与引用</h2>
+  <ul>
+    <li><b>论文图</b>（Vaswani Fig.1）：arXiv 上可以引用，<b>注明出处</b>即可。</li>
+    <li><b>《The Illustrated Transformer》的图</b>：<b>CC BY-NC-SA 4.0</b>（署名-非商业-相同方式共享）——<b>能引用，不能白拿、不能改了再发</b>，要带作者名和同样的许可。</li>
+    <li><b>Transformer Explainer</b>：是网页工具，<b>直接给人链接</b>最省事，也不涉及搬运。</li>
+  </ul>
+  <p style="font-size:0.9rem;color:var(--muted)">这也是本课坚持自画图的原因之一：<b>自己的图可以随便改口径、改措辞、改成中文主线</b>；别人的图不行。</p>
+
+  <div class="source">
+    <b>来源</b>：<br>
+    <a href="https://arxiv.org/abs/1706.03762">Vaswani et al. — Attention Is All You Need（2017）</a>——图 1 是 Transformer 的"官方"架构图。<br>
+    <a href="https://jalammar.github.io/illustrated-transformer/">Jay Alammar — The Illustrated Transformer</a>——被业界当作 canonical 图解的一篇。<br>
+    <a href="https://poloclub.github.io/transformer-explainer/">Transformer Explainer（Georgia Tech）</a>——浏览器里跑真 GPT-2，可拧 temperature / top-k / top-p。<br>
+    <a href="https://brandonrohrer.com/transformers.html">Brandon Rohrer — Transformers from Scratch</a>——专讲"论文图里的这一块到底在哪一步"。
+  </div>
+
+  <p class="next">
+    本课自画的图：<a href="one-request-end-to-end.html">图 · 一次请求，从头到尾</a>　·　<a href="../assets/llm-architecture.svg">架构图（只在本页用）</a>　·　<a href="../assets/llm-pipeline.svg">流程图（第 1 课 §3）</a><br>
+    相关：<a href="glossary.html#logits">Logits / Softmax / 采样</a> · <a href="glossary.html#lm-head">LM Head</a> · <a href="glossary.html#ffn">FFN</a> · <a href="glossary.html#layer">层</a>
+  </p>
+</div>
+</body>
+</html>
