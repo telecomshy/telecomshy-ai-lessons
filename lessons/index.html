@@ -18,18 +18,19 @@
     <p>这个仓库只有<b>一个目标</b>：搞懂 AI Agent 的原理与工程。但课程分成四条轨道——</p>
     <p><b>LLM 底层</b>只讲"影响 agent 成本 / 延迟 / 设计"的机制，以及能力和失效的来源；<b>Agent 原理篇</b>直接服务这个目标（是什么、为什么）；<b>Agent 技巧篇</b>讲"怎么做、怎么不翻车"（上下文工程、工具设计、失败模式）；<b>RAG</b>讲"怎么让模型用上手边没有的信息"，只讲机制与取舍。</p>
     <p>四条轨道<b>各自从 0001 编号</b>，所以提课号时要说清轨道，例如「LLM 底层第 3 课」。轨道之间用超链接互相打通。</p>
+    <p>课程是<b>AI 先生成、我再逐课修改</b>的，进度分三档：标题后带 <span class="badge">completed</span> 的是<b>已经改过一遍</b>的；普通卡片是<b>还在改</b>；虚线卡片标着「下一步开」的<b>还没写</b>。带标记的课可以直接照着读。</p>
   </div>
 
   <h2>LLM 底层</h2>
   <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲影响 agent 成本 / 延迟 / 设计的机制，<b>以及能力与失效的来源</b>。教材放在 <code>lessons/llm/</code>。<b>基础课给初学者和业务人员，进阶版给技术读者。</b></p>
   <div class="pillars">
-    <div class="pillar">
-      <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a></h3>
+    <div class="pillar completed">
+      <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a><span class="badge">completed</span></h3>
       <p><b>先导课，先读这个</b>：大模型作为程序为什么多一个训练阶段，那些数字是哪来的、怎么被调的，以及为什么它天生只会「接下一个字」。</p>
       <p>动手：<code>exercises/llm/0000-how-models-learn.py</code></p>
     </div>
-    <div class="pillar">
-      <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a></h3>
+    <div class="pillar completed">
+      <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a><span class="badge">completed</span></h3>
       <p><b>基石课</b>：文字 → token → 向量 → 注意力 → FFN → 采样，看懂全貌。</p>
       <p>进阶：<a href="llm/0001-from-token-to-next-token-deep.html">九个追问</a>　·　<code>exercises/llm/0001-tiny-attention.py</code>　·　<code>exercises/llm/0001-sampling-params.py</code></p>
     </div>

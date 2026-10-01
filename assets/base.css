@@ -151,6 +151,25 @@ em { font-style: italic; }
 .pillar.planned { border-style: dashed; border-top-color: var(--rule); background: var(--paper); }
 .pillar.planned h3, .pillar.planned p { color: var(--muted); }
 
+/* ---- 完成标记：写完且作者逐课改过（区别于 planned 的"还没写"） ---- */
+.pillar.completed { border-top-color: var(--ok); }
+.pillar.completed h3 .badge { margin-left: 0.35rem; }
+.badge {
+  display: inline-block;
+  font-family: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", sans-serif;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+  color: var(--ok);
+  background: var(--ok-soft);
+  border: 1px solid var(--ok);
+  border-radius: 3px;
+  padding: 0 0.32rem;
+  vertical-align: 0.15em;
+  white-space: nowrap;
+}
+
 /* ---- 代码 ---- */
 pre {
   background: var(--code-bg);

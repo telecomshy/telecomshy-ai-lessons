@@ -10,7 +10,24 @@
 
 我不是人工智能专业的研究者，只是一名普通工程师，写这份教程之前我自己也是 AI 领域的初学者。所以对我来说，写这份教程的过程，也是一次系统学习。因此教程一定有错漏，一定有讲得不够好的地方，**如果你发现了错误，或者有更好的讲法，欢迎开一个 Issue 告诉我**。
 
-教程基于 [mattpocock 的 `teach` 技能](https://github.com/mattpocock/skills/blob/main/docs/productivity/teach.md) 开发，因此一开始就有一个现成的骨架：AI 先生成课件，我再一课一课地修改和调整。目录里点不开的那几课还没写 —— 后期变动会比较大。
+教程基于 [mattpocock 的 `teach` 技能](https://github.com/mattpocock/skills/blob/main/docs/productivity/teach.md) 开发，因此一开始就有一个现成的骨架：AI 先生成课件，我再一课一课地修改和调整。
+
+### 课程进度怎么标记
+
+整个教程的课件是 **AI 辅助生成**的，我一课一课地改。所以进度分三档，目录页上一眼能分清：
+
+| 标记 | 含义 |
+|---|---|
+| 标题后带 <code>completed</code> | **已经逐课改过一遍**，内容定稿，可以直接照着读 |
+| 普通卡片 | 已经写出来了，但**还在改** —— 措辞、举例、配图都可能变 |
+| 虚线卡片，标着「下一步开」 | **还没写** |
+
+目前标为 `completed` 的是：
+
+- **LLM 底层 · 第 0 课**（[模型是怎么学出来的](lessons/llm/0000-how-models-learn.html)）
+- **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「九个追问」](lessons/llm/0001-from-token-to-next-token-deep.html)
+
+基础课和进阶版算同一课，改过一课就算这一课 `completed`。剩下的课会接着往下标。
 
 ---
 
