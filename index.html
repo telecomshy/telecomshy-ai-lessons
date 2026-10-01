@@ -157,16 +157,6 @@ h1 .neon {
   aspect-ratio: 4 / 5;
 }
 .portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.portrait .fallback {
-  position: absolute; inset: 0; display: grid; place-content: center;
-  gap: 0.7rem; text-align: center; padding: 2rem;
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 0.8rem; color: rgba(255,255,255,.86); letter-spacing: 0.04em;
-}
-.portrait .fallback code {
-  font-size: 0.76rem; color: #fff; background: rgba(0,0,0,.42);
-  border: 1px solid rgba(255,255,255,.28); border-radius: 6px; padding: 0.3rem 0.55rem;
-}
 .portrait::before {
   content: ""; position: absolute; inset: -1px; border-radius: 19px;
   padding: 1px; pointer-events: none;
@@ -202,64 +192,34 @@ h2 .accent { color: var(--cyan); text-shadow: 0 0 22px var(--glow-c); }
   opacity: .55;
 }
 
-/* ---- 人物画像 ---- */
-.dossier {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
+/* ---- 格言 ---- */
+.motto { text-align: center; padding: 3.6rem 0 3rem; }
+.motto .ornament {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.9rem; margin-bottom: 2.1rem;
 }
-.card {
-  border: 1px solid var(--line); border-radius: 14px;
-  background: linear-gradient(165deg, rgba(13,16,36,.92), rgba(7,9,18,.86));
-  padding: 1.4rem 1.5rem; backdrop-filter: blur(8px);
-  box-shadow: 0 18px 50px rgba(0,0,0,.42);
+.motto .ornament i {
+  height: 1px; width: min(13rem, 20vw);
+  background: linear-gradient(90deg, transparent, var(--cyan));
 }
-.card h3 {
-  margin: 0 0 1rem; font-size: 0.76rem; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--violet);
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-weight: 600;
+.motto .ornament i:last-child { background: linear-gradient(90deg, var(--pink), transparent); }
+.motto .ornament b {
+  width: 6px; height: 6px; flex: 0 0 auto; transform: rotate(45deg);
+  background: var(--cyan); box-shadow: 0 0 12px var(--glow-c);
 }
-.trait { margin-bottom: 0.95rem; }
-.trait:last-child { margin-bottom: 0; }
-.trait .lab {
-  display: flex; justify-content: space-between; align-items: baseline;
-  font-size: 0.88rem; margin-bottom: 0.32rem; gap: 0.8rem;
+.motto .q {
+  margin: 0; font-size: clamp(1.45rem, 4.4vw, 2.6rem); line-height: 1.52;
+  font-weight: 400; letter-spacing: 0.03em;
+  background: linear-gradient(96deg, #ffffff 8%, var(--cyan) 42%, var(--violet) 68%, var(--pink) 94%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 32px rgba(34, 211, 238, 0.26));
 }
-.trait .lab i { font-style: normal; color: var(--muted); font-size: 0.78rem; }
-.meter { height: 7px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
-.meter span {
-  display: block; height: 100%; border-radius: 999px; width: var(--w, 50%);
-  background: linear-gradient(90deg, var(--cyan), var(--violet) 55%, var(--pink));
-  box-shadow: 0 0 14px rgba(167,139,250,.6);
-  animation: grow 1.5s cubic-bezier(.2,.8,.2,1) both;
+.motto .from {
+  margin: 1.8rem 0 0; font-size: 0.9rem; color: var(--muted);
+  letter-spacing: 0.06em;
 }
-@keyframes grow { from { width: 0; } }
-
-.chips { display: flex; flex-wrap: wrap; gap: 0.55rem; }
-.chip {
-  font-size: 0.88rem; padding: 0.36rem 0.85rem; border-radius: 999px;
-  border: 1px solid rgba(94,234,212,.34); color: var(--ink);
-  background: rgba(34,211,238,.09); transition: background .2s, border-color .2s;
-}
-.chip:hover { background: rgba(34,211,238,.2); border-color: var(--cyan); }
-.chip.warm { border-color: rgba(244,114,182,.36); background: rgba(236,72,153,.11); }
-.chip.warm:hover { background: rgba(236,72,153,.22); border-color: var(--pink); }
-
-.dream {
-  grid-column: 1 / -1;
-  border: 1px solid rgba(244,114,182,.34); border-radius: 14px;
-  background:
-    linear-gradient(120deg, rgba(236,72,153,.15), rgba(109,40,217,.13) 55%, rgba(8,145,178,.15)),
-    rgba(7,9,18,.86);
-  padding: 1.6rem 1.7rem;
-  box-shadow: 0 0 44px rgba(236,72,153,.16);
-}
-.dream h3 { color: var(--pink); }
-.dream p { margin: 0 0 0.7rem; font-size: 1.02rem; }
-.dream p:last-child { margin-bottom: 0; }
-.dream b { color: #fff; }
-.path {
-  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 0.86rem; color: var(--cyan); text-shadow: 0 0 12px var(--glow-c);
+.motto .from::before {
+  content: "— "; color: var(--pink);
 }
 
 /* ---- 轨道 ---- */
@@ -296,12 +256,12 @@ footer a:hover { text-decoration: underline; }
   .hero { grid-template-columns: 1fr; gap: 2.4rem; padding-top: 1.6rem; }
   .portrait { max-width: 26rem; margin: 0 auto; }
   .tag.t1 { left: 0; } .tag.t2 { right: 0; }
-  .dossier { grid-template-columns: 1fr; }
   .stats { gap: 1.5rem; }
+  .motto { padding: 2.8rem 0 2.2rem; }
+  .motto .ornament i { width: min(6rem, 18vw); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .blob, .dot, .portrait::before, .meter span { animation: none !important; }
-  .meter span { width: var(--w, 50%); }
+  .blob, .dot, .portrait::before { animation: none !important; }
 }
 </style>
 </head>
@@ -318,7 +278,7 @@ footer a:hover { text-decoration: underline; }
     <a class="brand" href="lessons/index.html">AI&nbsp;AGENT&nbsp;·&nbsp;原理与工程</a>
     <nav class="navlinks">
       <a href="lessons/index.html">课程目录</a>
-      <a href="#portrait">人物画像</a>
+      <a href="#motto">写在前面</a>
       <a href="#tracks">四条轨道</a>
       <a href="README.md">README</a>
     </nav>
@@ -332,11 +292,10 @@ footer a:hover { text-decoration: underline; }
       <p class="lede">
         不是「会调 API」，而是知道它<b>为什么能工作</b>、<b>会在哪里翻车</b>。
         四条轨道、<b>17 门基础课 + 7 门进阶课</b>，22 个能跑的 Python 脚本。
-        讲解用中文，标尺是「初中生能看懂」。
+        讲解用中文，标尺是「高中生能看懂」。
       </p>
       <div class="cta">
         <a class="btn" href="lessons/index.html">开始学习 →</a>
-        <a class="btn ghost" href="#portrait">这份教程的由来</a>
       </div>
       <div class="stats">
         <div class="stat"><b>4</b><span>条轨道</span></div>
@@ -349,14 +308,8 @@ footer a:hover { text-decoration: underline; }
     <div class="portrait" id="portrait">
       <span class="tag t1">for her · 为她而作</span>
       <div class="frame">
-        <!-- 把她的画像存成 assets/portrait.png（或 .jpg），这张图就会出现 -->
         <img src="assets/portrait.png" alt="AI 生成的画像：霓虹夜色中的少女"
              onerror="this.style.display='none'">
-        <div class="fallback">
-          <div>把她的画像放到</div>
-          <code>assets/portrait.png</code>
-          <div>这张图就会出现在这里</div>
-        </div>
       </div>
       <span class="tag t2">ai-generated</span>
     </div>
@@ -364,73 +317,11 @@ footer a:hover { text-decoration: underline; }
 
   <hr class="rule">
 
-  <!-- AI 人物画像 -->
-  <section>
-    <h2>AI 人物画像 <span class="accent">/ character profile</span></h2>
-    <p class="sub">
-      这门教程最初的收件人，是下面这个人。她的画像由 AI 生成，配图也是 AI 画的 ——
-      这本身就是她喜欢的东西：自然科学、物理天文、编程、人工智能。
-    </p>
-
-    <div class="dossier">
-      <div class="card">
-        <h3>traits · 性格</h3>
-        <div class="trait">
-          <div class="lab"><span>聪明 · 举一反三</span><i>会自己验算</i></div>
-          <div class="meter"><span style="--w:95%"></span></div>
-        </div>
-        <div class="trait">
-          <div class="lab"><span>善良</span><i>待人温和</i></div>
-          <div class="meter"><span style="--w:92%"></span></div>
-        </div>
-        <div class="trait">
-          <div class="lab"><span>执着</span><i>认准了就往下钻</i></div>
-          <div class="meter"><span style="--w:94%"></span></div>
-        </div>
-        <div class="trait">
-          <div class="lab"><span>好奇心</span><i>兴趣跨度极大</i></div>
-          <div class="meter"><span style="--w:98%"></span></div>
-        </div>
-        <div class="trait">
-          <div class="lab"><span>专注</span><i>能在一件事上很久</i></div>
-          <div class="meter"><span style="--w:90%"></span></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3>interests · 兴趣</h3>
-        <div class="chips">
-          <span class="chip">画画</span>
-          <span class="chip">自然科学</span>
-          <span class="chip">物理</span>
-          <span class="chip">天文</span>
-          <span class="chip">编程</span>
-          <span class="chip warm">人工智能</span>
-        </div>
-        <h3 style="margin-top:1.6rem">background · 身份</h3>
-        <div class="chips">
-          <span class="chip warm">艺术生</span>
-          <span class="chip">兴趣广泛到有点“不务正业”</span>
-          <span class="chip">常觉得自己是唯一懂的少数派</span>
-        </div>
-      </div>
-
-      <div class="dream">
-        <h3>dream · 她的梦想</h3>
-        <p>
-          <b>亲手做一个能陪伴自己的机器人。</b>
-        </p>
-        <p>
-          有时候她会感到孤独。这个愿望听起来很远，但路是具体的 ——
-          先得搞懂 <b>agent 怎么「想」</b>、为什么会一本正经地胡说、
-          它怎么<b>「伸手」操作真实世界</b>、以及它<b>在哪里会翻车</b>。
-          这四件事，就是这 24 门课在讲的东西。
-        </p>
-        <p class="path">
-          起点 → agent/0001 · 最小循环　｜　路线 → agent/0003 → 0004 → 0006
-        </p>
-      </div>
-    </div>
+  <!-- 格言 -->
+  <section class="motto" id="motto">
+    <div class="ornament"><i></i><b></b><i></i></div>
+    <p class="q">梦想也许很远，<br>每一步都离梦想更近。</p>
+    <p class="from">写给那个想亲手做出机器人的女孩</p>
   </section>
 
   <hr class="rule">
