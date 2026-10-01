@@ -11,13 +11,43 @@
 
   <div class="lesson-meta">目录 / Index</div>
   <h1>课程目录</h1>
-  <p class="subtitle">一个 mission，三条轨道。各轨独立编号，可以分开翻。</p>
+  <p class="subtitle">一个 mission，四条轨道。各轨独立编号，可以分开翻。</p>
 
   <div class="note">
     <span class="label">怎么读这个目录</span>
-    <p>本工作区只有<b>一个目标</b>：搞懂 AI Agent 的原理与工程。但课程分成三条轨道——</p>
-    <p><b>Agent 原理篇</b>直接服务这个目标（是什么、为什么）；<b>LLM 底层</b>只讲"影响 agent 成本 / 延迟 / 设计"的机制；<b>Agent 技巧篇</b>讲"怎么做、怎么不翻车"（上下文工程、工具设计、失败模式）。</p>
-    <p>三条轨道<b>各自从 0001 编号</b>，所以提课号时要说清轨道，例如「LLM 底层第 3 课」。轨道之间用超链接互相打通。</p>
+    <p>这个仓库只有<b>一个目标</b>：搞懂 AI Agent 的原理与工程。但课程分成四条轨道——</p>
+    <p><b>LLM 底层</b>只讲"影响 agent 成本 / 延迟 / 设计"的机制，以及能力和失效的来源；<b>Agent 原理篇</b>直接服务这个目标（是什么、为什么）；<b>Agent 技巧篇</b>讲"怎么做、怎么不翻车"（上下文工程、工具设计、失败模式）；<b>RAG</b>讲"怎么让模型用上手边没有的信息"，只讲机制与取舍。</p>
+    <p>四条轨道<b>各自从 0001 编号</b>，所以提课号时要说清轨道，例如「LLM 底层第 3 课」。轨道之间用超链接互相打通。</p>
+  </div>
+
+  <h2>LLM 底层</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲影响 agent 成本 / 延迟 / 设计的机制，<b>以及能力与失效的来源</b>。教材放在 <code>lessons/llm/</code>。<b>基础课给初学者和业务人员，进阶版给技术读者。</b></p>
+  <div class="pillars">
+    <div class="pillar">
+      <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a></h3>
+      <p><b>先导课，先读这个</b>：大模型作为程序为什么多一个训练阶段，那些数字是哪来的、怎么被调的，以及为什么它天生只会「接下一个字」。</p>
+      <p>动手：<code>exercises/llm/0000-how-models-learn.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a></h3>
+      <p><b>基石课</b>：文字 → token → 向量 → 注意力 → FFN → 采样，看懂全貌。</p>
+      <p>进阶：<a href="llm/0001-from-token-to-next-token-deep.html">九个追问</a>　·　<code>exercises/llm/0001-tiny-attention.py</code>　·　<code>exercises/llm/0001-sampling-params.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0002-prefill-vs-decode.html">0002 · 一次请求的两段：prefill 与 decode</a></h3>
+      <p>为什么「读长文」快、「写长文」慢。顺带钉死<b>一次任务 / 一次请求 / 一轮 decode</b>。</p>
+      <p>进阶：<a href="llm/0002-prefill-vs-decode-deep.html">十一个追问</a>　·　<code>exercises/llm/0002-prefill-vs-decode.py</code>　·　<code>exercises/llm/0002-why-all-positions.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0003-kv-cache-and-prompt-caching.html">0003 · KV Cache 与「缓存命中」是两回事</a></h3>
+      <p>请求内算过的别重算，跨请求捡现成。本课实测：<b>只改开头一处，成本差 3.7 倍</b>。</p>
+      <p>进阶：<a href="llm/0003-kv-cache-and-prompt-caching-deep.html">五个绕人的细节</a>　·　<code>exercises/llm/0003-cache-hit-simulator.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a></h3>
+      <p>批处理怎么救 decode：用一点点延迟，换几十倍吞吐。</p>
+      <p>进阶：<a href="llm/0004-batching-deep.html">拐点与工业界的招</a>　·　<code>exercises/llm/0004-batching.py</code></p>
+    </div>
   </div>
 
   <h2>Agent 原理篇</h2>
@@ -53,10 +83,6 @@
       <p><b>Agent ＝ Model ＋ Harness</b>。模型、agent、harness 三者的边界。</p>
       <p><code>exercises/agent/0006-harness-checklist.py</code></p>
     </div>
-    <div class="pillar planned">
-      <h3>0007 · 工具设计</h3>
-      <p>名字、描述、参数怎么写，模型才调得准。下一步开。</p>
-    </div>
   </div>
 
   <h2>Agent 技巧篇</h2>
@@ -81,38 +107,8 @@
       <p>agent 会怎么翻车，翻了怎么救。</p>
     </div>
   </div>
-  <h2>LLM 底层</h2>
-  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲影响 agent 成本 / 延迟 / 设计的机制，<b>以及能力与失效的来源</b>。教材放在 <code>lessons/llm/</code>。<b>基础课给初学者和业务人员，进阶版给技术读者。</b></p>
-  <div class="pillars">
-    <div class="pillar">
-      <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a></h3>
-      <p><b>先导课，先读这个</b>：大模型作为程序为什么多一个训练阶段，那些数字是哪来的、怎么被调的，以及为什么它天生只会「接下一个字」。</p>
-      <p>动手：<code>exercises/llm/0000-how-models-learn.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a></h3>
-      <p><b>基石课</b>：文字 → token → 向量 → 注意力 → FFN → 采样，看懂全貌。</p>
-      <p>进阶：<a href="llm/0001-from-token-to-next-token-deep.html">九个追问</a>　·　<code>exercises/llm/0001-tiny-attention.py</code>　·　<code>exercises/llm/0001-sampling-params.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="llm/0002-prefill-vs-decode.html">0002 · 一次请求的两段：prefill 与 decode</a></h3>
-      <p>为什么「读长文」快、「写长文」慢。顺带钉死<b>一次任务 / 一次请求 / 一轮 decode</b>。</p>
-      <p>进阶：<a href="llm/0002-prefill-vs-decode-deep.html">十一个追问</a>　·　<code>exercises/llm/0002-prefill-vs-decode.py</code>　·　<code>exercises/llm/0002-why-all-positions.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="llm/0003-kv-cache-and-prompt-caching.html">0003 · KV Cache 与「缓存命中」是两回事</a></h3>
-      <p>请求内算过的别重算，跨请求捡现成。本课实测：<b>只改开头一处，成本差 3.7 倍</b>。</p>
-      <p>进阶：<a href="llm/0003-kv-cache-and-prompt-caching-deep.html">五个绕人的细节</a>　·　<code>exercises/llm/0003-cache-hit-simulator.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a></h3>
-      <p>批处理怎么救 decode：用一点点延迟，换几十倍吞吐。</p>
-      <p>进阶：<a href="llm/0004-batching-deep.html">拐点与工业界的招</a>　·　<code>exercises/llm/0004-batching.py</code></p>
-    </div>
-  </div>
-
   <h2>RAG</h2>
-  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲<b>机制与取舍</b>：为什么要检索、一条链六步各在干什么、什么时候不该上。<b>不讲向量库选型 / 产品对比</b>（会烂，也超出本工作区的使命）。教材放在 <code>lessons/rag/</code>。</p>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲<b>机制与取舍</b>：为什么要检索、一条链六步各在干什么、什么时候不该上。<b>不讲向量库选型 / 产品对比</b>（会烂，也超出这份教程的使命）。教材放在 <code>lessons/rag/</code>。</p>
   <div class="pillars">
     <div class="pillar">
       <h3><a href="rag/0001-why-retrieval.html">0001 · 为什么得"先查资料再回答"</a></h3>
@@ -162,7 +158,7 @@
   </div>
 
   <h2>学习记录 / Learning records</h2>
-  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">你已建立的、会影响后续教学的节点（跨三条轨道）。放在 <code>learning-records/</code>。</p>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">你已建立的、会影响后续教学的节点（跨四条轨道）。放在 <code>learning-records/</code>。</p>
   <ul>
     <li><b>0001</b> · 「缓存命中率」是 agent 成本结构的第一杠杆</li>
     <li><b>0002</b> · 能独立推导无缓存时的重复计算量（<code>N(N+1)/2</code>）</li>
@@ -172,10 +168,10 @@
   </ul>
 
   <div class="ask-teacher">
-    <b>不知道从哪开始？</b>如果只挑一样，就从 <a href="agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a>开始；如果想先看懂成本，从 <a href="llm/0001-from-token-to-next-token.html">LLM 底层第 1 课</a>（基石）顺着往下。随时问我"下一课学什么"。
+    <b>不知道从哪开始？</b>从 <a href="llm/0000-how-models-learn.html">LLM 底层 · 第 0 课</a>（先导）读起，再顺着 <a href="llm/0001-from-token-to-next-token.html">第 1 课</a>（基石）往下；看完想动手做自己的 agent，就转 <a href="agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a>。随时问我"下一课学什么"。
   </div>
 
-  <footer>AI Agent 原理与工程 · 课程目录 · 一个 mission，三条轨道</footer>
+  <footer>AI Agent 原理与工程 · 课程目录 · 一个 mission，四条轨道</footer>
 </div>
 </body>
 </html>
