@@ -34,7 +34,7 @@
       <span class="loop-note">↻ <b>层内是并行的</b>：n 行<b>并排</b>过，不排队。整条链真正串行的只有第 5 环的"挑字"。</span>
       <span class="loop-note">↻ <b>顺手做的事</b>：每一层算出的 k、v 全部填进缓存（KV cache），后面的轮次直接取。</span>
       <span class="in">这一步的输入：<b>上一环那张表</b>。出来的是<b>同样形状、但每行都被改写过的新表</b>。</span>
-      <span class="to">层与轮两个轴的关系见 <a href="#q11-axes">Q11</a>；为什么能并行见 <a href="#q9-parallel">Q9</a>；缓存里为什么只有 K/V 见 <a href="#q1-hidden">Q1</a>；每步的"搬运"见 <a href="#q2-overlap">Q2</a>；FFN 为什么不进缓存见 <a href="#q4-ffn">Q4</a></span></li>
+      <span class="to">为什么能并行见 <a href="#q9-parallel">Q9</a>；缓存里为什么只有 K/V 见 <a href="#q1-hidden">Q1</a>；每步的"搬运"见 <a href="#q2-overlap">Q2</a>；FFN 为什么不进缓存见 <a href="#q4-ffn">Q4</a></span></li>
     <li><b>只取最后一层、最后一个位置</b>，得到<b>一根向量</b>。
       <span class="in">这一步的输入：<b>第 3 环改写完的那张表</b>。其它行也出了结果，但推理时没人要——<b>作废</b>。</span>
       <span class="to">为什么"只有最后一行被采用"，见 <a href="#q10-why-all">Q10</a></span></li>
@@ -55,7 +55,7 @@
   </div>
   <div class="note">
     <span class="label">卡在哪一环？直接跳过去</span>
-    <p><b>第 3 环</b>　为什么每一行都能并排过、不排队 → <a href="#q9-parallel">Q9</a>　·　前缀的字自己也要算注意力吗 → <a href="#q10-why-all">Q10</a>　·　层和轮到底是什么关系 → <a href="#q11-axes">Q11</a>　·　缓存里为什么只有 K/V → <a href="#q1-hidden">Q1</a><br>
+    <p><b>第 3 环</b>　为什么每一行都能并排过、不排队 → <a href="#q9-parallel">Q9</a>　·　前缀的字自己也要算注意力吗 → <a href="#q10-why-all">Q10</a>　·　缓存里为什么只有 K/V → <a href="#q1-hidden">Q1</a><br>
        <b>第 4 环</b>　中间某一层能不能直接拿去用 → <a href="0001-from-token-to-next-token-deep.html#q8-layers">第 1 课进阶 · Q8</a><br>
        <b>第 5–7 环</b>　挑出来的是编号不是向量 → <a href="#q8-output">Q8</a>　·　采样参数（temperature / top_p）各在调什么 → <a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 · Q10</a><br>
        <b>第 3 环的代价</b>　每步为什么卡带宽 → <a href="#q2-overlap">Q2</a> / <a href="#q3-intensity">Q3</a>　·　滑动窗口 → <a href="#q7-window">Q7</a></p>
@@ -412,56 +412,6 @@ O = softmax(S) · V         ← 按每一行的权重，把 V 加权取回来</c
        前面每个位置<b>也各自出了个预测</b>，但推理时没人要——<b>那才是真正被丢掉的部分。</b><br>
        <span style="color:var(--muted)">（这跟<b>第 1 课第 4 节收尾</b>是同一件事：每个位置都猜了一个下一个字，只有最后一行的猜测被采用。）</span></p>
   </div>
-
-  <h2 id="q11-axes">Q11 · 「层」和「轮」到底是什么关系？一张图钉死</h2>
-  <p><b>对应初学版第 2 节</b>那条「层」和「轮」的钉死。初学版只给了两句话，这里把它<b>画成一张图</b>。这一问是整门课<b>最容易反复卡住</b>的地方：<b>层</b>和<b>轮</b>是两个垂直的维度，初学版分别在不同地方讲过，但从没并排对过账。</p>
-  <p>先各自定义清楚：</p>
-  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
-    <thead><tr>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">词</th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">到底是什么</th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">有多少</th>
-    </tr></thead>
-    <tbody>
-      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>层</b>（layer）</td>
-          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">四个小步：<b>注意力 → 残差 → FFN → 残差</b></td>
-          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">几十层（第 1 课 Q6 那个"中间某一层"就是其中一层）</td></tr>
-      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>轮</b>（one pass）</td>
-          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">一个 token <b>从第 1 层走到最后一层</b>，完整走一遍</td>
-          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">一次请求里有很多轮（一个输出字一轮）</td></tr>
-      <tr><td style="padding:0.5rem"><b>一次请求</b>（request）</td>
-          <td style="padding:0.5rem">你发一次 API、它回一次</td>
-          <td style="padding:0.5rem">1 次 prefill ＋ 若干次 decode</td></tr>
-    </tbody>
-  </table>
-  <div class="goal" style="background:#fff;border-color:var(--ink)">
-    <p><b>最容易错的一处：一轮 ≠ 一层。一轮 = 走完全部层。</b><br>
-       「把流程走完、算出一个字」——那是<b>一轮</b>，不是一层。<br>
-       「再走一遍流程」——那是<b>第二轮</b>，不是第二层。</p>
-  </div>
-  <p>为什么这两个方向容易混？第 1 课讲"层"用的是<b>竖着叠</b>的图（Block 一个摞一个），第 2 课讲"轮"用的是<b>竖着往下</b>的流程图——<b>长得像，意思完全不同</b>。把这两个方向摊成<b>横竖两个轴</b>，就是下面这张网格图。</p>
-  <figure class="figure">
-    <img src="../../assets/layer-vs-round.svg" alt="网格图：横轴是层，纵轴是位置与轮次。每一格是某个位置在某一层的向量。prefill 一次填满前三行、从右下角挑出第一个字；decode 每一轮只新增一行。">
-    <figcaption><b>每一格 = 某个位置在某一层的那根向量。</b>红色那几行是 prefill <b>一轮就全填满</b>；绿色是 decode <b>一轮只加一行</b>，上面原封不动。中间那道「挑字」的坎，是整条流水线唯一真串行的地方。<b>横着走是过层（几十遍），竖着加才是加轮（一轮加一行）。</b></figcaption>
-  </figure>
-  <p>把三个数套进这张图：</p>
-  <ul>
-    <li><b>一次请求</b> ＝ 图里从上往下：<b>红框（prefill 一轮填满那几行）＋ 中间那道挑字的坎 ＋ 之后每轮加一行</b>。</li>
-    <li><b>一轮</b> ＝ 图里<b>沿着一行从左走到右</b>（穿过全部层），走到最右边才有资格挑字。</li>
-    <li><b>层</b> ＝ 图里<b>一列</b>（一列就是那四小步）。</li>
-  </ul>
-  <details class="formula">
-    <summary>看公式（可跳过）——把「层」和「轮」写成符号</summary>
-    <p>设层数 <code>L</code>、输入长度 <code>n</code>、输出长度 <code>m</code>：</p>
-    <pre><code>一轮 prefill：   算出 n × L 个向量    （n 行，每行穿过 L 层）
-一次 decode 轮： 算出   1 × L 个向量    （只有新增那一行，穿过 L 层）
-一次请求合计：   (n + m) × L 个向量
-
-⇒ 为什么 prefill 卡算力、decode 卡带宽？
-   prefill：搬一次权重，喂 n 行 → 权重开销被摊薄
-   decode： 一行一搬，每轮都要把权重重搬一遍 → 搬的比算的多</code></pre>
-  </details>
-  <p>顺带把 <a href="#q10-why-all">Q10</a> 那个"偏差一层层放大"放到这张图上就好懂了：<b>竖着加是轮（每轮多一行）</b>，<b>横着走才是层（每层把所有行重算一遍）</b>——所以位置 2 的注意力要到<b>右边那一列</b>才被位置 3 读到。</p>
 
   <h2 id="q-misconceptions">附 · 一个容易说错的用词</h2>
   <div class="note">
