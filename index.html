@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Agent 原理与工程 · 一份送给她的教程</title>
+<meta name="description" content="一份中文的 AI Agent 入门教程：讲清它是什么、为什么能工作、会在哪里翻车。">
+<style>
+:root {
+  --bg: #070912;
+  --bg2: #0c1024;
+  --ink: #e9edff;
+  --muted: #98a2c9;
+  --cyan: #5eead4;
+  --cyan2: #22d3ee;
+  --pink: #f472b6;
+  --magenta: #ec4899;
+  --violet: #a78bfa;
+  --line: rgba(94, 234, 212, 0.20);
+  --glow-c: rgba(34, 211, 238, 0.55);
+  --glow-m: rgba(236, 72, 153, 0.45);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+               "PingFang SC", "Noto Serif CJK SC", "Microsoft YaHei", serif;
+  font-size: 18px;
+  line-height: 1.75;
+  overflow-x: hidden;
+}
+
+/* ---- 背景：两层漂移的色雾 + 网格 + 扫描线 ---- */
+.bg { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+.blob {
+  position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.5;
+}
+.blob.a { width: 46rem; height: 46rem; top: -14rem; left: -10rem;
+  background: radial-gradient(circle, #0891b2, transparent 68%);
+  animation: drift 26s ease-in-out infinite alternate; }
+.blob.b { width: 40rem; height: 40rem; top: 24rem; right: -12rem;
+  background: radial-gradient(circle, #be185d, transparent 68%);
+  animation: drift 31s ease-in-out infinite alternate-reverse; }
+.blob.c { width: 34rem; height: 34rem; bottom: -12rem; left: 30%;
+  background: radial-gradient(circle, #6d28d9, transparent 70%);
+  animation: drift 37s ease-in-out infinite alternate; }
+@keyframes drift {
+  from { transform: translate3d(0,0,0) scale(1); }
+  to   { transform: translate3d(4rem,3rem,0) scale(1.18); }
+}
+.grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(94,234,212,.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(94,234,212,.055) 1px, transparent 1px);
+  background-size: 58px 58px;
+  mask-image: radial-gradient(ellipse 85% 70% at 50% 22%, #000 25%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 70% at 50% 22%, #000 25%, transparent 78%);
+}
+.scan {
+  position: absolute; inset: 0; opacity: 0.30; pointer-events: none;
+  background: repeating-linear-gradient(180deg,
+    rgba(255,255,255,.035) 0 1px, transparent 1px 4px);
+}
+
+.wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.5rem; }
+
+/* ---- 顶栏 ---- */
+.top {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; padding: 1.1rem 0; flex-wrap: wrap;
+}
+.brand {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.76rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--cyan); text-decoration: none;
+  text-shadow: 0 0 14px var(--glow-c);
+}
+.navlinks { display: flex; gap: 1.3rem; flex-wrap: wrap; }
+.navlinks a {
+  font-size: 0.85rem; color: var(--muted); text-decoration: none;
+  border-bottom: 1px solid transparent; transition: color .2s, border-color .2s;
+}
+.navlinks a:hover { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+/* ---- HERO ---- */
+.hero {
+  display: grid; grid-template-columns: 1.05fr 0.95fr;
+  gap: 3rem; align-items: center; padding: 3rem 0 4.5rem;
+}
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--pink); border: 1px solid rgba(244,114,182,.45);
+  border-radius: 999px; padding: 0.2rem 0.7rem; margin-bottom: 1.4rem;
+  text-shadow: 0 0 12px var(--glow-m);
+}
+.dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--pink);
+  box-shadow: 0 0 10px var(--pink); animation: pulse 2.1s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+h1 {
+  margin: 0 0 0.6rem; font-size: clamp(2.1rem, 5.4vw, 3.5rem);
+  line-height: 1.14; font-weight: 600; letter-spacing: -0.015em;
+}
+h1 .neon {
+  background: linear-gradient(96deg, var(--cyan) 4%, #a5f3fc 26%, var(--violet) 58%, var(--pink) 92%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 26px rgba(34,211,238,.35));
+}
+.lede { color: var(--muted); font-size: 1.06rem; margin: 0 0 2rem; max-width: 34rem; }
+.lede b { color: var(--ink); font-weight: 600; }
+
+.cta { display: flex; gap: 0.9rem; flex-wrap: wrap; align-items: center; }
+.btn {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  font-size: 0.98rem; font-weight: 600; text-decoration: none;
+  padding: 0.72rem 1.5rem; border-radius: 999px;
+  border: 1px solid var(--cyan); color: #04222a;
+  background: linear-gradient(96deg, var(--cyan), var(--cyan2));
+  box-shadow: 0 0 26px rgba(34,211,238,.36);
+  transition: transform .18s, box-shadow .18s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(34,211,238,.55); }
+.btn.ghost {
+  background: transparent; color: var(--cyan);
+  border-color: rgba(94,234,212,.4); box-shadow: none;
+}
+.btn.ghost:hover { border-color: var(--cyan); box-shadow: 0 0 22px rgba(34,211,238,.22); }
+
+.stats { display: flex; gap: 2.2rem; margin-top: 2.6rem; flex-wrap: wrap; }
+.stat b {
+  display: block; font-size: 1.7rem; font-weight: 600; line-height: 1.2;
+  background: linear-gradient(180deg, #fff, var(--cyan));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.stat span { font-size: 0.78rem; color: var(--muted); letter-spacing: 0.06em; }
+
+/* ---- 肖像 ---- */
+.portrait { position: relative; }
+.portrait .frame {
+  position: relative; border-radius: 18px; overflow: hidden;
+  border: 1px solid rgba(167,139,250,.4);
+  background:
+    radial-gradient(120% 90% at 25% 15%, #164e63 0%, #0e7490 32%, #6d28d9 68%, #831843 100%);
+  box-shadow:
+    0 0 0 1px rgba(34,211,238,.22),
+    0 24px 70px rgba(0,0,0,.6),
+    0 0 70px rgba(167,139,250,.28);
+  aspect-ratio: 4 / 5;
+}
+.portrait img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.portrait .fallback {
+  position: absolute; inset: 0; display: grid; place-content: center;
+  gap: 0.7rem; text-align: center; padding: 2rem;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.8rem; color: rgba(255,255,255,.86); letter-spacing: 0.04em;
+}
+.portrait .fallback code {
+  font-size: 0.76rem; color: #fff; background: rgba(0,0,0,.42);
+  border: 1px solid rgba(255,255,255,.28); border-radius: 6px; padding: 0.3rem 0.55rem;
+}
+.portrait::before {
+  content: ""; position: absolute; inset: -1px; border-radius: 19px;
+  padding: 1px; pointer-events: none;
+  background: linear-gradient(140deg, var(--cyan), transparent 42%, transparent 62%, var(--pink));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: sheen 7s linear infinite;
+}
+@keyframes sheen { to { background-position: 300% 0; } }
+.tag {
+  position: absolute; z-index: 2;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.7rem; letter-spacing: 0.1em; padding: 0.3rem 0.62rem;
+  border-radius: 6px; background: rgba(7,9,18,.82);
+  border: 1px solid var(--line); color: var(--cyan);
+  backdrop-filter: blur(6px);
+}
+.tag.t1 { top: 1rem; left: -0.9rem; }
+.tag.t2 { bottom: 1.4rem; right: -0.7rem; color: var(--pink);
+          border-color: rgba(244,114,182,.45); }
+
+/* ---- 通用 section ---- */
+section { padding: 3.4rem 0; }
+h2 {
+  margin: 0 0 0.5rem; font-size: clamp(1.5rem, 3.2vw, 2rem);
+  font-weight: 600; letter-spacing: -0.01em;
+}
+h2 .accent { color: var(--cyan); text-shadow: 0 0 22px var(--glow-c); }
+.sub { color: var(--muted); margin: 0 0 2rem; max-width: 44rem; }
+.rule {
+  height: 1px; border: 0; margin: 0 0 2.6rem;
+  background: linear-gradient(90deg, var(--cyan), rgba(236,72,153,.5), transparent);
+  opacity: .55;
+}
+
+/* ---- 人物画像 ---- */
+.dossier {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
+}
+.card {
+  border: 1px solid var(--line); border-radius: 14px;
+  background: linear-gradient(165deg, rgba(13,16,36,.92), rgba(7,9,18,.86));
+  padding: 1.4rem 1.5rem; backdrop-filter: blur(8px);
+  box-shadow: 0 18px 50px rgba(0,0,0,.42);
+}
+.card h3 {
+  margin: 0 0 1rem; font-size: 0.76rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--violet);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-weight: 600;
+}
+.trait { margin-bottom: 0.95rem; }
+.trait:last-child { margin-bottom: 0; }
+.trait .lab {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.88rem; margin-bottom: 0.32rem; gap: 0.8rem;
+}
+.trait .lab i { font-style: normal; color: var(--muted); font-size: 0.78rem; }
+.meter { height: 7px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+.meter span {
+  display: block; height: 100%; border-radius: 999px; width: var(--w, 50%);
+  background: linear-gradient(90deg, var(--cyan), var(--violet) 55%, var(--pink));
+  box-shadow: 0 0 14px rgba(167,139,250,.6);
+  animation: grow 1.5s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes grow { from { width: 0; } }
+
+.chips { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+.chip {
+  font-size: 0.88rem; padding: 0.36rem 0.85rem; border-radius: 999px;
+  border: 1px solid rgba(94,234,212,.34); color: var(--ink);
+  background: rgba(34,211,238,.09); transition: background .2s, border-color .2s;
+}
+.chip:hover { background: rgba(34,211,238,.2); border-color: var(--cyan); }
+.chip.warm { border-color: rgba(244,114,182,.36); background: rgba(236,72,153,.11); }
+.chip.warm:hover { background: rgba(236,72,153,.22); border-color: var(--pink); }
+
+.dream {
+  grid-column: 1 / -1;
+  border: 1px solid rgba(244,114,182,.34); border-radius: 14px;
+  background:
+    linear-gradient(120deg, rgba(236,72,153,.15), rgba(109,40,217,.13) 55%, rgba(8,145,178,.15)),
+    rgba(7,9,18,.86);
+  padding: 1.6rem 1.7rem;
+  box-shadow: 0 0 44px rgba(236,72,153,.16);
+}
+.dream h3 { color: var(--pink); }
+.dream p { margin: 0 0 0.7rem; font-size: 1.02rem; }
+.dream p:last-child { margin-bottom: 0; }
+.dream b { color: #fff; }
+.path {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.86rem; color: var(--cyan); text-shadow: 0 0 12px var(--glow-c);
+}
+
+/* ---- 轨道 ---- */
+.tracks { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+.track {
+  display: block; text-decoration: none; color: inherit;
+  border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem 1.3rem;
+  background: rgba(9,12,26,.8);
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+.track:hover {
+  transform: translateY(-3px); border-color: rgba(94,234,212,.55);
+  box-shadow: 0 0 34px rgba(34,211,238,.18);
+}
+.track .no {
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem; letter-spacing: 0.14em; color: var(--pink);
+}
+.track h4 { margin: 0.35rem 0 0.5rem; font-size: 1.06rem; font-weight: 600; }
+.track p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+.track .go { margin-top: 0.8rem; font-size: 0.8rem; color: var(--cyan); }
+
+/* ---- 页脚 ---- */
+footer {
+  margin-top: 3.5rem; padding: 2.2rem 0 3.4rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.84rem; color: var(--muted);
+  display: flex; justify-content: space-between; gap: 1.2rem; flex-wrap: wrap;
+}
+footer a { color: var(--cyan); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+@media (max-width: 880px) {
+  .hero { grid-template-columns: 1fr; gap: 2.4rem; padding-top: 1.6rem; }
+  .portrait { max-width: 26rem; margin: 0 auto; }
+  .tag.t1 { left: 0; } .tag.t2 { right: 0; }
+  .dossier { grid-template-columns: 1fr; }
+  .stats { gap: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .blob, .dot, .portrait::before, .meter span { animation: none !important; }
+  .meter span { width: var(--w, 50%); }
+}
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <div class="blob a"></div><div class="blob b"></div><div class="blob c"></div>
+  <div class="grid"></div><div class="scan"></div>
+</div>
+
+<div class="wrap">
+
+  <div class="top">
+    <a class="brand" href="lessons/index.html">AI&nbsp;AGENT&nbsp;·&nbsp;原理与工程</a>
+    <nav class="navlinks">
+      <a href="lessons/index.html">课程目录</a>
+      <a href="#portrait">人物画像</a>
+      <a href="#tracks">四条轨道</a>
+      <a href="README.md">README</a>
+    </nav>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div>
+      <span class="eyebrow"><span class="dot"></span>AI 辅助生成 · 逐课人工修改</span>
+      <h1>把 AI Agent<br><span class="neon">真正讲懂</span></h1>
+      <p class="lede">
+        不是「会调 API」，而是知道它<b>为什么能工作</b>、<b>会在哪里翻车</b>。
+        四条轨道、<b>17 门基础课 + 7 门进阶课</b>，22 个能跑的 Python 脚本。
+        讲解用中文，标尺是「初中生能看懂」。
+      </p>
+      <div class="cta">
+        <a class="btn" href="lessons/index.html">开始学习 →</a>
+        <a class="btn ghost" href="#portrait">这份教程的由来</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>4</b><span>条轨道</span></div>
+        <div class="stat"><b>24</b><span>门课</span></div>
+        <div class="stat"><b>22</b><span>个脚本</span></div>
+        <div class="stat"><b>3</b><span>门已定稿</span></div>
+      </div>
+    </div>
+
+    <div class="portrait" id="portrait">
+      <span class="tag t1">for her · 为她而作</span>
+      <div class="frame">
+        <!-- 把她的画像存成 assets/portrait.png（或 .jpg），这张图就会出现 -->
+        <img src="assets/portrait.png" alt="AI 生成的画像：霓虹夜色中的少女"
+             onerror="this.style.display='none'">
+        <div class="fallback">
+          <div>把她的画像放到</div>
+          <code>assets/portrait.png</code>
+          <div>这张图就会出现在这里</div>
+        </div>
+      </div>
+      <span class="tag t2">ai-generated</span>
+    </div>
+  </div>
+
+  <hr class="rule">
+
+  <!-- AI 人物画像 -->
+  <section>
+    <h2>AI 人物画像 <span class="accent">/ character profile</span></h2>
+    <p class="sub">
+      这门教程最初的收件人，是下面这个人。她的画像由 AI 生成，配图也是 AI 画的 ——
+      这本身就是她喜欢的东西：自然科学、物理天文、编程、人工智能。
+    </p>
+
+    <div class="dossier">
+      <div class="card">
+        <h3>traits · 性格</h3>
+        <div class="trait">
+          <div class="lab"><span>聪明 · 举一反三</span><i>会自己验算</i></div>
+          <div class="meter"><span style="--w:95%"></span></div>
+        </div>
+        <div class="trait">
+          <div class="lab"><span>善良</span><i>待人温和</i></div>
+          <div class="meter"><span style="--w:92%"></span></div>
+        </div>
+        <div class="trait">
+          <div class="lab"><span>执着</span><i>认准了就往下钻</i></div>
+          <div class="meter"><span style="--w:94%"></span></div>
+        </div>
+        <div class="trait">
+          <div class="lab"><span>好奇心</span><i>兴趣跨度极大</i></div>
+          <div class="meter"><span style="--w:98%"></span></div>
+        </div>
+        <div class="trait">
+          <div class="lab"><span>专注</span><i>能在一件事上很久</i></div>
+          <div class="meter"><span style="--w:90%"></span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>interests · 兴趣</h3>
+        <div class="chips">
+          <span class="chip">画画</span>
+          <span class="chip">自然科学</span>
+          <span class="chip">物理</span>
+          <span class="chip">天文</span>
+          <span class="chip">编程</span>
+          <span class="chip warm">人工智能</span>
+        </div>
+        <h3 style="margin-top:1.6rem">background · 身份</h3>
+        <div class="chips">
+          <span class="chip warm">艺术生</span>
+          <span class="chip">兴趣广泛到有点“不务正业”</span>
+          <span class="chip">常觉得自己是唯一懂的少数派</span>
+        </div>
+      </div>
+
+      <div class="dream">
+        <h3>dream · 她的梦想</h3>
+        <p>
+          <b>亲手做一个能陪伴自己的机器人。</b>
+        </p>
+        <p>
+          有时候她会感到孤独。这个愿望听起来很远，但路是具体的 ——
+          先得搞懂 <b>agent 怎么「想」</b>、为什么会一本正经地胡说、
+          它怎么<b>「伸手」操作真实世界</b>、以及它<b>在哪里会翻车</b>。
+          这四件事，就是这 24 门课在讲的东西。
+        </p>
+        <p class="path">
+          起点 → agent/0001 · 最小循环　｜　路线 → agent/0003 → 0004 → 0006
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- 轨道 -->
+  <section id="tracks" style="padding-top:0">
+    <h2>四条轨道 <span class="accent">/ tracks</span></h2>
+    <p class="sub">各自独立编号，可以分开翻。基础课给初学者和业务人员，进阶版给想动手验算的技术读者。</p>
+    <div class="tracks">
+      <a class="track" href="lessons/index.html">
+        <div class="no">TRACK 01</div>
+        <h4>LLM 底层</h4>
+        <p>只讲影响 agent 成本、延迟、设计的机制，以及能力和失效的来源。</p>
+        <div class="go">5 门基础 · 4 门进阶 →</div>
+      </a>
+      <a class="track" href="lessons/index.html">
+        <div class="no">TRACK 02</div>
+        <h4>Agent 原理篇</h4>
+        <p>模型怎么「想」、怎么「伸手」做事 —— 直接做出自己的 agent。</p>
+        <div class="go">6 门基础 →</div>
+      </a>
+      <a class="track" href="lessons/index.html">
+        <div class="no">TRACK 03</div>
+        <h4>Agent 技巧篇</h4>
+        <p>怎么做、怎么不翻车。每条都带理由、一个反例、什么时候不适用。</p>
+        <div class="go">2 门基础 →</div>
+      </a>
+      <a class="track" href="lessons/index.html">
+        <div class="no">TRACK 04</div>
+        <h4>RAG</h4>
+        <p>让模型用上手边没有的信息。只讲机制与取舍，不讲选型对比。</p>
+        <div class="go">4 门基础 · 3 门进阶 →</div>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div>
+      AI Agent 原理与工程 · 一份送给她的教程 ·
+      课件由 <a href="https://github.com/mattpocock/skills/blob/main/docs/productivity/teach.md" rel="noopener">mattpocock 的 teach 技能</a> 辅助搭建
+    </div>
+    <div><a href="lessons/index.html">课程目录 →</a></div>
+  </footer>
+
+</div>
+</body>
+</html>
