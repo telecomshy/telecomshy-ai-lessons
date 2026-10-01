@@ -1,5 +1,13 @@
 # AI Agent 原理与工程
 
+> ### 📖 在线阅读
+>
+> **https://telecomshy.github.io/telecomshy-ai-lessons/**
+>
+> 从这里进，能直接看到排版好的课件、插图，能答题。
+> 本页下面的课程链接也都指向那里 —— 在 GitHub 仓库里点 `.html` 文件只会
+> 显示源码，不是课件。
+
 ## 为什么会有这个仓库
 
 这个仓库是**给我女儿的一份礼物**。
@@ -24,8 +32,8 @@
 
 目前标为 `completed` 的是：
 
-- **LLM 底层 · 第 0 课**（[模型是怎么学出来的](lessons/llm/0000-how-models-learn.html)）
-- **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「十个追问」](lessons/llm/0001-from-token-to-next-token-deep.html)
+- **LLM 底层 · 第 0 课**（[模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html)）
+- **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「十个追问」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)
 
 基础课和进阶版算同一课，改过一课就算这一课 `completed`。剩下的课会接着往下标。
 
@@ -33,7 +41,7 @@
 
 ## 怎么用
 
-**完整目录在 [`lessons/index.html`](lessons/index.html)** —— 建议直接用浏览器打开它。
+**完整目录在 [`lessons/index.html`](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/index.html)** —— 建议直接用浏览器打开它。
 
 ### 关于「基础课」和「进阶版」
 
@@ -60,7 +68,7 @@ $env:OPENAI_API_KEY = "sk-..."
 python exercises/agent/0004-real-model-agent.py
 ```
 
-脚本是**加分项，不是必修项**。主线不依赖跑代码 —— 完全跟着代码走的课（目前是 [`agent/0004`](lessons/agent/0004-real-model-agent.html)）在课里标出了哪几节可以整节跳过。
+脚本是**加分项，不是必修项**。主线不依赖跑代码 —— 完全跟着代码走的课（目前是 [`agent/0004`](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-real-model-agent.html)）在课里标出了哪几节可以整节跳过。
 
 ---
 
@@ -74,20 +82,20 @@ python exercises/agent/0004-real-model-agent.py
 
 | 课    | 标题                                                                                  |
 | ---- | ----------------------------------------------------------------------------------- |
-| 0000 | [模型是怎么学出来的](lessons/llm/0000-how-models-learn.html) —— **先导课，先读这个**　<code>completed</code> |
-| 0001 | [从「token」到「下一个 token」](lessons/llm/0001-from-token-to-next-token.html) —— **基石课**　<code>completed</code> |
-| 0002 | [一次请求的两段：prefill 与 decode](lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢 |
-| 0003 | [KV Cache 与「缓存命中」是两回事](lessons/llm/0003-kv-cache-and-prompt-caching.html)           |
-| 0004 | [一趟装满的卡车](lessons/llm/0004-batching.html) —— 批处理怎么救 decode                          |
+| 0000 | [模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html) —— **先导课，先读这个**　<code>completed</code> |
+| 0001 | [从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html) —— **基石课**　<code>completed</code> |
+| 0002 | [一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢 |
+| 0003 | [KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)           |
+| 0004 | [一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html) —— 批处理怎么救 decode                          |
 
 **进阶版** —— 给想动手验算的技术读者，装的是基础课没讲的那部分理由。
 
 | 课    | 标题                                            |
 | ---- | ----------------------------------------------- |
-| 0001 进阶 | [十个追问](lessons/llm/0001-from-token-to-next-token-deep.html)　<code>completed</code> |
-| 0002 进阶 | [里面到底在转什么](lessons/llm/0002-prefill-vs-decode-deep.html)                 |
-| 0003 进阶 | [五个绕人的细节](lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)              |
-| 0004 进阶 | [拐点、工业界的招](lessons/llm/0004-batching-deep.html)                              |
+| 0001 进阶 | [十个追问](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)　<code>completed</code> |
+| 0002 进阶 | [里面到底在转什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)                 |
+| 0003 进阶 | [五个绕人的细节](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)              |
+| 0004 进阶 | [拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                              |
 
 ### Agent 原理篇
 
@@ -95,12 +103,12 @@ python exercises/agent/0004-real-model-agent.py
 
 | 课    | 标题                                                                                   |
 | ---- | ------------------------------------------------------------------------------------ |
-| 0001 | [Agent 到底是什么？](lessons/agent/0001-what-is-an-agent.html) —— 用一个**假模型**跑通最小循环         |
-| 0002 | [模型只能吐字，它怎么「伸手」做事？](lessons/agent/0002-tool-use.html) —— 工具调用：模型只「说要调」，动手的是你的程序      |
-| 0003 | [把零件装起来：一个真的 agent](lessons/agent/0003-mini-agent.html) —— 核心代码十几行                   |
-| 0004 | [换上真模型，假的骗了你哪些地方](lessons/agent/0004-real-model-agent.html)                          |
-| 0005 | [工具长出两个新形状：MCP 与 Skill](lessons/agent/0005-mcp-and-skills.html)                      |
-| 0006 | [Harness：你天天在用，却没分清的那个词](lessons/agent/0006-harness.html) —— Agent = Model + Harness |
+| 0001 | [Agent 到底是什么？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0001-what-is-an-agent.html) —— 用一个**假模型**跑通最小循环         |
+| 0002 | [模型只能吐字，它怎么「伸手」做事？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0002-tool-use.html) —— 工具调用：模型只「说要调」，动手的是你的程序      |
+| 0003 | [把零件装起来：一个真的 agent](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0003-mini-agent.html) —— 核心代码十几行                   |
+| 0004 | [换上真模型，假的骗了你哪些地方](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-real-model-agent.html)                          |
+| 0005 | [工具长出两个新形状：MCP 与 Skill](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-mcp-and-skills.html)                      |
+| 0006 | [Harness：你天天在用，却没分清的那个词](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0006-harness.html) —— Agent = Model + Harness |
 
 ### Agent 技巧篇
 
@@ -108,8 +116,8 @@ python exercises/agent/0004-real-model-agent.py
 
 | 课    | 标题                                                                                       |
 | ---- | ---------------------------------------------------------------------------------------- |
-| 0001 | [上下文工程](lessons/practice/0001-context-engineering.html) —— 放什么、放哪、什么时候丢                  |
-| 0002 | [怎么判断一个 agent 好不好用](lessons/practice/0002-evaluating-agents.html) —— 单次 90% 连做 8 次只剩 43% |
+| 0001 | [上下文工程](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/practice/0001-context-engineering.html) —— 放什么、放哪、什么时候丢                  |
+| 0002 | [怎么判断一个 agent 好不好用](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/practice/0002-evaluating-agents.html) —— 单次 90% 连做 8 次只剩 43% |
 
 ### RAG
 
@@ -117,18 +125,18 @@ python exercises/agent/0004-real-model-agent.py
 
 | 课    | 标题                                                                   |
 | ---- | -------------------------------------------------------------------- |
-| 0001 | [为什么得「先查资料再回答」](lessons/rag/0001-why-retrieval.html)                 |
-| 0002 | [一条 RAG 链长什么样](lessons/rag/0002-rag-pipeline.html) —— 六步里只有最后一步是模型   |
-| 0003 | [什么时候不该上 RAG](lessons/rag/0003-when-not-to-use-rag.html)             |
-| 0004 | [两种典型翻车](lessons/rag/0004-two-failure-modes.html) —— 该来的没来 vs 来了但没用上 |
+| 0001 | [为什么得「先查资料再回答」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0001-why-retrieval.html)                 |
+| 0002 | [一条 RAG 链长什么样](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0002-rag-pipeline.html) —— 六步里只有最后一步是模型   |
+| 0003 | [什么时候不该上 RAG](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0003-when-not-to-use-rag.html)             |
+| 0004 | [两种典型翻车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0004-two-failure-modes.html) —— 该来的没来 vs 来了但没用上 |
 
 **进阶版** —— 给想动手验算的技术读者。
 
 | 课    | 标题                                                    |
 | ---- | ----------------------------------------------------- |
-| 0001 进阶 | [稀疏和稠密各自在哪翻车](lessons/rag/0001-why-retrieval-deep.html) |
-| 0002 进阶 | [切块到底切多大](lessons/rag/0002-rag-pipeline-deep.html)         |
-| 0004 进阶 | [RAG 到底怎么评](lessons/rag/0004-two-failure-modes-deep.html)     |
+| 0001 进阶 | [稀疏和稠密各自在哪翻车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0001-why-retrieval-deep.html) |
+| 0002 进阶 | [切块到底切多大](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0002-rag-pipeline-deep.html)         |
+| 0004 进阶 | [RAG 到底怎么评](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0004-two-failure-modes-deep.html)     |
 
 ### 速查 · 课很少回看，速查会
 
@@ -136,13 +144,13 @@ python exercises/agent/0004-real-model-agent.py
 
 | 页面                                                  | 用途                                         |
 | --------------------------------------------------- | ------------------------------------------ |
-| [术语表](reference/glossary.html)                      | 全课程统一用词，课里出现的词回来对一遍                        |
-| [采样参数速查](reference/sampling-params.html)            | temperature / top_p / top_k / seed，配模型时照着抄 |
-| [KV Cache 与「缓存命中」速查](reference/prompt-caching.html) | LLM 底层第 3 课的压缩版                            |
-| [一次请求，从头到尾](reference/one-request-end-to-end.html)  | 可点逐步版 —— 看货架（KV cache）怎么一点点变满              |
-| [agent 评估该问什么](reference/agent-eval-checklist.html) | Agent 技巧篇第 2 课的检查单                         |
-| [预算与排座次](reference/context-budget.html)             | 上下文工程的对照表                                  |
-| [权威架构图 · 对照](reference/canonical-diagrams.html)     | 认得出英文资料里那几张图对应哪一块，当对照不当教材                  |
+| [术语表](https://telecomshy.github.io/telecomshy-ai-lessons/reference/glossary.html)                      | 全课程统一用词，课里出现的词回来对一遍                        |
+| [采样参数速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/sampling-params.html)            | temperature / top_p / top_k / seed，配模型时照着抄 |
+| [KV Cache 与「缓存命中」速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/prompt-caching.html) | LLM 底层第 3 课的压缩版                            |
+| [一次请求，从头到尾](https://telecomshy.github.io/telecomshy-ai-lessons/reference/one-request-end-to-end.html)  | 可点逐步版 —— 看货架（KV cache）怎么一点点变满              |
+| [agent 评估该问什么](https://telecomshy.github.io/telecomshy-ai-lessons/reference/agent-eval-checklist.html) | Agent 技巧篇第 2 课的检查单                         |
+| [预算与排座次](https://telecomshy.github.io/telecomshy-ai-lessons/reference/context-budget.html)             | 上下文工程的对照表                                  |
+| [权威架构图 · 对照](https://telecomshy.github.io/telecomshy-ai-lessons/reference/canonical-diagrams.html)     | 认得出英文资料里那几张图对应哪一块，当对照不当教材                  |
 
 ---
 
@@ -175,7 +183,7 @@ assets/               共享样式表、测验组件、SVG 插图
 几条实用的自检提示：
 
 - **看到具体数字，回头看它引的是哪份原文。** 转引的数字（综述里引的论文数字）我在 `RESOURCES.md` 里都标了「未读原始报告」。
-- **和英文原图的措辞对一下。** [`reference/canonical-diagrams.html`](reference/canonical-diagrams.html) 附了中英认词表。
+- **和英文原图的措辞对一下。** [`reference/canonical-diagrams.html`](https://telecomshy.github.io/telecomshy-ai-lessons/reference/canonical-diagrams.html) 附了中英认词表。
 - **觉得哪里别扭，就别别扭着。** 直觉是有效的信号，你的怀疑比我的自信更值得听。
 
 欢迎开 [Issue](https://github.com/telecomshy/telecomshy-ai-lessons/issues) 挑错，包括错别字和措辞别扭。
@@ -210,4 +218,4 @@ assets/               共享样式表、测验组件、SVG 插图
 
 本仓库的课件与脚本以 [MIT](LICENSE) 许可发布 —— 可以自由使用、改编、再分发。
 
-一个例外：[`reference/canonical-diagrams.html`](reference/canonical-diagrams.html) 里引用的 Jay Alammar《The Illustrated Transformer》配图是 **CC BY-NC-SA 4.0**（署名 - 非商业 - 相同方式共享）—— 那张图能引用，但不能白拿、不能改了再发，转载请带上作者名和同样的许可。
+一个例外：[`reference/canonical-diagrams.html`](https://telecomshy.github.io/telecomshy-ai-lessons/reference/canonical-diagrams.html) 里引用的 Jay Alammar《The Illustrated Transformer》配图是 **CC BY-NC-SA 4.0**（署名 - 非商业 - 相同方式共享）—— 那张图能引用，但不能白拿、不能改了再发，转载请带上作者名和同样的许可。
