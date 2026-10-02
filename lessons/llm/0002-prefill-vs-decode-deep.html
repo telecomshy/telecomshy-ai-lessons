@@ -34,7 +34,7 @@
       <span class="loop-note">↻ <b>层内是并行的</b>：n 行<b>并排</b>过，不排队。整条链真正串行的只有第 5 环的"挑字"。</span>
       <span class="loop-note">↻ <b>顺手做的事</b>：每一层算出的 k、v 全部填进缓存（KV cache），后面的轮次直接取。</span>
       <span class="in">这一步的输入：<b>上一环那张表</b>。出来的是<b>同样形状、但每行都被改写过的新表</b>。</span>
-      <span class="to">为什么能并行见 <a href="#q9-parallel">Q9</a>；缓存里为什么只有 K/V 见 <a href="#q1-hidden">Q1</a>；每步的"搬运"见 <a href="#q2-overlap">Q2</a>；FFN 为什么不进缓存见 <a href="#q4-ffn">Q4</a></span></li>
+      <span class="to">为什么能并行见 <a href="#q9-parallel">Q9</a>；缓存里为什么只有 K/V 见 <a href="#q1-hidden">Q1</a>；每步的"搬运"见 <a href="#q2-overlap">Q2</a>；<a href="#q4-ffn">两种"键值"别混 · FFN 为什么不进缓存见 Q4</a></span></li>
     <li><b>只取最后一层、最后一个位置</b>，得到<b>一根向量</b>。
       <span class="in">这一步的输入：<b>第 3 环改写完的那张表</b>。其它行也出了结果，但推理时没人要——<b>作废</b>。</span>
       <span class="to">为什么"只有最后一行被采用"，见 <a href="#q10-why-all">Q10</a></span></li>
@@ -180,8 +180,8 @@ O = softmax(S) · V         ← 按每一行的权重，把 V 加权取回来</c
     <p><b>顺带解释了一件事</b>：因果掩码是在<b>整张 n×n 表算完之后</b>才把"不该看"的那半遮掉的——位置 1 跟位置 3 的相似度<b>白算了，然后扔掉</b>。所以即使有掩码，prefill 干的活仍是完整的 n² 那一份，<b>掩码不影响"算了多少"，只影响"哪些分作废"</b>。这正是 prefill 算力吃紧的根源。</p>
   </details>
 
-  <h2 id="q4-ffn">Q4 · FFN 也有 K/V 吗？</h2>
-  <p><b>对应初学版第 3 节末尾那个顺带的问题</b><span style="color:var(--muted)">（总图 第 3 环 · 里面那步 FFN）</span>（"FFN 也有 K/V 吗？"）。答案是一句干净的"没有"，但背后有一个<b>同词不同义</b>的坑。</p>
+  <h2 id="q4-ffn">Q4 · 两种「键值」别混：注意力的 K/V 是机制，FFN 的键值记忆是比喻</h2>
+  <p>对应总图<b>第 3 环 · 里面那步 FFN</b>，以及第 1 课第 3 节③那一步。<b>一词两义</b>的坑：论文里 FFN 也常被形容成一张"键值记忆"表，但那和缓存里那份 K/V 不是一回事。<b>FFN 那一步到底在改什么 → <a href="0001-from-token-to-next-token-deep.html#q7-ffn">第 1 课进阶 · Q7</a></b>；这里只讲它为什么<u>不</u>进缓存、以及那个比喻到底怎么回事。</p>
   <p><b>没有。</b>盒子里说的 K/V，<b>专指注意力那一步算出来的东西</b>——每一层只有注意力那一份，FFN 没有。</p>
   <p>理由：<b>FFN 不回头读历史。</b>注意力要去看所有历史位置，所以它的产值得留着被后面反复读；FFN 是<b>逐位置处理</b>的（每一行各走各的，谁都不看）——<b>没有"被后面复用"的东西，就不需要缓存。</b></p>
   <p style="color:var(--muted)">（跟 <a href="#q1-hidden">Q1</a> 是一对：Q1 讲"盒子里为什么只有 K/V"，这里讲"为什么 FFN 不往盒子里放东西"。）</p>
