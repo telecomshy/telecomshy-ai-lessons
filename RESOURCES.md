@@ -65,6 +65,8 @@
 - [Orca 论文 (OSDI'22)](https://www.usenix.org/system/files/osdi22-yu.pdf)
   连续批处理（iteration-level scheduling）的原始论文，报告同延迟下 36.9× 吞吐。**用来**：追溯 continuous batching 的来源。
 - [DistServe 论文 (OSDI 2024)](https://www.usenix.org/conference/osdi24/presentation/zhong-yinmin)
+  [arXiv 全文](https://arxiv.org/html/2401.09670v3)。**§2.1 给了本课那句根因的原话**：prefill "tends to be compute-bound"，而 decode "despite processing only one new token per step, the decoding phase incurs a **similar level of I/O to the prefill phase**, making it constrained by the GPU's memory bandwidth" —— 即两段搬运的量级相近，差的是算的量。
+  **附录 A.2 / A.3 给了矩阵乘法的原始推导**（第 2 课进阶 Q2 的出处）：prefill 那四个 GEMM 形状是 M=(t,h)、N=(h,·)，**算术强度 O(t)**，A100 上 AI>156 即算力受限，t 通常几百所以必然受限；decode 把 t 换成 batch size B，**算术强度掉到 O(B)**，B 受显存与延迟限制，因此这四个 GEMM 全部 memory-bound。延迟公式也在那里：`T_prefill = C₁(4th²+2thm) + C₂·3ht²/b`，`T_decode = C₄(4h²+2hm) + C₅·3ht`。**权重项 4h²+2hm 两边一样**——这正是"搬运量相同、算量不同"的公式依据。
   **prefill/decode 分离**的正式论文。课程里用的数字（多服务 7.4× 请求 / SLO 达标收紧 12.6×；Perplexity、Meta、LinkedIn、Mistral 在生产里跑）**取自 Weka 综述的转述，未直接读原文——引用前先核**。**用来**：讲"把两段放到不同机器上"。
 - [Sarathi 论文](https://arxiv.org/abs/2308.16369)
   **分块预填充（chunked prefill）**的出处。课程里"最多 6.9× 吞吐提升"这个数字同样出自 Weka 综述转述，未直接读原文。**用来**：讲"把长 prefill 切块、和 decode 交替跑"。
