@@ -90,6 +90,11 @@
   <p><b>每个字的注意力都要算，一个都不少</b>——但这一批可以<b>一次算完</b>，不用排队。因为算某个字的 k、v <b>只用到它自己那一行</b>，谁也不依赖谁。<span style="color:var(--muted)">（为什么"看前面"不等于"等前面"？<a href="0002-prefill-vs-decode-deep.html#q9-parallel">→ 进阶版 Q9</a>；<b>那"一个都不少"是为什么？</b><a href="0002-prefill-vs-decode-deep.html#q10-why-all">→ Q10</a>）</span></p>
   <p>于是第 1 轮跑完，有<b>两个产出</b>：<b>摆满 k、v 的货架</b>（货架就是显存 —— k、v 一算出来就存下来，后面轮次直接取用），和<b>第一个字</b>（也就是这次请求返回给你的、用来回答你问题的那个字）。<b>pre</b>（预先）＋ <b>fill</b>（填充），名字就是这么来的。<span style="color:var(--muted)">（<a href="../../reference/one-request-end-to-end.html">可点着一步步走的那张图</a>里，货架就是画成了一排货架。）</span></p>
   <p>补一件容易想当然的事：<b>你给的每一个字，模型都预测了一遍下一个字</b>——「你」预测「是」，「是」预测「谁」，「谁」预测「我」。<b>但只有最后一个字的预测被留下，前面几个的预测全部丢掉</b>，因为只有它后面还接着内容。真正返回给你的，只有从「谁」那儿预测出来的「我」。<span style="color:var(--muted)">（为什么能这样、以及为什么前面几个字<b>连自己的注意力都必须算</b>——一步的细节见<a href="0002-prefill-vs-decode-deep.html#q9-parallel">进阶版 Q9</a>）</span></p>
+
+  <figure class="figure">
+    <img src="../../assets/every-position-predicts.svg" alt="第 1 轮 prefill：「你」「是」「谁」三个 token 向量各自都预测了下一个字 ——「你」预测出「是」、「是」预测出「谁」，这两个预测丢弃；只有「谁」预测出的「我」被取走，再经打分、百分比、挑，才变成返回给你的那个字。">
+    <figcaption>第 1 轮里三个位置各自都预测了一遍。<b>字只是拿来演示的</b> —— 真实送进模型的是每行一个 token 向量（n 行 × d 列），不是字。</figcaption>
+  </figure>
   <p>之后每一轮就轻松了：拿刚挑出来的那个<b>编号</b>，<b>重新查一次嵌入表</b>，得到一根<b>新向量</b>，只算<b>它这一行</b>的 q、k、v；前面所有字的 k、v <b>直接从显存取</b>，不用再算。<span style="color:var(--muted)">（注意是<b>从嵌入表重新查</b>，不是接着上一轮那根 —— 上一轮交出去的是<b>编号</b>，不是向量：那根向量要先变成十几万个分数、再变成百分比、再挑出一个编号。编号 → 查表，才轮到下一轮那根新向量。细节见<a href="0002-prefill-vs-decode-deep.html#q8-output">进阶版 Q8</a>）</span></p>
   <p><b>一句话：KV cache 省的是"重算"，不是"重读"。</b>——旧的不用重算，但每次还是得把整份读一遍。</p>
 
