@@ -114,19 +114,18 @@
   <p>数据也印证了：decode 时 GPU 的利用率会掉到 <b>20–40%</b>（大部分计算单元在干等数据）；prefill 时能跑到接近满载。<span style="color:var(--muted)">（这两个数字来自 <a href="https://www.weka.io/learn/ai-ml/prefill-and-decode/">Weka 的技术综述</a>，是转引的量级证据，不是原始实测）</span></p>
 
   <h2>5. 于是有了两个不同的「延迟」</h2>
-  <p>因为两段脾气不同，你感受到的"慢"其实是两种慢：</p>
-  <div class="note">
-    <span class="label">术语：TTFT 与 TPOT</span>
-    <p><b>TTFT（首字延迟）</b>＝ Time To First Token。从你按回车，到看见<b>第一个</b>字。它由 <b>prefill</b> 决定——输入越长，等得越久。<br>
-       <b>TPOT（每 token 耗时）</b>＝ Time Per Output Token。开始输出之后，<b>每个</b>字花多久。它由 <b>decode</b> 决定——这就是你感觉到的"打字速度"。</p>
-  </div>
-  <p>一条真实的时间线长这样：</p>
-  <pre><code>t = 0–50ms   网络 + 排队
-t =  50ms    prefill：3200 个输入字一次跑完（顺手把 K/V 填好）
-t = 400ms    ── 第一个字出来了        ← TTFT = 400ms
-t = 400ms+   decode：每 ~30ms 蹦一个字  ← TPOT
-t = 12.7s    第 410 个字，结束         ← 端到端延迟</code></pre>
-  <p>看到没：<b>首字只等了 400ms，但全文写了 12 秒多。</b>两段完全是两种体验。</p>
+  <p>因为两段脾气不同，所以，你可能会感受到两种不同的"<b>慢</b>"。</p>
+  <p><b>TTFT（首字延迟，首字要等多久）</b>＝ Time To First Token。从你按回车，到看见<b>第一个</b>字。它由 <b>prefill</b> 决定——输入越长，等得越久。</p>
+  <p><b>TPOT（每 token 耗时，出字有多快）</b>＝ Time Per Output Token。开始输出之后，<b>每个</b>字花多久。它由 <b>decode</b> 决定——这就是你感觉到的"打字速度"。</p>
+  <p>一条真实的时间线长这样（<a href="https://clickhouse.com/resources/engineering/llm-inference-latency">ClickHouse 实测</a>：3200 字输入、410 字输出）：</p>
+  <pre><code>① t = 0            你按回车
+② t = 0–50ms       网络 ＋ 排队
+③ t = 50–400ms     prefill：3200 个输入字，一次全算完（顺手把 K/V 填好）
+④ t = 400ms        第一个字出来了                ← TTFT ＝ 400ms
+⑤ t = 400ms–12.7s  decode：每 ~30ms 蹦一个字，一轮只算 1 个  ← TPOT
+⑥ t = 12.7s        第 410 个字，结束              ← 端到端延迟</code></pre>
+  <p><b>别被 ③ 和 ⑤ 的毫秒数骗了 —— 关键在括号里"一次算几个字"。</b>③ 那 350ms 是<b>一次</b>算完 3200 个字；⑤ 那 30ms 是<b>一轮只算 1 个</b>字。按每个字平均：prefill 约 0.11ms 一个字，decode 约 30ms 一个字 —— <b>decode 慢了两百多倍。</b></p>
+  <p>而 decode 慢的原因不是算不动，是<b>搬不过来</b>：一轮只产出一个字，GPU 大部分时间在干等数据（利用率掉到 20–40%）。<b>首字只等了 400ms，但全文写了 12 秒多</b> —— 两段完全是两种体验。</p>
 
   <h2>6. 动手：亲手看清两种请求</h2>
   <p>脚本在工作区：<code>exercises/llm/0002-prefill-vs-decode.py</code>。</p>
