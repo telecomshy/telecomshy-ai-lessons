@@ -42,7 +42,9 @@
 - [Redis — "Prefill vs Decode: LLM Inference Phases Explained"](https://redis.io/blog/prefill-vs-decode/)
   讲清两段的瓶颈差异（prefill 算力受限 / decode 显存带宽受限），并给出"输入越长、TTFT 越高"的实测数字。**用来**：讲 prefill/decode 的直觉与量级。
 - [Weka — "Prefill and Decode: A Technical Guide"](https://www.weka.io/learn/ai-ml/prefill-and-decode/)
-  给出 decode 的算术强度（60–80 ops/byte）与 GPU 利用率（20–40%）等具体数字。**用来**：给"decode 为什么慢"提供量级证据。
+  给出 decode 的算术强度（60–80 ops/byte）与 GPU 利用率（20–40%）等具体数字。**用来**：给"decode 为什么慢"提供量级证据。⚠ **这两个数字是综述转引、不是原始实测**，课件里引用时要说明出处级别。
+- [Mistral 7B 发布公告](https://mistral.ai/news/announcing-mistral-7b/)
+  官方原话：Mistral 7B uses a sliding window attention (SWA) mechanism, in which **each layer attends to the previous 4,096 tokens**（层数堆叠后有效上下文可达 32k）。**用来**：讲滑动窗口不只是教科书里的选项、**生产模型确实在用** —— 第 2 课进阶 Q7 与基础课那句"生产上不会每次都读全部 KV"的依据。
 - [HuggingFace — "How to generate text: using different decoding methods"](https://huggingface.co/blog/how-to-generate)
   把"挑字"的几种挑法讲全：**贪婪搜索**（每步取概率最高的那个）、beam search、**采样**（原文："randomly picking the next word according to its conditional probability distribution"）、**Top-K**、**Top-p（nucleus）**，以及 **temperature**（"调 softmax 的锐度"）。**用来**：讲"字是怎么从分表里被挑出来的、有哪些挑法"。
 - [vLLM — SamplingParams（官方 API 文档）](https://docs.vllm.ai/en/latest/api/vllm/sampling_params.html)
