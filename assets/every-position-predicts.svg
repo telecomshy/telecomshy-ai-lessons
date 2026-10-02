@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 350" width="720" height="350" role="img" aria-label="每个 token 都往右预测下一个字：你的输入是三个 token 向量，各自都预测了一遍，只有最后一个的预测被取走，再经打分、百分比、挑选，变成一个编号返回给你">
-  <rect x="0" y="0" width="720" height="350" fill="#fdfcf8"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 366" width="720" height="366" role="img" aria-label="每个 token 都往右预测下一个字：你的输入是三个 token 向量，各自都预测了一遍，只有最后一个的预测被取走，再经打分、百分比、挑选，变成一个编号返回给你">
+  <rect x="0" y="0" width="720" height="366" fill="#fdfcf8"/>
 
   <defs>
     <marker id="arGrey" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
@@ -39,32 +39,33 @@
   <text x="238" y="58" font-family="sans-serif" font-size="11" fill="#6c675e">各自都预测了下一个字</text>
 
   <rect x="238" y="76" width="104" height="46" rx="7" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.4"/>
-  <text x="278" y="106" font-family="serif" font-size="20" fill="#8d887c">是</text>
+  <text x="266" y="106" font-family="serif" font-size="20" fill="#8d887c">是</text>
+  <text x="296" y="105" font-family="sans-serif" font-size="10.5" fill="#a9a396">向量</text>
 
   <rect x="238" y="140" width="104" height="46" rx="7" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.4"/>
-  <text x="278" y="170" font-family="serif" font-size="20" fill="#8d887c">谁</text>
+  <text x="266" y="170" font-family="serif" font-size="20" fill="#8d887c">谁</text>
+  <text x="296" y="169" font-family="sans-serif" font-size="10.5" fill="#a9a396">向量</text>
 
   <rect x="238" y="204" width="104" height="46" rx="7" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.8"/>
-  <text x="278" y="234" font-family="serif" font-size="20" fill="#8a2b06">我</text>
+  <text x="266" y="234" font-family="serif" font-size="20" fill="#8a2b06">我</text>
+  <text x="296" y="233" font-family="sans-serif" font-size="10.5" fill="#a9a396">向量</text>
 
   <!-- 前两个丢弃 -->
   <text x="354" y="104" font-family="sans-serif" font-size="11.5" fill="#8d887c">✕ 丢弃</text>
   <text x="354" y="168" font-family="sans-serif" font-size="11.5" fill="#8d887c">✕ 丢弃</text>
 
-  <!-- 只有「我」往下：打分 → 百分比 → 挑选 → 编号 -->
+  <!-- 只有「我」往下：一条长箭头，穿过打分/百分比/挑选，落到「我的编号」 -->
   <text x="354" y="232" font-family="sans-serif" font-size="11.5" fill="#8a2b06" font-weight="600">✓ 取走</text>
 
-  <line x1="290" y1="254" x2="290" y2="278" stroke="#8a2b06" stroke-width="2.2" marker-end="url(#ar)"/>
-  <text x="304" y="272" font-family="sans-serif" font-size="11" fill="#6c675e">打分 → 百分比 → 挑选</text>
+  <line x1="290" y1="256" x2="290" y2="312" stroke="#8a2b06" stroke-width="2.2" marker-end="url(#ar)"/>
+  <text x="304" y="278" font-family="sans-serif" font-size="11" fill="#6c675e">打分 → 百分比 → 挑选</text>
 
-  <line x1="290" y1="284" x2="290" y2="306" stroke="#8a2b06" stroke-width="2.2" marker-end="url(#ar)"/>
-
-  <rect x="222" y="308" width="136" height="34" rx="7" fill="#fff" stroke="#8a2b06" stroke-width="1.8"/>
-  <text x="242" y="330" font-family="serif" font-size="16" fill="#8a2b06">编号「我」</text>
-  <text x="238" y="297" font-family="sans-serif" font-size="10.5" fill="#6c675e">返回给你</text>
+  <rect x="222" y="316" width="136" height="34" rx="7" fill="#fff" stroke="#8a2b06" stroke-width="1.8"/>
+  <text x="242" y="338" font-family="serif" font-size="16" fill="#8a2b06">我的编号</text>
+  <text x="366" y="338" font-family="sans-serif" font-size="10.5" fill="#6c675e">返回给你</text>
 
   <!-- 分隔与说明 -->
-  <line x1="430" y1="42" x2="430" y2="330" stroke="#e4ded1" stroke-width="1.2"/>
+  <line x1="430" y1="42" x2="430" y2="346" stroke="#e4ded1" stroke-width="1.2"/>
 
   <text x="456" y="106" font-family="sans-serif" font-size="11.5" fill="#6c675e">每一行都往右预测了一遍，</text>
   <text x="456" y="125" font-family="sans-serif" font-size="11.5" fill="#6c675e">三个字都真的算了。</text>
