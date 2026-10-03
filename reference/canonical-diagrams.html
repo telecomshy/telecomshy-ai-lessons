@@ -69,12 +69,12 @@
 
   <h2>权威图里有、我们没讲的（撞见了别慌）</h2>
   <ul>
-    <li><b><code>Positional Encoding</code>（位置编码）</b>——字的"第几个"是怎么塞进向量里的。我们只说了"一个 token 一行"。</li>
+    <li><b><code>Positional Encoding</code>（位置编码）</b>——字的"第几个"是怎么塞进向量里的。我们只在<a href="glossary.html#positional-encoding">术语表</a>补了<b>推理期必需的那一条</b>（位置＝已缓存的长度）；<b>正弦/可学习的绝对位置编码、RoPE 这些做法本身没讲</b>——撞见了不至于慌，但要去查。</li>
     <li><b><code>Layer Norm</code>（层归一化）</b>——把每层数字的幅度按住，训练才稳。我们只讲了 <code>Add &amp; Norm</code> 里的 Add。</li>
     <li><b><code>Multi-Head</code>（多头）</b>——注意力并排跑好几套，各看各的关系。我们只讲了其中一套。</li>
     <li><b><code>Dropout</code> / 优化器 / 初始化</b>——纯训练期的事，推理时看不到。</li>
   </ul>
-  <p style="font-size:0.9rem;color:var(--muted)">这些都是<b>训练期才需要懂</b>的东西。等「模型是怎么学出来的」那一课定了要不要开，再决定要不要讲它们。</p>
+  <p style="font-size:0.9rem;color:var(--muted)">这些多半是<b>训练期才需要懂</b>的东西。等「模型是怎么学出来的」那一课定了要不要开，再决定要不要讲它们。<b>但别把这条当成"推理期一律用不上"</b>——<code>Layer Norm</code>、<code>Multi-Head</code>、<code>Positional Encoding</code> 在<b>推理时都在跑</b>；位置编码我们已经补了推理必需的那一条（见上）。</p>
 
   <h2>版权与引用</h2>
   <ul>
