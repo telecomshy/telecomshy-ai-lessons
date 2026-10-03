@@ -185,7 +185,9 @@ h2 {
   font-weight: 600; letter-spacing: -0.01em;
 }
 h2 .accent { color: var(--cyan); text-shadow: 0 0 22px var(--glow-c); }
-.sub { color: var(--muted); margin: 0 0 2rem; max-width: 44rem; }
+.sub { color: var(--muted); margin: 0 0 2rem; max-width: 52rem; }
+/* 中文可以在任意两个字之间折行；短语用这个包住就不会被拆开（避免「读者」断成「读｜者」） */
+.nowrap { white-space: nowrap; }
 .rule {
   height: 1px; border: 0; margin: 0 0 2.6rem;
   background: linear-gradient(90deg, var(--cyan), rgba(236,72,153,.5), transparent);
@@ -280,7 +282,6 @@ footer a:hover { text-decoration: underline; }
       <a href="lessons/index.html">课程目录</a>
       <a href="#motto">写在前面</a>
       <a href="#tracks">四条轨道</a>
-      <a href="README.md">README</a>
     </nav>
   </div>
 
@@ -330,7 +331,7 @@ footer a:hover { text-decoration: underline; }
   <!-- 轨道 -->
   <section id="tracks" style="padding-top:0">
     <h2>四条轨道 <span class="accent">/ tracks</span></h2>
-    <p class="sub">各自独立编号，可以分开翻。基础课给初学者和业务人员，进阶版给想动手验算的技术读者。</p>
+    <p class="sub">各自独立编号，可以分开翻。基础课给初学者和业务人员，<span class="nowrap">进阶版给想动手验算的技术读者。</span></p>
     <div class="tracks">
       <a class="track" href="lessons/index.html">
         <div class="no">TRACK 01</div>
