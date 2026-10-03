@@ -87,16 +87,16 @@
        然后拿自己的 <b>q</b>，去跟<b>前面所有字的 k</b> 比一遍；再按比出来的比例，把<b>它们的 v</b> 取过来、汇总。</p>
   </div>
   <p>所以你看：<b>要算任何一个字的注意力，都得用到前面所有字的 k 和 v。</b>那模型就得把它们<b>存起来</b>（存在显存里，正式名字叫 <b>KV cache</b>）。</p>
-  <p><b>每个字的注意力都要算，一个都不少</b>——但这一批可以<b>一次算完</b>，不用排队。因为算某个字的 k、v <b>只用到它自己那一行</b>，谁也不依赖谁。<span style="color:var(--muted)">（为什么"看前面"不等于"等前面"？<a href="0002-prefill-vs-decode-deep.html#q9-parallel">→ 进阶版 Q9</a>；<b>那"一个都不少"是为什么？</b><a href="0002-prefill-vs-decode-deep.html#q10-why-all">→ Q10</a>）</span></p>
+  <p><b>每个字的注意力都要算，一个都不少</b>——但这一批可以<b>一次算完</b>，不用排队。因为算某个字的 k、v <b>只用到它自己那一行</b>，谁也不依赖谁。<span style="color:var(--muted)">（为什么"看前面"不等于"等前面"？<a href="0002-prefill-vs-decode-deep.html#q5-parallel">→ 进阶版 Q5</a>；<b>那"一个都不少"是为什么？</b><a href="0002-prefill-vs-decode-deep.html#q6-why-all">→ Q6</a>）</span></p>
   <p>于是第 1 轮跑完，有<b>两个产出</b>：<b>摆满 k、v 的货架</b>（货架就是显存——k、v 一算出来就存下来，后面轮次直接取用），和<b>第一个字</b>（也就是这次请求返回给你的、用来回答你问题的那个字）。<b>pre</b>（预先）＋ <b>fill</b>（填充），名字就是这么来的。<span style="color:var(--muted)">（<a href="../../reference/one-request-end-to-end.html">可点着一步步走的那张图</a>里，货架就是画成了一排货架。）</span></p>
-  <p>其实每一个字，模型都预测了一遍下一个字——「你」预测「是」，「是」预测「谁」，「谁」预测「我」。<b>但只有最后一个字的预测被留下，前面几个的预测全部丢掉</b>，因为只有它后面还接着内容。真正返回给你的，只有从「谁」那儿预测出来的「我」。<span style="color:var(--muted)">（<b>每一轮都是这样</b>，不只是第 1 轮。细节见<a href="0002-prefill-vs-decode-deep.html#q9-parallel">进阶版 Q9</a>）</span></p>
+  <p>其实每一个字，模型都预测了一遍下一个字——「你」预测「是」，「是」预测「谁」，「谁」预测「我」。<b>但只有最后一个字的预测被留下，前面几个的预测全部丢掉</b>，因为只有它后面还接着内容。真正返回给你的，只有从「谁」那儿预测出来的「我」。<span style="color:var(--muted)">（<b>每一轮都是这样</b>，不只是第 1 轮。细节见<a href="0002-prefill-vs-decode-deep.html#q5-parallel">进阶版 Q5</a>）</span></p>
   <p>「返回给你的那个字」只是个方便的说法——严格讲，交到你手上的是<b>编号</b>，不是字。轮与轮之间传的都是编号。下面那张图画的是完整过程。</p>
 
   <figure class="figure">
     <img src="../../assets/every-position-predicts.svg" alt="每个 token 都往右预测下一个字：三个 token 向量「你」「是」「谁」各自都预测了一遍 ——「你」预测出「是」、「是」预测出「谁」，这两个预测丢弃；只有「谁」预测出的「我」被取走，再经打分、百分比、挑选，变成一个编号返回给你。">
     <figcaption>每一轮都是这个过程。<b>字只是拿来演示的</b>——真实送进模型的是每行一个 token 向量（n 行 × d 列），不是字。</figcaption>
   </figure>
-  <p>之后每一轮就轻松了：<b>注意，一轮最后返回的是编号，不是向量。</b>预测出的那根向量先变成十几万个<b>分数</b>、再变成<b>百分比</b>、再<b>挑出</b>一个词表编号返回；下一轮就根据这个编号去查<b>嵌入表</b>，得到一根新向量，只算<b>它这一行</b>的 q、k、v；前面所有字的 k、v <b>直接从显存取</b>，不用再算。<span style="color:var(--muted)">（细节见<a href="0002-prefill-vs-decode-deep.html#q8-output">进阶版 Q8</a>）</span></p>
+  <p>之后每一轮就轻松了：<b>注意，一轮最后返回的是编号，不是向量。</b>预测出的那根向量先变成十几万个<b>分数</b>、再变成<b>百分比</b>、再<b>挑出</b>一个词表编号返回；下一轮就根据这个编号去查<b>嵌入表</b>，得到一根新向量，只算<b>它这一行</b>的 q、k、v；前面所有字的 k、v <b>直接从显存取</b>，不用再算。<span style="color:var(--muted)">（这一步中间隔着好几步，摊开见<a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 Q10</a>）</span></p>
   <p><b>一句话：KV cache 省的是"重算"，不是"重读"。</b>——旧的不用重算，但每次还是得把整份读一遍。</p>
 
   <h2>4. 两段的脾气完全相反</h2>
@@ -109,8 +109,9 @@
   <p>prefill 要把你输入的<b>每一个字</b>的 q、k、v 都算出来。这些运算<b>本质上是矩阵乘法，所以一次能算一整批</b>——2 万行就一起算完。这一趟干的活很多，时间都花在<b>"算"</b>上，所以容易<b>算力受限</b>。</p>
 
   <p>decode 每一轮只<b>新算一个字的 q、k、v</b>——前面那些字的 k、v 早算好了存在缓存里，不用重算。</p>
-  <p>但<b>新字并不是单独走一趟</b>：它要跟<b>前面所有字</b>一起送进模型。经过每一层时，它自己的那一步只占一行，可<b>注意力那一步要读全部前面位置的 k、v</b>（第 3 节那句"跟前面所有字的 k 比一遍"）——<b>读的量覆盖了前面所有行，写的却只有新字那一行</b>，所以容易<b>带宽受限</b>。</p>
-  <p><b>而且这份会越攒越多</b>：对话越长，缓存里的 k、v 越多，每一轮要读的也越多——这正好回答"<b>为什么长上下文让每一步都更慢</b>"。不过生产上并不会每次都读全部 k、v，滑动窗口只读最近的一部分，细节见<a href="0002-prefill-vs-decode-deep.html#q7-window">进阶版 Q7</a>。</p>
+  <p><b>送进去的只有它自己那一行</b>：新字查表得到 1 根向量，<b>前面所有字一个都不再送</b>（它们的 k、v 已经在货架上）。可它<b>照样"看见"了全部历史</b>——因为注意力那一步要拿它的 q 去比<b>全部前面位置的 k</b>、按比重取全部前面位置的 v。</p>
+  <p>所以每一层里的账是这样：<b>送进去 1 行、扫货架 T 行</b>。<b>读的量覆盖了前面所有行，写的却只有新字那一行</b>——因此容易<b>带宽受限</b>。<span style="color:var(--muted)">（<b>FFN 那一步只处理这 1 行</b>：它本来就是"每一行各走各的、谁都不看别人"，所以 1 行对它完全够用，它也不用进缓存——<a href="0002-prefill-vs-decode-deep.html#q1-overlap">→ 进阶版 Q1</a>）</span></p>
+  <p><b>而且这份会越攒越多</b>：对话越长，缓存里的 k、v 越多，每一轮要读的也越多——这正好回答"<b>为什么长上下文让每一步都更慢</b>"。不过生产上并不会每次都读全部 k、v，滑动窗口只读最近的一部分，那"能看到多远"见<a href="0001-from-token-to-next-token-deep.html#q6-mask">第 1 课进阶 Q6</a>。</p>
   <p>数据也印证了：decode 时 GPU 的利用率会掉到 <b>20–40%</b>（大部分计算单元在干等数据）；prefill 时能跑到接近满载。<span style="color:var(--muted)">（这两个数字来自 <a href="https://www.weka.io/learn/ai-ml/prefill-and-decode/">Weka 的技术综述</a>，是转引的量级证据，不是原始实测）</span></p>
 
   <h2>5. 于是有了两个不同的「延迟」</h2>
@@ -257,17 +258,14 @@
   <h2>8. 想深挖？进阶版在等你</h2>
   <p>上面这些够你看懂全貌了。读的过程中如果冒出疑问，点对应的链接就行——<b>不用从头看进阶版</b>。</p>
   <ul>
-    <li><a href="0002-prefill-vs-decode-deep.html#q1-hidden">Q1 · 「hidden 向量」是什么？为什么存的是 K/V，不是它？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q2-overlap">Q2 · 「搬」和「算」是两个阶段，还是同一个过程？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q3-intensity">Q3 · 「算力受限 / 带宽受限」是怎么算出来的？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q4-ffn">Q4 · 两种「键值」别混：注意力的 K/V 是机制，FFN 的键值记忆是比喻</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q5-incremental">Q5 · 缓存命中时，「计算」具体指什么？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q6-preflight">Q6 · 多轮对话、agent 跑起来，prefill 会反复发生吗？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q7-window">Q7 · 「必须全部读一遍」有没有例外？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q8-output">Q8 · 模型最后吐出来的，是「字」还是「向量」？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q9-parallel">Q9 · 为什么第 1 轮那一整批字可以一起算，不用排队等前面？</a></li>
-    <li><a href="0002-prefill-vs-decode-deep.html#q10-why-all">Q10 · 前缀里的字自己也要算注意力吗？（一个很容易想歪的地方）</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q1-overlap">Q1 · 「搬」和「算」是两个阶段，还是同一个过程？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q2-intensity">Q2 · 「算力受限 / 带宽受限」是怎么算出来的？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q3-ffn">Q3 · 两种「键值」别混：注意力的 K/V 是机制，FFN 的键值记忆是比喻</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q4-incremental">Q4 · 缓存命中时，「计算」具体指什么？（多轮 / agent 也在这一问收口）</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q5-parallel">Q5 · 为什么第 1 轮那一整批字可以一起算，不用排队等前面？</a></li>
+    <li><a href="0002-prefill-vs-decode-deep.html#q6-why-all">Q6 · 前缀里的字自己也要算注意力吗？（一个很容易想歪的地方）</a></li>
   </ul>
+  <p style="color:var(--muted)">（另有三处<strong>不在这一问里</strong>、改到第 1 课进阶去讲了——<b>hidden 向量是什么</b> → <a href="0001-from-token-to-next-token-deep.html#q-misconceptions">第 1 课进阶 · 附录「五个别误会」</a>；<b>吐出来的是编号不是向量</b> → <a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 · Q10</a>；<b>滑动窗口</b> → <a href="0001-from-token-to-next-token-deep.html#q6-mask">第 1 课进阶 · Q6</a>。它们跟 prefill / decode 无关，本来就不该挂在这一问下。）</p>
 
   <div class="source">
     <b>这节课的一手资料</b>：<br>
