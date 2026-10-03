@@ -89,7 +89,7 @@
   落地证据：摘要给了 MNIST 与**"significantly improve the acoustic model of a heavily used commercial system"**（一个在用的商业语音系统）。
   ⚠ 提取方式：用代理下 PDF 再抽文字（`Invoke-WebRequest -Proxy 'http://127.0.0.1:7890'`），上面三句是**原文**，不是转述。
 - [DeepSeek-AI et al. — DeepSeek-R1（Nature 2025 · arXiv 2501.12948）](https://arxiv.org/abs/2501.12948)
-  **第 6 课已经引过这篇；但第 7 课要用它的附录 F 和"局限"那一段。**
+  **第 5 课已经引过这篇；但第 7 课要用它的附录 F 和"局限"那一段。**
   ① **R1 的蒸馏是"搬回答"，不是"搬 logit"**：附录 A.2 原话"The reasoning trajectories discovered through this self-exploration are subsequently **distilled** and used to train other models"；附录 F 整节标题就是 **"F DeepSeek-R1 Distillation"**、F.1 是 **"Distillation v.s. Reinforcement Learning"**。**用来**：讲"蒸馏"今天至少有两个机制（软标签 / 搬大模型的输出），别混。
   ② **对 agent 最要紧的一条自述局限**（第 7 课落点）："**Structure Output and Tool Use:** Currently, the structural output capabilities of DeepSeek-R1 remain **suboptimal** compared to existing models. Moreover, **DeepSeek-R1 cannot leverage tools**, such as search engines and calculators, to improve the performance of output."（**推理强 ≠ 工具调用强**——这条出自论文自己的局限章节，不是二手评论）
   ③ 其他两条顺手记下：蒸馏模型"surpassing the performance of their **original instruction-tuned counterparts**"（超越的是它自己的**指令版**，不是超越大模型）；token 效率那条"it uses fewer tokens to solve simple tasks… **instances of excessive reasoning—manifested as overthinking—are still observed**"。
@@ -99,7 +99,7 @@
   **用来防止把"小模型变强"全归给蒸馏。** 这条线（TinyStories → phi-1 → phi-1.5）走的是**另一条路**：用已有的大模型**生成"教科书级"数据**来训练 1.3B 的小模型（原文"use existing Large Language Models (LLMs) to generate 'textbook quality' data"），结果是"**performance on natural language tasks comparable to models 5x larger**"。
   **所以"小模型为什么这么强"的诚实答案是三条路一起走**（合成数据 · 蒸馏 · 更好的后训练），**不是"全靠蒸馏"**。⚠ 它**不是** Hinton 那种软标签蒸馏，别当成同一种机制。
 
-### 会思考的模型（第 6 课）
+### 会思考的模型（第 5 课）
 
 - [Anthropic — Thinking（Claude 平台文档）](https://platform.claude.com/docs/en/build-with-claude/thinking)
   **本课的主来源**。原话（讲清"多出来的那一步"是什么）："A model that answers in a single pass has to get everything right on the first try: **no scratch work, no checking, no changing course halfway through**"；"When thinking is active, Claude works through the problem **in its own words** before answering: it **restates what is being asked, tries approaches, checks intermediate results, and abandons paths that do not hold up**"。
@@ -119,7 +119,7 @@
 - [AWS — Claude on Bedrock：Extended thinking](https://docs.aws.amazon.com/bedrock/latest/userguide/claude-messages-extended-thinking.html)
   同一套机制在 Bedrock 上的落地说明，**两条运维经验值**：预算**从下限起步逐步加**（"start at the minimum and increase incrementally"）；**预算超过 32K 建议走批量处理**，否则"causes long running requests that might result in system timeouts"。**用来**：讲"预算不是越大越好"以及顶格预算的工程后果。
 
-### 量化（第 5 课）
+### 量化（第 6 课）
 
 - [llama.cpp — `tools/quantize/README.md`（官方仓库）](https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md)
   **本课最重要的一条实测来源**。Llama-3.1-8B 在同一台机器上的完整对照表，每档都给了三个数：`bits/weight`（含刻度开销）、`size`、`prompt processing t/s @ 512` 与 `text generation t/s @ 128`。原值：**F16 = 16.0005 bit / 14.96 GiB / prefill 923.49 / decode 29.17**；Q8_0 = 8.5008 / 7.95 / 865.09 / **50.93**；Q6_K = 6.5633 / 6.14 / 812.01 / 58.67；Q5_K_M = 5.7036 / 5.33 / 758.69 / 67.23；**Q4_K_M = 4.8944 / 4.58 / 821.81 / 71.93**；Q3_K_M = 3.9960 / 3.74 / 783.44 / 71.68；Q2_K_S = 2.9697 / 2.78 / 798.91 / 90.01。

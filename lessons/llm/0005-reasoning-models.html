@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LLM 底层 · 第 6 课 · 会思考的模型：多出来的那一步</title>
+<title>LLM 底层 · 第 5 课 · 会思考的模型：多出来的那一步</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta">LLM 底层 · 第 6 课 · 初学版</div>
+  <div class="lesson-meta">LLM 底层 · 第 5 课 · 初学版</div>
   <h1>会思考的模型：多出来的那一步</h1>
   <p class="subtitle">同一个问题，3 秒答一个、30 秒答一个，<b>后者还更对</b>。这多出来的 27 秒是什么？<b>以及它凭什么更对。</b></p>
 
@@ -131,13 +131,13 @@
   <p>给 agent 算一笔现实的：<b>跑 10 步、每步思考 2000 token</b>，按第 2 课那套时间模型，每步要等<b>四十多秒</b>，十步就是<b>七分钟</b>。而这类循环常常是<b>按用户的耐心在计时</b>的。</p>
   <div class="goal">
     <span class="label">最后一层提醒</span>
-    <p>思考变准是真的，<b>但它变的只是「答案对不对」这一维</b>。第 5 课那条「格式敏感的活得压着量化」的判断在这里同样适用——<b>该测的还是得测</b>：开了思考之后，工具调用还准不准、格式还对不对、延迟能不能忍，<b>都是要自己跑一遍才知道的</b>。</p>
+    <p>思考变准是真的，<b>但它变的只是「答案对不对」这一维</b>。<a href="0006-quantization.html">第 6 课</a>那条「格式敏感的活得压着量化」的判断在这里同样适用——<b>该测的还是得测</b>：开了思考之后，工具调用还准不准、格式还对不对、延迟能不能忍，<b>都是要自己跑一遍才知道的</b>。</p>
     <p>所以别把「它会思考」当成免检。<span style="color:var(--muted)">（怎么测：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>）</span></p>
   </div>
 
   <h2>7. 动手跑一遍</h2>
-  <p>脚本在工作区：<code>exercises/llm/0006-reasoning-cost.py</code>。<b>只用 Python 标准库</b>，不联网——它<b>直接把思考 token 加进第 2 课那套账里</b>（同样的时间模型和价格模型），所以结论是算出来的，不是讲出来的。</p>
-  <pre><code>python exercises/llm/0006-reasoning-cost.py</code></pre>
+  <p>脚本在工作区：<code>exercises/llm/0005-reasoning-cost.py</code>。<b>只用 Python 标准库</b>，不联网——它<b>直接把思考 token 加进第 2 课那套账里</b>（同样的时间模型和价格模型），所以结论是算出来的，不是讲出来的。</p>
+  <pre><code>python exercises/llm/0005-reasoning-cost.py</code></pre>
   <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
   <pre><code>[1] 先钉死一件事：那段「思考」不是免费的旁白，它【就是输出】
       官方文档的原话是：思考花的 token 按【输出 token】计费，
@@ -269,13 +269,13 @@
 
   <p class="next">
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（思考为什么只能加在「多久看到答案」那一段上）· <a href="0003-kv-cache-and-prompt-caching.html">第 3 课 · 缓存命中</a>（第 4 节那笔账的来处）<br>
-    <b>顺着往下</b>：LLM 底层 · 第 7 课 · <b>蒸馏：小模型的本事从哪来</b>（还没写）——大模型的思考能力怎么搬到小模型上<br>
-    <b>相关</b>：<a href="0005-quantization.html">第 5 课 · 量化</a>（另一件「拿什么换什么」的工程取舍）· <a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（开了思考要不要重测）<br>
+    <b>顺着往下</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化</a>（另一件「拿什么换什么」的工程取舍：省字节）→ <a href="0007-distillation.html">第 7 课 · 蒸馏</a>（能力怎么从大模型搬到小模型）<br>
+    <b>相关</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（开了思考要不要重测）<br>
     <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
     术语表：<a href="../../reference/glossary.html#reasoning">思考 reasoning</a> · <a href="../../reference/glossary.html#inference">推理引擎 inference</a> · <a href="../../reference/glossary.html#ttft">TTFT</a> · <a href="../../reference/glossary.html#tpot">TPOT</a>
   </p>
 
-  <footer>AI Agent 原理与工程 · LLM 底层 · 第 6 课（初学版）· <a href="../index.html">课程目录</a></footer>
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 5 课（初学版）· <a href="../index.html">课程目录</a></footer>
 </div>
 </body>
 </html>

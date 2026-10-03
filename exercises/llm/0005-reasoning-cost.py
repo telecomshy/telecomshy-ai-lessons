@@ -1,4 +1,4 @@
-"""LLM 底层 · 第 6 课 配套脚本：思考 token 进了哪本账。
+"""LLM 底层 · 第 5 课 配套脚本：思考 token 进了哪本账。
 
 这一课只讲一件事：会思考的模型多出来的那一步，不是免费的旁白——
 它就是【输出 token】，所以它进了和输出一模一样的两本账：贵的账、慢的账。
@@ -13,7 +13,7 @@
   时间：预填充 0.00005 s/token；解码每 token 固定 0.010 s，另加读历史 KV 的开销
   价格：输入 1.0、输出 5.0（5 倍取自各家公开价目表）、命中前缀按 0.1 倍计
 
-运行：  python exercises/llm/0006-reasoning-cost.py
+运行：  python exercises/llm/0005-reasoning-cost.py
 Windows 终端若中文乱码：先执行  chcp 65001
 """
 

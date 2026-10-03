@@ -16,7 +16,7 @@
 
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
-    <p>这一课是 <a href="0005-quantization.html">第 5 课</a>的另一半。前面你见过「量化」这个词，但量化干的事只是<b>换个存法</b>——模型学到的东西一个没动。</p>
+    <p>这一课是 <a href="0006-quantization.html">第 6 课</a>的另一半。前面你见过「量化」这个词，但量化干的事只是<b>换个存法</b>——模型学到的东西一个没动。</p>
     <p>那真正让小模型变强的是另一件事。它有个名字叫<b>蒸馏（distillation）</b>，一句话版本：<b>让一个小模型照着一个大模型学，学的不只是答案。</b></p>
     <p>先拆一个误会，因为这词最容易被用错：<b>蒸馏不是"把大模型的答案抄下来"。</b>抄答案恰恰是里面<b>最差</b>的一种做法——本课第 2 节会给你看实测。</p>
     <p style="margin-top:0.7rem"><b>学完这课，你能</b>分清「量化」和「蒸馏」各改了什么、解释小模型为什么这么强、以及——<b>一条对做 agent 直接要命的判断</b>。</p>
@@ -33,7 +33,7 @@
   <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">量化（第 5 课）</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">量化（第 6 课）</th>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">蒸馏（本课）</th>
     </tr></thead>
     <tbody>
@@ -131,7 +131,7 @@
     <li><b>蒸馏模型在"想"这一维可能很强，在"格式和动手"这两维未必</b>。</li>
     <li>所以问「能不能用」的方式只有一个：<b>拿你自己的活去测，而且要专门测工具调用那一维</b>，别只看跑分。</li>
   </ul>
-  <p>这和第 5 课那条结论<b>是同一条</b>：那边说"格式敏感的活，量化要压着来"，这边说"推理强的模型，工具调用未必行"。<b>跑得动和用得对，是两件事。</b></p>
+  <p>这和<a href="0006-quantization.html">第 6 课</a>那条结论<b>是同一条</b>：那边说"格式敏感的活，量化要压着来"，这边说"推理强的模型，工具调用未必行"。<b>跑得动和用得对，是两件事。</b></p>
 
   <h2>7. 动手跑一遍</h2>
   <p>脚本在工作区：<code>exercises/llm/0007-distillation.py</code>。<b>只用 Python 标准库</b>，离线能跑。它做一个能真量出来的小实验：</p>
@@ -237,7 +237,7 @@
     <button class="quiz-option">全部来自蒸馏，老师能力直接继承</button>
     <button class="quiz-option" data-correct="true">造数据、蒸馏、更好的后训练，三条一起</button>
     <button class="quiz-option">主要是因为参数结构改进了，蒸馏是次要的</button>
-    <button class="quiz-option">因为小模型的推理时间更长，见第 6 课</button>
+    <button class="quiz-option">因为小模型的思考时间更长，见第 5 课</button>
     <p class="feedback"
        data-ok="对。三条路都在起作用——只记住蒸馏会推出「一定继承了老师一切」这个错结论。"
        data-no="是三条路一起走（造数据 · 蒸馏 · 后训练）。只记住蒸馏会推出错误的结论。"></p>
@@ -267,8 +267,8 @@
   </div>
 
   <p class="next">
-    <b>前置</b>：<a href="0005-quantization.html">LLM 底层 · 第 5 课 · 量化</a>（另一半；两课合起来才是"让模型变小"这件事）· <a href="0006-reasoning-models.html">第 6 课 · 会思考的模型</a>（"搬家"的两个理由之一，另一个是第 0 课的规模）<br>
-    <b>这条轨道到此为止</b>：七课走完了一条线——<b>模型里发生了什么 → 一次请求怎么跑 → 时间/带宽/精度怎么被优化 → 能力从哪来</b>。<a href="../index.html">回到课程目录</a><br>
+    <b>前置</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化</a>（另一半；两课合起来才是"让模型变小"这件事）· <a href="0005-reasoning-models.html">第 5 课 · 会思考的模型</a>（"搬家"的两个理由之一，另一个是第 0 课的规模）<br>
+    <b>这条轨道到此为止</b>：八课走完了一条线——<b>模型里发生了什么 → 一次请求怎么跑 → 它怎么"想"、那一步有多贵 → 时间/带宽/精度怎么被优化 → 能力从哪来</b>。<a href="../index.html">回到课程目录</a><br>
     <b>接下来往哪走</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a>（真动手做一个）· <a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>（本课第 6 节那条「工具调用要专门测」的前置）<br>
     术语表：<a href="../../reference/glossary.html#distillation">蒸馏 distillation</a> · <a href="../../reference/glossary.html#quantization">量化 quantization</a> · <a href="../../reference/glossary.html#temperature">温度 temperature</a> · <a href="../../reference/glossary.html#logits">Logits / Softmax</a>
   </p>

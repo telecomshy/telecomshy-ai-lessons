@@ -1,4 +1,4 @@
-"""LLM 底层 · 第 5 课 配套脚本：把模型权重「压小」，看看压掉的是什么。
+"""LLM 底层 · 第 6 课 配套脚本：把模型权重「压小」，看看压掉的是什么。
 
 这一课只讲一件事：量化省的是【搬运量】，所以它只救 decode，不救 prefill。
 
@@ -18,7 +18,7 @@
      （算出来的 8.5 / 4.5，和 llama.cpp 官方公布的数字对得上）
   6. 能力掉没掉：把第 0 课训练出来的玩具模型压一遍，看平均扣分
 
-运行：  python exercises/llm/0005-quantization.py
+运行：  python exercises/llm/0006-quantization.py
 Windows 终端若中文乱码：先执行  chcp 65001
 """
 

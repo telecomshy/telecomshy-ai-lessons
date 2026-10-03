@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LLM 底层 · 第 5 课 · 量化：把模型压小，把字吐快</title>
+<title>LLM 底层 · 第 6 课 · 量化：把模型压小，把字吐快</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta">LLM 底层 · 第 5 课 · 初学版</div>
+  <div class="lesson-meta">LLM 底层 · 第 6 课 · 初学版</div>
   <h1>量化：把模型压小，把字吐快</h1>
   <p class="subtitle">前面四课都在讲<b>怎么少浪费时间</b>。这一课讲其中最直接的一个动作 —— 而且它的效果<b>只有一半</b>，不是大多数人以为的那样。</p>
 
@@ -154,8 +154,8 @@
   </ul>
 
   <h2>6. 动手跑一遍</h2>
-  <p>脚本在工作区：<code>exercises/llm/0005-quantization.py</code>。它用<b>只用 Python 标准库</b>，离线能跑，做了三件事：造一张带"大数列"的权重表、用三种尺子压一遍并量误差、再把<b>第 0 课那个真训练出来的玩具模型</b>压一遍看扣分变没变。</p>
-  <pre><code>python exercises/llm/0005-quantization.py</code></pre>
+  <p>脚本在工作区：<code>exercises/llm/0006-quantization.py</code>。它用<b>只用 Python 标准库</b>，离线能跑，做了三件事：造一张带"大数列"的权重表、用三种尺子压一遍并量误差、再把<b>第 0 课那个真训练出来的玩具模型</b>压一遍看扣分变没变。</p>
+  <pre><code>python exercises/llm/0006-quantization.py</code></pre>
   <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
   <pre><code>[2] 换一种存法：float32 -&gt; int8（一把尺子量整张表）
       float32：每个权重 32 bit = 4 字节 -&gt; 全表 16384 字节
@@ -273,12 +273,13 @@
 
   <p class="next">
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（本课第 2、3 节全挂在它那条「带宽受限」上）· <a href="0004-batching.html">第 4 课 · 批处理</a>（另一个砍搬运的招数，对照着看）<br>
-    <b>顺着往下</b>：LLM 底层 · 第 6 课 · <b>会思考的模型：多出来的那一步</b>（还没写）——另一件"拿延迟和成本换能力"的事<br>
+    <b>回上一课</b>：<a href="0005-reasoning-models.html">LLM 底层 · 第 5 课 · 会思考的模型</a>——那一课讲的是「多花 token 换准确率」；<b>从这一课起我们回到成本这条线，讲「少花字节换速度」</b>。两件事都是在做交易，但一个动的是能力，一个动的是存法。<br>
+    <b>顺着往下</b>：<a href="0007-distillation.html">LLM 底层 · 第 7 课 · 蒸馏</a>——改「从哪来」的那一件，正好和本课「改怎么存」凑成一对<br>
     <b>这条轨道</b>：<a href="../index.html">课程目录</a>　·　<b>换个角度</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（量化模型要不要评估）<br>
     术语表：<a href="../../reference/glossary.html#quantization">量化</a> · <a href="../../reference/glossary.html#activation">激活</a> · <a href="../../reference/glossary.html#bandwidth">显存带宽</a>
   </p>
 
-  <footer>AI Agent 原理与工程 · LLM 底层 · 第 5 课（初学版）· <a href="../index.html">课程目录</a></footer>
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 6 课（初学版）· <a href="../index.html">课程目录</a></footer>
 </div>
 </body>
 </html>
