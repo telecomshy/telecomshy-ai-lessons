@@ -227,7 +227,8 @@ h2 .accent { color: var(--cyan); text-shadow: 0 0 22px var(--glow-c); }
 /* ---- 轨道 ---- */
 .tracks { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
 .track {
-  display: block; text-decoration: none; color: inherit;
+  display: flex; flex-direction: column;
+  text-decoration: none; color: inherit;
   border: 1px solid var(--line); border-radius: 14px; padding: 1.2rem 1.3rem;
   background: rgba(9,12,26,.8);
   transition: transform .2s, border-color .2s, box-shadow .2s;
@@ -241,7 +242,8 @@ h2 .accent { color: var(--cyan); text-shadow: 0 0 22px var(--glow-c); }
   font-size: 0.72rem; letter-spacing: 0.14em; color: var(--pink);
 }
 .track h4 { margin: 0.35rem 0 0.5rem; font-size: 1.06rem; font-weight: 600; }
-.track p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+/* 描述段吸收多余高度，把 .go 顶到卡片底部 —— 否则四张卡描述行数不同，底部那行会高低不齐 */
+.track p { margin: 0; flex: 1 1 auto; font-size: 0.88rem; color: var(--muted); }
 .track .go { margin-top: 0.8rem; font-size: 0.8rem; color: var(--cyan); }
 
 /* ---- 页脚 ---- */
