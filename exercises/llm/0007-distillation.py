@@ -144,42 +144,41 @@ print(f"      和语料频率差 {tv(teacher, rich_t):.4f} —— 收敛得很�
 
 # ============ [3] 三种教法，三个学生 ============
 poor_t = corpus_target(POOR)
-argmax = max(range(len(CAND)), key=lambda i: teacher[i])
+top = max(range(len(CAND)), key=lambda i: teacher[i])
 
-student_a = train(onehot(argmax))          # A：正确答案（one-hot），也就是第 0 课那种
-student_b = train(onehot(argmax))          # 占位，下面替换
-student_b = train(onehot(max(range(len(CAND)), key=lambda i: teacher[i])))
-student_c = train(teacher)                 # C：老师的整张分布 = 真蒸馏
-
-# A 其实要按【学生自己那份语料的频率】训，而不是老师的答案
-student_a = train(poor_t)
+student_a = train(poor_t)                    # A：正确答案（one-hot），也就是第 0 课那种
+student_b = train(onehot(top))               # B：只搬老师的答案
+student_c = train(teacher)                   # C：老师的整张分布 = 真蒸馏
 
 print("\n[3] 三个学生，骨架一样、步数一样，只有「你给它什么」不同")
-print(f"      {'教法':<34}{'离老师多远':>11}{'尾部排序对吗':>13}{'第一名多自信':>13}")
+print(f"      {pad('教法', 34)}{lpad('离老师多远', 11)}{lpad('尾部排序', 10)}"
+      f"{lpad('尾部差距', 11)}{lpad('第一名多自信', 13)}")
 rows = []
 for label, s in [("A 正确答案（one-hot）", student_a),
                  ("B 只搬老师的答案（argmax）", student_b),
                  ("C 搬老师的整张分布（蒸馏）", student_c)]:
     d = tv(s, teacher)
-    ok = "对" if tail_order(s) == tail_order(teacher) else "错"
+    verdict = tail_verdict(s, teacher)
+    spread = tail_spread(s)
     conf = s[max(range(len(CAND)), key=lambda i: s[i])]
-    rows.append((label, s, d, ok, conf))
-    print(f"      {pad(label, 34)}{lpad(f'{d:.3f}', 11)}{lpad(ok, 13)}"
-          f"{lpad(f'{conf * 100:.0f}%', 13)}")
+    rows.append((label, s, d, verdict, spread, conf))
+    print(f"      {pad(label, 34)}{lpad(f'{d:.3f}', 11)}{lpad(verdict, 10)}"
+          f"{lpad(f'{spread * 100:.1f} pp', 11)}{lpad(f'{conf * 100:.0f}%', 13)}")
+print(f"      （老师自己的尾部差距是 {tail_spread(teacher) * 100:.1f} pp）")
 
 print()
-for label, s, d, ok, conf in rows:
+for label, s, *_ in rows:
     show(f"  {label}", s)
 
 # ============ [4] 三条结论 ============
 print("\n[4] 三条要看懂的")
 a, b, c = rows[0], rows[1], rows[2]
-print(f"      A 离老师 {a[2]:.3f}，尾部排序{a[3]}。")
+print(f"      A 离老师 {a[2]:.3f}，尾部排序{a[3]}（差距只有 {a[4] * 100:.1f} pp）。")
 print("        它学到的是【学生自己那份小语料的频率】——语料里没有的东西，它学不到。")
-print(f"      B 离老师 {b[2]:.3f}，第一名拿了 {b[4] * 100:.0f}%。")
+print(f"      B 离老师 {b[2]:.3f}，尾部{b[3]}，第一名拿了 {b[5] * 100:.0f}%。")
 print("        这是最糟的一档：整套排序全丢了，还额外得到一个【过度自信】的学生。")
 print("        「只搬老师的答案」听起来像蒸馏，其实不是。")
-print(f"      C 离老师 {c[2]:.3f}，尾部排序{c[3]}。")
+print(f"      C 离老师 {c[2]:.3f}，尾部排序{c[3]}，差距 {c[4] * 100:.1f} pp——和老师一样。")
 print("        它没有见过老师那份语料，只是照着那 5 个数反复拧，就复现了老师的排序。")
 print("        ——被搬过来的不是答案，是【泛化方式】。")
 
@@ -190,12 +189,16 @@ for t in (0.5, 1.0, 3.0, 8.0):
     hot = softmax([math.log(max(p, 1e-12)) for p in teacher], t=t)
     print(f"      {pad(str(t), 10)}" + "".join(f"{lpad(f'{d * 100:.1f}%', 8)}" for d in hot)
           + "   " + " > ".join(tail_order(hot)))
-print("      ——温度【越低】第一名越突出、其余全挤成 0，排序信息被压没了；")
-print("        温度【越高】那几个非答案的分数越能看清谁大谁小。")
+print("      ——注意这个玩具里【排序】四种温度下都没变（雨>风>云>霜）。")
+print("        真正被温度改变的是【尾部之间的差距】：")
+print("          0.5 档：尾部挤成 7.9% / 2.4% / 1.2% / 0.6%——四个数已经快贴成一条线；")
+print("                 （这个玩具只有 5 个候选，再挤也挤不到 0；真实词表是几万量级，")
+print("                  所以实际训练里尾部会被压得更狠，这是要留意的方向。）")
+print("          8.0 档：尾部被抹平到 20.7% / 19.2% / 18.4% / 17.6%——谁大谁小也看不清了。")
+print("        所以温度是【两头都不能要】：太低压掉尾部，太高抹平尾部。")
 print("        Hinton 那篇的原话：蒸馏就是「把 softmax 的温度往上抬，")
 print("        直到老师给出一组足够软的目标」。而且直接对齐 logit 只是它的特例。")
-print("        ⚠ 但温度也别调过头——调过头第一名也会被抹平，")
-print("           这就是第 1 课那个采样参数，两头都不能要。")
+print("        这也正是第 1 课那个 temperature —— 同一个旋钮，训练和生成两头都在用。")
 
 # ============ [6] 和量化对照 ============
 print("\n[6] 收尾：它和第 5 课的量化是两件事")

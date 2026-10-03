@@ -89,6 +89,7 @@ python exercises/agent/0004-real-model-agent.py
 | 0004 | [一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html) —— 批处理怎么救 decode                                               |
 | 0005 | [量化：把模型压小，把字吐快](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-quantization.html) —— 压小＝吐字快，**但读长文一点不快**      |
 | 0006 | [会思考的模型：多出来的那一步](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-reasoning-models.html) —— 同一道题，3 秒答一个、30 秒答一个，后者还更对 |
+| 0007 | [蒸馏：小模型的本事从哪来](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation.html) —— **你给它什么，它就只能学到什么**（这条轨道到此为止）|
 
 **进阶版** —— 给想动手验算的技术读者，装的是基础课没讲的那部分理由。
 

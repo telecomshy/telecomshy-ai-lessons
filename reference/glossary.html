@@ -210,6 +210,12 @@
     <dt id="bandwidth"><strong>显存带宽（memory bandwidth）／ 算力（compute）</strong></dt>
     <dd>显卡的<b>两条独立资源</b>：算力＝每秒能做多少次运算，带宽＝每秒能从显存搬多少字节。<b>prefill 喂得饱算力</b>（decode 喂不饱、卡在带宽上），见 <a href="#arithmetic-intensity">算术强度</a>。<b>判断一个优化有没有用的问法</b>：它砍的是「搬」还是「算」？——<a href="../lessons/llm/0002-prefill-vs-decode.html">量化</a>砍「搬」，所以只救 decode。</dd>
 
+    <dt id="distillation"><strong>蒸馏（distillation）／ 软标签（soft targets）</strong></dt>
+    <dd><b>让一个小模型照着一个大模型学</b>——训练时拿<b>老师那整张概率表</b>当目标，<b>包括几个"错"字上的分数</b>。那些分数不是噪声：老师不只说「是晴天」，还说「错了多半错成下雨」——<b>这套排序就是它的泛化方式</b>，而只给正确答案的表里一点都留不下。
+    <b>要先把老师「加热」</b>（调高 <a href="#temperature">温度</a>），因为分布太尖时「第二名是谁」会被吞掉。
+    <b>⚠ 别和量化混</b>：<a href="#quantization">量化</a>改「怎么存」，能力不变；蒸馏改「从哪来」，能力会变。<b>顺序是先蒸馏变小、再量化压小。</b>
+    <b>⚠ 「蒸馏」今天至少两个意思</b>：搬<b>概率表</b>（本文这种），和搬<b>大模型写出来的回答</b>（R1 用的那种）。见<a href="../lessons/llm/0007-distillation.html">LLM 第 7 课</a>。</dd>
+
     <dt id="inference"><strong>推理引擎（inference）</strong></dt>
     <dd><b>跑模型这件事本身</b>——把权重搬上 GPU、把输入过一遍、把 token 挑出来。vLLM、SGLang、各家 API 的服务端都叫这个名字。<b>⚠ 中文有坑</b>：「推理」这两个字在中文里同时指 inference 和 reasoning，见下面一条。<b>本课程的口径</b>：<b>跑模型＝推理引擎</b>（讲机制时用「跑」字），<b>想事情＝思考</b>。</dd>
 

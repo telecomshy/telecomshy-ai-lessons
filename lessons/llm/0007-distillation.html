@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 7 课 · 蒸馏：小模型的本事从哪来</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 7 课 · 初学版</div>
+  <h1>蒸馏：小模型的本事从哪来</h1>
+  <p class="subtitle">手机里那个几 GB 的小模型，凭什么也能写代码、做数学题？<b>它是自己练出来的，还是有人教的。</b></p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>这一课是 <a href="0005-quantization.html">第 5 课</a>的另一半。前面你见过「量化」这个词，但量化干的事只是<b>换个存法</b>——模型学到的东西一个没动。</p>
+    <p>那真正让小模型变强的是另一件事。它有个名字叫<b>蒸馏（distillation）</b>，一句话版本：<b>让一个小模型照着一个大模型学，学的不只是答案。</b></p>
+    <p>先拆一个误会，因为这词最容易被用错：<b>蒸馏不是"把大模型的答案抄下来"。</b>抄答案恰恰是里面<b>最差</b>的一种做法——本课第 2 节会给你看实测。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>分清「量化」和「蒸馏」各改了什么、解释小模型为什么这么强、以及——<b>一条对做 agent 直接要命的判断</b>。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>教一个小模型时，你给它什么，它就只能学会什么。所以「答案」和「答案的分布」是两回事：前者只能让它背下题目，后者才能把老师的判断方式搬过去。</b></p>
+    <p>后面每一节都挂回它。</p>
+  </div>
+
+  <h2>1. 先把两件事分清</h2>
+  <p>它们经常被混着讲，但改的<b>完全不是同一个东西</b>：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">量化（第 5 课）</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">蒸馏（本课）</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>改什么</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">怎么<b>存</b>：每个数占几个字节</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>从哪来</b>：拿谁当老师</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>模型的能力变了吗</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">没变，一个数都没少</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">变了，学的是别人的本事</td></tr>
+      <tr><td style="padding:0.45rem"><b>什么时候做</b></td>
+          <td style="padding:0.45rem">部署之前</td>
+          <td style="padding:0.45rem">训练的时候</td></tr>
+    </tbody>
+  </table>
+  <p><b>所以顺序是先蒸馏变小、再量化压小。</b>反过来做，等于把一个本来就没学好的模型再压一遍——它本来就还没学会，你先把它压扁了。</p>
+
+  <h2>2. 蒸馏到底搬什么</h2>
+  <p>先回忆<b>第 0 课</b>那套训练：出题 → 对答案 → <b>只给正确答案</b> → 扣分 → 拧。整张目标表里，答对的那个字拿满分，其他全是 0。</p>
+  <p>蒸馏的做法不一样：<b>它把老师那一整张概率表当目标</b>——包括那几个"错"字上的分数。</p>
+
+  <figure class="figure">
+    <img src="../../assets/distill-soft-targets.svg" alt="两行对照：上面是老师的概率表，晴 60%、雨 18%、风 10%、云 7%、霜 5%，尾部四根很小的柱子上带着「雨大于风大于云大于霜」的排序；下面只给正确答案，尾部全是零，排序一点不剩">
+    <figcaption>被搬过去的<b>不是那个 60%</b>，是底下那一行<b>排序</b>。而只给正确答案时，这一行<b>一个格子都不剩</b>。</figcaption>
+  </figure>
+
+  <p>那些"错字"上的分数，为什么不是噪声？Hinton 那篇论文里给了个很好的例子：模型把某个东西误认成<b>垃圾车</b>，这个错误<b>仍然比误认成胡萝卜的可能性大出很多倍</b>。</p>
+  <div class="goal">
+    <span class="label">白话就是这句</span>
+    <p>老师不光说「是晴天」。它还说了：<b>「要是我错了，多半是错成下雨，不会错成下霜。」</b></p>
+    <p><b>这句话里就藏着它的判断方式。</b>而只给正确答案的表里，这一层信息<b>一点都没有</b>——因为那四个候选全都是 0%，0% 和 0% 之间排不出先后。</p>
+  </div>
+  <p>而这正是蒸馏值得多花力气的原因。Hinton 那篇里有这么一句，是本课最值钱的一句：</p>
+  <p>蒸馏的时候，<b>我们能让小模型「用和老师一样的方式去泛化」</b>。<b>学生学的不是答案，是老师的泛化方式。</b><span style="color:var(--muted)">（原文是 "we can train the small model to <b>generalize in the same way</b> as the large model"——课件里这句话是转述，英文原句在 <code>RESOURCES.md</code>）</span></p>
+
+  <h2>3. 为什么还得先把老师「加热」</h2>
+  <p>上面那张表里，尾部四个数是 18% / 10% / 7% / 5%——分得开，看得清谁大谁小。<b>但很多情况下不是这样。</b></p>
+  <p>回想第 0 课那个玩具：训练完之后，老师给「好 / 冷 / 差」三个几乎一样的分数（32.7% / 34.2% / 33.0%），因为<b>语料里三种都出现过、且一样多</b>。那种时候排序信息本来就很弱。</p>
+  <p><b>真正要命的是反过来的情况</b>：模型非常确定第一名（99%），其余候选全挤在 0 附近。<b>那时候"第二名是谁"这件事，根本就被吞掉了</b>——而那恰恰是"如果我错了"最该知道的事。</p>
+  <p>所以蒸馏会先把老师<b>加热</b>，把分布调软，让那些小差别重新分开。这一步的正式名字是<a href="../../reference/glossary.html#temperature">温度（temperature）</a>。Hinton 的原话：</p>
+  <div class="note">
+    <span class="label">机制的原话</span>
+    <p>「我们这套更一般的方案叫做<b>蒸馏</b>：<b>把最后一次 softmax 的温度往上抬，直到老师给出一组足够软的目标</b>。训练小模型去匹配这些软目标时，我们用<b>同样</b>的高温度。」</p>
+    <p>而且他还顺手说了一句：**直接去对齐 logit，其实只是蒸馏的一个特例。**</p>
+  </div>
+  <p><b>所以温度是两头都不能要的</b>：太低，尾部被压成一条线；太高，尾部被抹平到分不出先后。脚本第 5 节把这两个方向都跑出来了。</p>
+  <p>顺带一提：<b>这正是第 1 课那个 <code>temperature</code></b>。同一个旋钮，训练时用来把老师的分布摊开，生成时用来决定挑哪个字——<b>同一个东西，两个方向都在用</b>。</p>
+
+  <h2>4. 「蒸馏」今天至少有两个意思</h2>
+  <p>这一节是为了防止你读到的资料互相打架。实际工程里，蒸馏被用来说两种不同的事：</p>
+  <ul>
+    <li><b>搬概率表</b>（就是上面讲的这一种）。Hinton 那篇的原始机制。</li>
+    <li><b>搬大模型写出来的回答</b>。让大模型把一道题连同它的完整思考过程写出来，<b>当成小模型的教材</b>。<a href="https://arxiv.org/abs/2501.12948">R1 那篇论文</a>用的就是这一种——它附录里有一整节就叫「DeepSeek-R1 蒸馏」，原话是：探索出来的那些推理路径「subsequently <b>distilled</b> and used to train other models」。</li>
+  </ul>
+  <p>另外还有<b>第三条路，也不该算在蒸馏头上</b>：<b>用大模型来造数据</b>。<a href="https://arxiv.org/abs/2309.05463">phi-1.5</a> 就是这条路——它用已有的大模型生成"教科书级"的语料，训练出一个 <b>1.3B</b> 的小模型，<b>在很多语言任务上和一些大它 5 倍的模型相当</b>。</p>
+  <div class="goal">
+    <span class="label">所以「小模型为什么这么强」的诚实答案</span>
+    <p><b>三条路一起走</b>：造更好的数据 · 蒸馏 · 更好的后训练。<b>不是"全靠蒸馏"。</b></p>
+    <p>这一条值得记住，因为你如果只记住"小模型是蒸馏来的"，就会顺手推出"小模型一定继承了老师的一切"——<b>那个推论是错的</b>，下一节就是它的反面例子。</p>
+  </div>
+
+  <h2>5. 一个具体数字：1.5B 也能拿 55 分</h2>
+  <p>上面讲的是机制。看看实际搬出来的效果——<a href="https://github.com/deepseek-ai/deepseek-r1">R1 官方仓库</a>公布的蒸馏模型实测表：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">模型</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">AIME 2024</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">MATH-500</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">GPQA</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">LiveCodeBench</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">R1-Distill-Qwen-<b>1.5B</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">28.9</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">83.9</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">33.8</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">16.9</td></tr>
+      <tr><td style="padding:0.45rem">R1-Distill-Qwen-<b>7B</b></td>
+          <td style="padding:0.45rem;text-align:right">55.5</td>
+          <td style="padding:0.45rem;text-align:right">92.8</td>
+          <td style="padding:0.45rem;text-align:right">49.1</td>
+          <td style="padding:0.45rem;text-align:right">37.6</td></tr>
+    </tbody>
+  </table>
+  <p>这些数字背后有个容易被跳过的事实：论文里蒸馏模型比的是<b>它自己的指令版</b>（同一个底子、没做蒸馏那一版），<b>不是</b>拿 1.5B 去和 R1 比。<b>蒸馏提升的是"同尺寸的模型能到哪"，不是"小模型追平大模型"。</b></p>
+
+  <h2>6. 落到 agent 上：这一课最要紧的一句</h2>
+  <p>前面说过好几次，本轨道讲的每件事最后都要回到 agent。那么——<b>一个蒸馏出来的小模型，能不能拿来跑 agent？</b></p>
+  <p>这里有一条<b>论文自己写的</b>答案，而且是在它的「局限」那一节里。R1 论文的原话：</p>
+  <div class="goal">
+    <span class="label">推理强，不等于工具调用强</span>
+    <p>它的<b>结构化输出</b>能力「remain <b>suboptimal</b> compared to existing models」（比现有模型差）。而且原文下一句更直接：<b>「DeepSeek-R1 cannot leverage tools」</b>——<b>它没法调用工具</b>，搜索引擎、计算器都用不上。</p>
+  </div>
+  <p>而 <b>agent 的命脉恰恰就是工具调用</b>（见 <a href="../agent/0002-tool-use.html">Agent 原理篇 · 第 2 课</a>）。所以：</p>
+  <ul>
+    <li><b>蒸馏模型在"想"这一维可能很强，在"格式和动手"这两维未必</b>。</li>
+    <li>所以问「能不能用」的方式只有一个：<b>拿你自己的活去测，而且要专门测工具调用那一维</b>，别只看跑分。</li>
+  </ul>
+  <p>这和第 5 课那条结论<b>是同一条</b>：那边说"格式敏感的活，量化要压着来"，这边说"推理强的模型，工具调用未必行"。<b>跑得动和用得对，是两件事。</b></p>
+
+  <h2>7. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/llm/0007-distillation.py</code>。<b>只用 Python 标准库</b>，离线能跑。它做一个能真量出来的小实验：</p>
+  <p>造<b>两份故意排得不一样</b>的语料（老师说「雨比云更可能」，学生自己的数据说「云比雨更可能」），然后用<b>三种教法</b>训练三个学生——骨架一样、步数一样，只有"你给它什么"不同。</p>
+  <pre><code>python exercises/llm/0007-distillation.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
+  <pre><code>[1] 先造两份语料。它们故意排得【不一样】——这是本脚本的关键
+      来源              规模      晴      雨      风      云      霜   尾部排序（非第一名）
+      老师见过的     100     60%     18%     10%      7%      5%   雨 &gt; 风 &gt; 云 &gt; 霜
+      学生手上的      50     60%     10%     10%     12%      8%   云 &gt; 雨 &gt; 风 &gt; 霜
+      ——老师说「雨比云更可能」，学生自己的数据说「云比雨更可能」。
+        所以「雨 &gt; 风 &gt; 云 &gt; 霜」这个排序，只存在于老师的分布里。
+
+[3] 三个学生，骨架一样、步数一样，只有「你给它什么」不同
+      教法                               离老师多远  尾部排序   尾部差距 第一名多自信
+      A 正确答案（one-hot）                   0.080        错     4.0 pp          60%
+      B 只搬老师的答案（argmax）              0.400      并列     0.0 pp         100%
+      C 搬老师的整张分布（蒸馏）              0.000        对    13.0 pp          60%
+      （老师自己的尾部差距是 13.0 pp）
+
+        A 正确答案（one-hot）           晴 60.0%    雨 10.0%    风 10.0%    云 12.0%     霜 8.0%
+        B 只搬老师的答案（argmax）     晴 100.0%     雨 0.0%     风 0.0%     云 0.0%     霜 0.0%
+        C 搬老师的整张分布（蒸馏）      晴 60.0%    雨 18.0%    风 10.0%     云 7.0%     霜 5.0%
+
+[4] 三条要看懂的
+      A 离老师 0.080，尾部排序错（差距只有 4.0 pp）。
+        它学到的是【学生自己那份小语料的频率】——语料里没有的东西，它学不到。
+      B 离老师 0.400，尾部并列，第一名拿了 100%。
+        这是最糟的一档：整套排序全丢了，还额外得到一个【过度自信】的学生。
+        「只搬老师的答案」听起来像蒸馏，其实不是。
+      C 离老师 0.000，尾部排序对，差距 13.0 pp——和老师一样。
+        它没有见过老师那份语料，只是照着那 5 个数反复拧，就复现了老师的排序。
+        ——被搬过来的不是答案，是【泛化方式】。
+
+[5] 那为什么要【加热】老师（temperature）？看尾部就明白了
+      温度              晴      雨      风      云      霜   尾部排序
+      0.5          87.8%    7.9%    2.4%    1.2%    0.6%   雨 &gt; 风 &gt; 云 &gt; 霜
+      1.0          60.0%   18.0%   10.0%    7.0%    5.0%   雨 &gt; 风 &gt; 云 &gt; 霜
+      3.0          31.8%   21.3%   17.5%   15.5%   13.9%   雨 &gt; 风 &gt; 云 &gt; 霜
+      8.0          24.1%   20.7%   19.2%   18.4%   17.6%   雨 &gt; 风 &gt; 云 &gt; 霜
+      ——注意这个玩具里【排序】四种温度下都没变（雨&gt;风&gt;云&gt;霜）。
+        真正被温度改变的是【尾部之间的差距】：
+          0.5 档：尾部挤成 7.9% / 2.4% / 1.2% / 0.6%——四个数已经快贴成一条线；
+                 （这个玩具只有 5 个候选，再挤也挤不到 0；真实词表是几万量级，
+                  所以实际训练里尾部会被压得更狠，这是要留意的方向。）
+          8.0 档：尾部被抹平到 20.7% / 19.2% / 18.4% / 17.6%——谁大谁小也看不清了。
+        所以温度是【两头都不能要】：太低压掉尾部，太高抹平尾部。</code></pre>
+  <p><b>三处要看懂</b>：</p>
+  <ul>
+    <li><b>A 那一行是本课的核心。</b>它离老师 0.080，尾部排序<b>还是错的</b>——因为"雨比云更可能"这件事<b>不在学生自己的语料里</b>。它能学到的极限就是那份小语料的频率。</li>
+    <li><b>B 比 A 还差，而且是两种差。</b>它离老师 0.400（最远），而且尾部<b>并列</b>（一点排序信息都没有），还额外得到一个<b> 100% 自信</b>的学生。<b>"只搬老师的答案"是最容易被误解成蒸馏、实际最没用的一档。</b></li>
+    <li><b>C 离老师 0.000。</b>它<b>没见过老师那份语料</b>，只是照着那 5 个数反复拧，就把老师的排序复现出来了（尾部差距 13.0 pp，和老师一样）。<b>这就是"泛化方式被搬过去了"的意思。</b></li>
+  </ul>
+
+  <h2>8. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 蒸馏和量化，最本质的区别是什么？</p>
+    <button class="quiz-option">蒸馏改怎么存，量化改从哪来</button>
+    <button class="quiz-option" data-correct="true">蒸馏改从哪来，量化改怎么存</button>
+    <button class="quiz-option">两个都是换存法，只是精度不同</button>
+    <button class="quiz-option">两个都会让模型的能力变强</button>
+    <p class="feedback"
+       data-ok="对。蒸馏改「从哪来」（学谁的本事），量化改「怎么存」（每数占几个字节）。"
+       data-no="记反了：蒸馏是训练时拿谁当老师（能力会变），量化是部署前换存法（能力不变）。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 蒸馏时，除了正确答案，还要给模型什么？</p>
+    <button class="quiz-option" data-correct="true">老师的完整概率表，含错字上的分数</button>
+    <button class="quiz-option">老师的推理过程，按步骤展开</button>
+    <button class="quiz-option">老师的全部训练数据和随机种子</button>
+    <button class="quiz-option">老师的模型文件，直接复制一份</button>
+    <p class="feedback"
+       data-ok="对。那张表上「错字」的分数，就是老师的判断方式。"
+       data-no="Hinton 那套要的是老师整张概率表，包括非答案那几个字上的分数。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 为什么蒸馏要先调高温度？</p>
+    <button class="quiz-option">为了让训练跑得更快一点</button>
+    <button class="quiz-option">为了压低模型的置信度，少犯错</button>
+    <button class="quiz-option" data-correct="true">因为太尖的分布会把尾部信息抹平</button>
+    <button class="quiz-option">因为低温会让数值溢出，训练不稳定</button>
+    <p class="feedback"
+       data-ok="对。模型太确定时，第二名是谁就被吞掉了——加热才能把它分出来。"
+       data-no="是尾部的问题：分布太尖时「第二名是谁」根本就被吞掉，加热才能分开。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 「只把小模型的答案换成老师的答案」，算蒸馏吗？</p>
+    <button class="quiz-option">算，这就是最省事的那种蒸馏</button>
+    <button class="quiz-option" data-correct="true">不算，那是丢信息最多的一档</button>
+    <button class="quiz-option">算，只是效果要跑一遍才知道</button>
+    <button class="quiz-option">算，因为答案本身没有不确定性</button>
+    <p class="feedback"
+       data-ok="对。脚本里那一档离老师最远、尾部并列，还得到一个 100% 自信的学生。"
+       data-no="不算。脚本实测：只搬 argmax 那档离老师 0.400、尾部全并列，还过度自信。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 「小模型为什么这么强」，最诚实的说法是？</p>
+    <button class="quiz-option">全部来自蒸馏，老师能力直接继承</button>
+    <button class="quiz-option" data-correct="true">造数据、蒸馏、更好的后训练，三条一起</button>
+    <button class="quiz-option">主要是因为参数结构改进了，蒸馏是次要的</button>
+    <button class="quiz-option">因为小模型的推理时间更长，见第 6 课</button>
+    <p class="feedback"
+       data-ok="对。三条路都在起作用——只记住蒸馏会推出「一定继承了老师一切」这个错结论。"
+       data-no="是三条路一起走（造数据 · 蒸馏 · 后训练）。只记住蒸馏会推出错误的结论。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 想拿蒸馏小模型跑 agent，最该先测哪一维？</p>
+    <button class="quiz-option">它的跑分是不是接近老师</button>
+    <button class="quiz-option">推理链是不是够长、够详细</button>
+    <button class="quiz-option">它每 GB 显存能带多少上下文</button>
+    <button class="quiz-option" data-correct="true">工具调用还准不准、格式还对不对</button>
+    <p class="feedback"
+       data-ok="对。推理强不等于工具调用强——R1 论文自己就写了它无法调用工具。"
+       data-no="工具调用和格式。R1 论文的局限章节明说它的结构化输出更差、而且无法调用工具。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/1503.02531">Hinton, Vinyals, Dean — Distilling the Knowledge in a Neural Network</a>——<b>蒸馏的出处</b>。三句原话都在：<b>把 softmax 温度往上抬直到给出足够软的目标</b>（机制）· <b>让小模型用和老师一样的方式去泛化</b>（为什么有用）· <b>误认成垃圾车仍远高于误认成胡萝卜</b>（"错字上的分数不是噪声"）。<br>
+    <a href="https://arxiv.org/abs/2501.12948">DeepSeek-AI et al. — DeepSeek-R1（Nature 2025）</a>——第 2 节的<b>工具调用那条局限</b>（出自论文自己的「局限」章节）和附录 F 的蒸馏那一节。<br>
+    <a href="https://github.com/deepseek-ai/deepseek-r1">DeepSeek-R1 官方仓库</a>——第 5 节那张蒸馏模型实测表的出处。<br>
+    <a href="https://arxiv.org/abs/2309.05463">Li et al. — phi-1.5 技术报告</a>——第 4 节那条<b>不是蒸馏的路</b>（用大模型造"教科书级"数据）。全部在 <code>RESOURCES.md</code> 里。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"既然能蒸馏，为什么不把大模型整个压成小模型？""那两个字谁更可能，是模型算出来的还是人教的？""小模型蒸馏完，能不能再蒸馏成更小的？""手机上的小模型是蒸馏来的吗，还是本来就没那么大？""如果一个模型是造数据练出来的，那它的'老师'是谁？"
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="0005-quantization.html">LLM 底层 · 第 5 课 · 量化</a>（另一半；两课合起来才是"让模型变小"这件事）· <a href="0006-reasoning-models.html">第 6 课 · 会思考的模型</a>（"搬家"的两个理由之一，另一个是第 0 课的规模）<br>
+    <b>这条轨道到此为止</b>：七课走完了一条线——<b>模型里发生了什么 → 一次请求怎么跑 → 时间/带宽/精度怎么被优化 → 能力从哪来</b>。<a href="../index.html">回到课程目录</a><br>
+    <b>接下来往哪走</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a>（真动手做一个）· <a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>（本课第 6 节那条「工具调用要专门测」的前置）<br>
+    术语表：<a href="../../reference/glossary.html#distillation">蒸馏 distillation</a> · <a href="../../reference/glossary.html#quantization">量化 quantization</a> · <a href="../../reference/glossary.html#temperature">温度 temperature</a> · <a href="../../reference/glossary.html#logits">Logits / Softmax</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 7 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>
