@@ -200,6 +200,23 @@
 
     <dt id="continuous-batching"><strong>连续批处理（continuous batching）</strong></dt>
     <dd>不等一整批跑完：每一步都重新组批，谁结束谁让位、空位立刻塞新请求。避免"短请求陪长请求干等"。vLLM 的核心优化之一。</dd>
+
+    <dt id="quantization"><strong>量化（quantization）／ 刻度（scale）</strong></dt>
+    <dd><b>换一种存法</b>：把每个权重从 float32（4 字节）改成低精度整数，配合一个「刻度（scale）」换算回去。刻度就是那把尺子的<b>格子宽度</b>——格子粗了省地方，但数只能落在格子线上，<b>中间那部分直接丢了</b>。<b>和压缩的区别</b>：压缩能还原，量化<b>原值不保留</b>。刻度本身要占地方，所以「4 bit」实际占用接近 5 bit。</dd>
+
+    <dt id="activation"><strong>激活（activation）／ 离群值（outlier）</strong></dt>
+    <dd>模型<b>算的时候中间产生</b>的那些数（不是学出来的权重，是喂进去之后流过各层的临时结果）。<b>离群值</b>指少数几个数天生比别的大很多——LLM 里它们<b>专挑激活出来</b>（权重好压，激活难压），会把一把尺子的量程吃光。所以量化真正难啃的是激活，不是权重；<b>AWQ 那个「重要性」也是看激活的分布，不是看权重本身。</b></dd>
+
+    <dt id="bandwidth"><strong>显存带宽（memory bandwidth）／ 算力（compute）</strong></dt>
+    <dd>显卡的<b>两条独立资源</b>：算力＝每秒能做多少次运算，带宽＝每秒能从显存搬多少字节。<b>prefill 喂得饱算力</b>（decode 喂不饱、卡在带宽上），见 <a href="#arithmetic-intensity">算术强度</a>。<b>判断一个优化有没有用的问法</b>：它砍的是「搬」还是「算」？——<a href="../lessons/llm/0002-prefill-vs-decode.html">量化</a>砍「搬」，所以只救 decode。</dd>
+
+    <dt id="inference"><strong>推理引擎（inference）</strong></dt>
+    <dd><b>跑模型这件事本身</b>——把权重搬上 GPU、把输入过一遍、把 token 挑出来。vLLM、SGLang、各家 API 的服务端都叫这个名字。<b>⚠ 中文有坑</b>：「推理」这两个字在中文里同时指 inference 和 reasoning，见下面一条。<b>本课程的口径</b>：<b>跑模型＝推理引擎</b>（讲机制时用「跑」字），<b>想事情＝思考</b>。</dd>
+
+    <dt id="reasoning"><strong>思考（reasoning）／ 会思考的模型</strong></dt>
+    <dd>模型<b>在给答案之前先把问题想一遍</b>——先复述题意、试几种办法、检查中间结果、发现不对就放弃那条路。那段「想」是<b>真的 token</b>：按<b>输出</b>计费、占上下文、而且必须<b>原样带回去</b>（否则有的厂商直接报错、有的让前缀缓存断掉）。<b>它不是「更聪明的另一个模型」</b>，而是<b>同一个模型被允许多花时间</b>。
+    <b>⚠ 中文有坑</b>：「推理」这两个字也指这个意思（中文里 <code>推理模型</code> 通常＝ reasoning model），<b>但本课程讲跑模型时说的是「推理引擎」＝ inference</b>。看到「推理」先分清是哪一个。
+    <b>也别把它想成人脑</b>：原厂自己说过，模型"very often make decisions based on factors that they <b>don't explicitly discuss</b> in their thinking process"，所以<b>读思考过程判断不了它在干什么</b>。见 <a href="../lessons/llm/0006-reasoning-models.html">LLM 第 6 课</a>。</dd>
   </dl>
 
   <p class="next"><a href="../lessons/agent/0001-what-is-an-agent.html">← 回到 Agent 原理篇 · 第 1 课</a></p>

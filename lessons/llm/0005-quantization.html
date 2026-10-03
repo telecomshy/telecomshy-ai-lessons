@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 5 课 · 量化：把模型压小，把字吐快</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 5 课 · 初学版</div>
+  <h1>量化：把模型压小，把字吐快</h1>
+  <p class="subtitle">前面四课都在讲<b>怎么少浪费时间</b>。这一课讲其中最直接的一个动作 —— 而且它的效果<b>只有一半</b>，不是大多数人以为的那样。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你大概听说过这么一件事：<b>几年前的笔记本根本跑不动的大模型，现在塞进普通电脑就能跑了。</b>而且模型名字后面还挂着一串看不懂的东西——<code>Q4_K_M</code>、<code>int8</code>、<code>FP8</code>。</p>
+    <p>那串东西是什么？先说掉一半误解：<b>它不是「把文件压缩一下」。</b>压缩（zip）压完还能解压还原，<b>量化是永久换掉存法，原来的数取不回来了</b>——它拿模型的一点点"记性"换了体积和速度。</p>
+    <p style="margin-top:0.7rem">真正反直觉的是这个：<b>所有人都说量化能让模型变快，可它只让一半的动作变快。</b>模型「吐字」快了，<b>「读长文」几乎一点不快</b>——甚至可能更慢。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>看懂模型名里那些后缀、判断一个模型能不能在你机器上跑、以及知道什么时候<b>不该</b>压到极限。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>量化只改一件事：模型里每个数占几个字节。而模型每吐一个字，都要把整张权重表整个搬一遍 —— 所以字节少了，吐字就快。</b></p>
+    <p>另一半（读长文）为什么不受益？因为那一段显卡<b>忙着算</b>，本来就没空理搬运的事。后面每一节都挂回它。</p>
+  </div>
+
+  <h2>1. 它到底是什么：换一把粗尺子</h2>
+  <p>第 0 课说过，模型里唯一的东西就是<b>一大堆数字</b>。这些数字现在通常用 <code>float32</code> 存——<b>每个数占 4 个字节</b>。一个 8B（80 亿个数）的模型，光数字就要 <b>32 GB</b>。</p>
+  <p>量化的做法很朴素：<b>给这堆数换一把刻度更粗的尺子量一遍</b>，然后只记住「落在第几格」。</p>
+  <ul>
+    <li>尺子上有格子。<b>格子越粗，能表示的档位就越少</b>——数只能落在格子线上，落在格子中间的部分直接丢了。</li>
+    <li>格子越细越准，但<b>要记的档位越多，占的地方也越多</b>。压得小和压得准，天生对着干。</li>
+  </ul>
+  <p>这一步的正式名字叫<a href="../../reference/glossary.html#quantization"><b>量化（quantization）</b></a>，格子的宽度叫<b>刻度（scale）</b>。「量化」这个词的意思就是「把连续的量变成分档的量」——<b>精度是在这一步被切掉的</b>。</p>
+
+  <div class="note">
+    <span class="label">这一条最容易被绕进去，先钉死</span>
+    <p><b>量化 ≠ 压缩。</b>压缩是「换个更省的存法，需要时能<b>还原</b>回去」，所以解压完还是原来那个模型；量化是「<b>直接换掉，原值不保留</b>」，所以它能换来的速度和体积，比压缩多得多——代价就是你再也换不回来。</p>
+    <p>所以量化永远是<b>一道选择题</b>：省多少，换掉多少精度。<b>没有「又快又好又不掉」的量化档位</b>，只有「你要哪一头」。</p>
+  </div>
+
+  <p>这把尺子量过的效果是实打实的体积账。下面是<a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp 官方仓库</a>自己公布的实测（把同一个模型压成 4 bit 那一档之后）：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">模型</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">原体积</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">压到 4 bit 之后</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">8B</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">32.1 GB</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right"><b>4.9 GB</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">70B</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">280.9 GB</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right"><b>43.1 GB</b></td></tr>
+      <tr><td style="padding:0.45rem">405B</td>
+          <td style="padding:0.45rem;text-align:right">1,625.1 GB</td>
+          <td style="padding:0.45rem;text-align:right"><b>249.1 GB</b></td></tr>
+    </tbody>
+  </table>
+  <p><b>「小模型能塞进笔记本」这件事，一大半是量化给的。</b>顺带提醒一句现实：量化<b>不是</b>一个动作，是<b>一堆互不兼容的格式</b>，每种还挑硬件。vLLM 官方那张支持矩阵就写着，<code>AWQ</code> 不认老一点的卡也不认 AMD，<code>GPTQ</code> 在更新的卡上反而不认——<b>所以「能不能用」先看硬件，再看格式</b>，不是看模型名字。</p>
+
+  <h2>2. 为什么省字节就等于变快</h2>
+  <p>这一节是本课的关键，因为<b>它把前四课串起来了</b>。回想第 2 课的结论：</p>
+  <div class="goal">
+    <span class="label">第 2 课的原话</span>
+    <p>显卡是个数学天才，但每做一道题都得跑去仓库搬书。<b>它在「吐字」那一段（decode）大部分时间在搬书</b>，不在算——术语叫<b>显存带宽受限</b>。<span style="color:var(--muted)">（那个「≈1」的算力强度是怎么算出来的？<a href="0002-prefill-vs-decode-deep.html#q3-intensity">→ 看第 2 课进阶 · Q3</a>）</span></p>
+  </div>
+  <p>那么，把前四课的招数按「<b>它砍掉了什么</b>」重新排一遍，位置立刻清楚了：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">招数</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">它砍掉的是</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><a href="0003-kv-cache-and-prompt-caching.html">KV Cache / 缓存命中</a></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">重复的<b>算</b>（省了计算，没省搬运）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><a href="0004-batching.html">批处理</a></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">让<b>多个请求共用同一次搬运</b>（一次搬，服务多个人）</td></tr>
+      <tr><td style="padding:0.45rem"><b>量化</b></td>
+          <td style="padding:0.45rem"><b>搬运量本身</b>——货变轻了，搬一趟就少一趟</td></tr>
+    </tbody>
+  </table>
+  <p><b>所以判断任何一个优化有没有用，只要问一句：它砍的是「搬」还是「算」？</b>砍「搬」的治「吐字慢」，砍「算」的治别的。<b>量化是这张表里唯一一个直接砍搬运量的</b>——这就是它快的全部原因。</p>
+
+  <h2>3. 反直觉的一半：只救吐字，不救读长文</h2>
+  <p>这条结论必须用实测说，因为它是<b>反直觉</b>的。同样一台机器、同一个模型（Llama-3.1-8B）、<b>只改存法</b>，其他什么都不动：</p>
+
+  <figure class="figure">
+    <img src="../../assets/quantization-bytes.svg" alt="左右对照：prefill 那一段算力本来就满，少搬不省时间，实测 923 到 822 没变快；decode 那一段时间几乎全花在搬运上，压到 4 bit 后搬的量少到三分之一，实测 29 到 72 每秒，快 2.5 倍">
+    <figcaption>左边是「读长文」（prefill），右边是「写长文」（decode）。<b>只有右边那根搬运条被砍短了</b>——而只有右边的时间是靠搬运决定的。</figcaption>
+  </figure>
+
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">同一台机器，每秒吐几个字 / 读完几个字</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">原样（float16）</th>
+      <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.45rem">压到 4 bit 那一档</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">读长文（一次读 512 个字）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">923</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule);text-align:right">822 <span style="color:var(--muted)">（没快）</span></td></tr>
+      <tr><td style="padding:0.45rem">吐字（一个字一个字来）</td>
+          <td style="padding:0.45rem;text-align:right">29</td>
+          <td style="padding:0.45rem;text-align:right"><b>72</b> <span style="color:var(--muted)">（快 2.5 倍）</span></td></tr>
+    </tbody>
+  </table>
+
+  <p>为什么左边不涨反跌？因为<b>读长文那一段是「算力受限」</b>——显卡的算力本来就打满了，<b>多出来的空档它没有</b>。你把货搬轻了，省下的搬运时间<b>并不能兑现成速度</b>。而吐字那一段是「带宽受限」，时间几乎全花在搬运上，货一轻，时间就跟着少。</p>
+  <p><b>这就是第 2 课那句「算力受限 / 带宽受限」的实测版。</b>那一课是推导出来的，这一课是量出来的——<b>两句说的是同一件事</b>。</p>
+  <div class="note">
+    <span class="label">这条对你有什么用</span>
+    <p><b>量化治的是「吐字慢」，不治「读长文慢」。</b>所以：</p>
+    <ul>
+      <li>模型<b>回答长、输入短</b>（聊天、写代码、长报告）→ 量化收益明显。</li>
+      <li>模型<b>输入长、回答短</b>（塞一大资料的 RAG、很长的系统提示）→ <b>别指望量化</b>。这种场景该去治 prefill——那是<a href="0002-prefill-vs-decode.html">第 2 课</a>和<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>的地盘（缓存、稳定前缀）。</li>
+    </ul>
+  </div>
+
+  <h2>4. 代价：格子粗了，会丢东西</h2>
+  <p>省字节的代价前面说了：<b>数只能落在格子线上</b>。但这里有个比「精度掉了一点」重要得多的发现。</p>
+  <p>先看最容易犯的错：<b>拿一把尺子量整张表</b>。问题是模型里<b>少数几个数天生就比别的大很多</b>（脚本第 1 节造的就是这种表）。它们把量程吃光了，剩下的普通数全被挤在很窄的一小段里——<b>挤没了</b>。结果是：<b>大数几乎没受影响，小数被压扁了</b>。脚本第 3 节量出来就是这个形状（绝对误差到处都差不多，但除以自己的量级，普通列差 4%，大列只差 0.2%）。</p>
+  <p>所以真实做法不是「一把尺子量全表」，而是<b>换更细的尺子</b>——按一小群数一把来量。代价是刻度要占地方，但换来误差掉一个数量级。</p>
+
+  <div class="note">
+    <span class="label">这一条是本课最值钱的一句</span>
+    <p><b>格子粗不会让模型「均匀地变糊」，而是「该糊的地方没糊、不该糊的地方糊了」。</b></p>
+    <p>因为各处的数重要性差得很远，所以正确的做法是<b>挑着压</b>——重点保住，别处粗一点没关系。<a href="https://arxiv.org/abs/2306.00978">AWQ 那篇论文（MLSys 2024 最佳论文）</a>的原话就是：<b>「不是所有权重都一样重要，保护那 1% 关键的权重，就能大幅降低误差。」</b>而且它补了一句很反直觉的话：<b>判断哪些通道关键，要看「激活」的分布，不是看权重本身</b>。</p>
+    <p><b>这就是为什么 4 bit 的模型还能用</b>——不是因为 4 bit 够准，是因为大家花了很大力气去保护那 1%。<span style="color:var(--muted)">（激活是什么、为什么它比权重还难压，见<a href="../../reference/glossary.html#activation">术语表</a>；<a href="https://arxiv.org/abs/2211.10438">SmoothQuant</a> 那篇的判断很直接：<b>权重好压，激活难压</b>。）</span></p>
+  </div>
+
+  <p>另一条要记住的：<b>「4 bit」其实不止 4 bit。</b>因为刻度本身也要占地方（前面说的「按小群量」，每群都要存一个自己的刻度）。所以 llama.cpp 实测出来的真实数字是：<code>Q8_0</code> 占 <b>8.50</b> bit，<code>Q4_K_M</code> 占 <b>4.89</b> bit。<b>模型名字上写 4 bit，真实占用接近 5 bit</b>——这不是虚标，是那 0.89 bit 买的是「精度」和「一把更细的尺子」。</p>
+
+  <h2>5. 什么时候会掉能力（对 agent 尤其要紧）</h2>
+  <p>压掉的那点精度，<b>不是均匀地摊在所有任务上</b>。经验上大致这样分：</p>
+  <ul>
+    <li><b>掉得最少</b>：粗活。闲聊、摘要大意、给材料分个类、从一堆文本里找出大概相关的那几段。</li>
+    <li><b>掉得最多</b>：<b>格式敏感的活</b>。严格的 JSON、必须一字不差的函数名、精确的数字、很长的指令遵循。</li>
+  </ul>
+  <div class="goal">
+    <span class="label">所以，对 agent 有这么一条</span>
+    <p>工具调用这件事本身，要求模型吐出一份<b>结构严格的 JSON</b>（哪个工具、参数是什么）——<b>这正好落在「掉得最多」那一类里</b>。</p>
+    <p><b>所以：正式跑 agent 的链路，别拿极限量化去赌格式。</b>要压就压到有余量的档（比如先试 8 bit 那一档，或者压到 4 bit 但<b>实测一遍工具调用还准不准</b>）。拿量化模型做原型、跑评估、做本地试验，随便压；上线要稳，就留够余量。</p>
+  </div>
+  <p>另外两件实用的事，都是官方文档里的原话：</p>
+  <ul>
+    <li><b>量化要喂样本，而且要喂贴近你活的那类。</b>vLLM 官方给的起点是<b>先 512 条</b>，准确率掉了就加。喂的是"你实际会输入的东西"，压出来的模型才适合你的场景。</li>
+    <li><b>量化后的模型对 <code>bos</code> 这类特殊 token 敏感。</b>评测时忘了加，它会给你一个偏低的分数——<b>那个分数是评测配错的，不是模型真变差了</b>。这是官方专门列出来的警告。</li>
+  </ul>
+
+  <h2>6. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/llm/0005-quantization.py</code>。它用<b>只用 Python 标准库</b>，离线能跑，做了三件事：造一张带"大数列"的权重表、用三种尺子压一遍并量误差、再把<b>第 0 课那个真训练出来的玩具模型</b>压一遍看扣分变没变。</p>
+  <pre><code>python exercises/llm/0005-quantization.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
+  <pre><code>[2] 换一种存法：float32 -&gt; int8（一把尺子量整张表）
+      float32：每个权重 32 bit = 4 字节 -&gt; 全表 16384 字节
+      int8   ：每个权重  8 bit = 1 字节 -&gt; 全表 4100 字节（含 4 字节刻度）
+      体积掉到 25.0%，但每个数只能落在 0.2379 的格子里
+      最大误差 0.1189，平均误差 0.0598，一半的列相对自己量级差 3.4%
+
+[3] 误差出在哪：绝对误差到处都差不多，差的是「相对自己量级」
+          列        这一列最大值        平均绝对误差      相对误差
+          0         1.520        0.0610     4.0%
+          2         1.736        0.0505     2.9%
+         42        30.210        0.0719     0.2%
+      ——绝对误差都是 0.06 上下，一模一样；可是除以自己量级，
+         普通列差 3~4%，大列只差 0.2%。被压扁的是小数，不是大数。
+
+[4] 换三种尺子：共用得越细，误差越小、刻度越占地方（8 bit）
+      方案                     最大误差   平均误差 一半的列相对误差   实际 bit/权重
+      整表一把尺子               0.1189     0.0598            3.39%           8.004
+      每列一把尺子               0.1109     0.0035            0.17%           8.004
+      每 32 个一把               0.1163     0.0094            0.33%           8.500
+
+[6] 换成真实模型的账：一个 8B 参数的模型，各种存法各占多大
+      存法                         每个权重    8B 模型体积   相对 float32
+      float16                        16 bit        16.0 GB          50.0%
+      int8                            8 bit         8.0 GB          25.0%
+      int4（每 32 个一把尺子）        4 bit         4.5 GB          14.1%
+      ——刻度开销已经算进去了：4 bit 那行是 4.50，不是 4.00；8 bit 那行是 8.50。
+         llama.cpp 官方公布的实测值是 8.5008 和 4.5，一模一样（课里会用到）。
+
+[7] 最要紧的一问：压完，模型还能不能用？拿第 0 课那个玩具模型试
+      float32（没压）    平均扣分 0.5989
+      int8（每行一把）  平均扣分 0.5992   变化 +0.0003
+      int4（每行一把）  平均扣分 0.6012   变化 +0.0023
+      ——int8 扣分几乎没动（+0.0003），int4 也只差 0.0023。看「很」那一行，
+         四个候选的百分比基本照旧，连排序都没变。
+      ——别急着把它读成「量化不掉能力」。这个玩具只有 18 道题、7 个候选字，
+         「能力」只有一个刻度，太粗了。真模型上能力是用几万道题测的，
+         那里掉一点就是掉分数——所以各家论文都要跑一整套 benchmark 才敢下结论。</code></pre>
+  <p><b>四处要看懂</b>：</p>
+  <ul>
+    <li><b>体积掉到 25%，但误差也立刻出现了</b>——省和掉是同时发生的，这就是那道选择题。</li>
+    <li><b>换尺子那三行</b>：误差从 3.4% 掉到 0.2% 上下，<b>一个数量级</b>，而体积只从 8.004 涨到 8.500 bit。<b>这就是第 4 节那笔买卖的价钱。</b></li>
+    <li><b>脚本报的 8.50 / 4.50，和 llama.cpp 官方公布的 8.5008 / 4.5 对得上</b>——这不是巧合：那个 0.5 bit 就是刻度本身。</li>
+    <li><b>最后一节能力几乎没掉，但这不能当成「量化不掉能力」的证据</b>——玩具只有 18 道题，尺子太粗。这恰恰是为什么真模型上必须跑一整套评测。</li>
+  </ul>
+
+  <h2>7. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 量化到底改动了模型的什么？</p>
+    <button class="quiz-option">改训练时喂进去的语料</button>
+    <button class="quiz-option">改模型一共有多少层</button>
+    <button class="quiz-option" data-correct="true">改每个权重占几个字节</button>
+    <button class="quiz-option">改抽样时用的那套参数</button>
+    <p class="feedback"
+       data-ok="对。量化只换存法，模型学到的东西一个没动。"
+       data-no="语料、层数、采样参数都不是量化动的东西——它只改每个权重占几个字节。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 同一个模型压到 4 bit，「读长文」那一段会变快吗？</p>
+    <button class="quiz-option">会快，而且和吐字一样快</button>
+    <button class="quiz-option">会快很多，字节少了一半以上</button>
+    <button class="quiz-option" data-correct="true">基本不变快，那一段本来就忙别的事</button>
+    <button class="quiz-option">一定变慢，因为多了一道还原工序</button>
+    <p class="feedback"
+       data-ok="对。读长文是算力受限，算力本来就打满，少搬货省不出时间。"
+       data-no="读长文那一段算力已经打满，砍搬运帮不上忙——实测甚至略降。受益的是吐字。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 模型名写着「4 bit」，为什么实际占用通常接近 5 bit？</p>
+    <button class="quiz-option">压完必须另存一份原始权重</button>
+    <button class="quiz-option">4 bit 会被自动补齐成 8 bit</button>
+    <button class="quiz-option">权重得按 32 个一组重排才对齐</button>
+    <button class="quiz-option" data-correct="true">刻度本身也要占地方</button>
+    <p class="feedback"
+       data-ok="对。刻度就是多出来那 0.5 bit——llama.cpp 实测 4.89，脚本也算出 4.50。"
+       data-no="多出来的是刻度（scale）本身：每一小组数都要存一个自己的刻度。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 「挑着压」这个说法，指的是什么？</p>
+    <button class="quiz-option">每隔几层就换一种量化格式</button>
+    <button class="quiz-option">把最大的那几个权重直接删掉</button>
+    <button class="quiz-option" data-correct="true">少数权重格外重要，保住它们</button>
+    <button class="quiz-option">按权重大小排序，只压后面一半</button>
+    <p class="feedback"
+       data-ok="对。重要性差得很远，所以重点保住那 1%，别处粗一点没关系。"
+       data-no="AWQ 的原话是「保护 1% 关键的权重就能大幅降低误差」——重点是保住重要的，不是排序或删掉。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 要给一个经常输出严格 JSON 的 agent 挑量化档，最该盯什么？</p>
+    <button class="quiz-option">体积能省下多少 GB</button>
+    <button class="quiz-option">每秒能吐多少个字</button>
+    <button class="quiz-option">校准数据要准备多少条</button>
+    <button class="quiz-option" data-correct="true">压到什么位还能不出格式错</button>
+    <p class="feedback"
+       data-ok="对。格式敏感的活掉得最多，所以要实测格式还准不准，别只看体积和速度。"
+       data-no="体积和速度当然要看，但对格式敏感的活，关键是压到什么位还不出错。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp — <code>tools/quantize/README.md</code></a>——<b>本课最重要的一条</b>：Llama-3.1-8B 在同一台机器上的完整实测表（每档的 <code>bits/weight</code>、体积、prefill 与 decode 速度），第 1、3、6 节的数字都出自这里。<br>
+    <a href="https://arxiv.org/abs/2306.00978">Lin et al. — AWQ: Activation-aware Weight Quantization</a>（MLSys 2024 最佳论文）——「<b>保护 1% 关键的权重就够了</b>」和「判断重要性要看激活的分布」，第 4 节那两句原话出自这里。<br>
+    <a href="https://docs.vllm.ai/en/latest/features/quantization/llm_compressor/int4/">vLLM — INT4 W4A16（官方文档）</a>——量化要喂校准样本（<b>先 512 条</b>，掉了就加）、<b>量化模型对 <code>bos</code> token 敏感</b>，第 5 节那两条出自这里。<br>
+    另外三条打底的：<a href="https://arxiv.org/abs/2208.07339">LLM.int8()</a>（离群值这个现象的出处）· <a href="https://arxiv.org/abs/2210.17323">GPTQ</a>（3–4 bit 还能用是怎么做到的）· <a href="https://arxiv.org/abs/2211.10438">SmoothQuant</a>（<b>权重好压、激活难压</b>）。三条都在 <code>RESOURCES.md</code> 里。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"为什么把文件 zip 一下不行，非得量化？""精度具体掉在哪种活上，能给个例子吗？""我这张卡能不能跑 <code>Q4_K_M</code> 那个文件？""要是我只做摘要，压狠一点行不行？""量化会不会让同一个问题两次答案不一样？"
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（本课第 2、3 节全挂在它那条「带宽受限」上）· <a href="0004-batching.html">第 4 课 · 批处理</a>（另一个砍搬运的招数，对照着看）<br>
+    <b>顺着往下</b>：LLM 底层 · 第 6 课 · <b>会思考的模型：多出来的那一步</b>（还没写）——另一件"拿延迟和成本换能力"的事<br>
+    <b>这条轨道</b>：<a href="../index.html">课程目录</a>　·　<b>换个角度</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（量化模型要不要评估）<br>
+    术语表：<a href="../../reference/glossary.html#quantization">量化</a> · <a href="../../reference/glossary.html#activation">激活</a> · <a href="../../reference/glossary.html#bandwidth">显存带宽</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 5 课（初学版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

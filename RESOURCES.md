@@ -55,6 +55,10 @@
   温度、top_k、top_p 各是一个 <code>LogitsWarper</code>，在 `generate` 里**排成一串依次作用**（temperature → top_k → top_p），最后才从剩下的里抽。**用来**：给"叠着用有先后、起作用的是更紧的那把"提供出处。
 - [Pope et al. — "Efficiently Scaling Transformer Inference"（2022）](https://arxiv.org/abs/2211.05102)
   Google 的推理优化论文，给"两段"的**硬件画像**：**处理输入 token 时 MFU 达 76%**（算力几乎打满），而**生成时低批延迟 29ms/token**（在等数据）。并说明 MQA 让上下文能扩到 32 倍。**用来**：给"prefill 算力受限 / decode 带宽受限"提供论文级依据。
+- [Anthropic 官方价目](https://www.anthropic.com/pricing)（2026-10-03 查）
+  API 每 MTok 单价。**输出一律是输入的 5 倍**：Fable 5.1 $10/$50、Opus 5.5 $4/$20、Sonnet 5.5 $2/$10、Haiku 4.5 $1/$5。缓存另计：**读** $0.10～$0.25（输入的 0.025～0.1 倍）、**写** 是输入的 1.25 倍；原页注明缓存价对应 **5 分钟 TTL**。**用来**：第 2 课第 6 节"输出比输入贵"的价目表；脚本 `PRICE_OUT` / `CACHE_HIT_DISCOUNT` 的依据。⚠ **价目会变，课件里必须标查证日期并给原页链接。**
+- [DeepSeek 官方价目](https://api-docs.deepseek.com/quick_start/pricing)（2026-10-03 查）
+  分**非高峰 / 高峰**两档（高峰为 UTC 工作日 01:00–04:00、06:00–10:00，非高峰约为高峰的一半）。非高峰：V4.1-Flash 输入（未命中）$0.15、输出 $0.60 → **4 倍**；V4-Pro 输入（未命中）$0.66、输出 $1.98 → **3 倍**。缓存命中输入低到 $0.003 / $0.022，即**未命中的 1/50 ～ 1/30**。**用来**：与 Anthropic 交叉验证"输出比输入贵"的方向与量级（第二家一手来源）。⚠ 同上，价目会变。
 - [ClickHouse — "LLM inference latency: TTFT, tokens per second"](https://clickhouse.com/resources/engineering/llm-inference-latency)
   用一条真实时间线（3200 token 输入 → 400ms 首字 → 410 token 输出 → 12.7s）解释 TTFT 与 TPOT 的分工。**用来**：讲两个延迟指标。
 - [Anyscale — "Understand LLM latency and throughput metrics"](https://docs.anyscale.com/llm/serving/benchmarking/metrics)
@@ -74,6 +78,68 @@
   **分块预填充（chunked prefill）**的出处。课程里"最多 6.9× 吞吐提升"这个数字同样出自 Weka 综述转述，未直接读原文。**用来**：讲"把长 prefill 切块、和 decode 交替跑"。
 - [Runpod — "vLLM Explained: PagedAttention and Continuous Batching"](https://www.runpod.io/articles/guides/vllm-pagedattention-continuous-batching)
   工业落地的科普版：静态批处理 vs 连续批处理、PagedAttention。**用来**：讲工程实现。
+
+### 蒸馏（第 7 课）
+
+- [Hinton, Vinyals, Dean — "Distilling the Knowledge in a Neural Network"（arXiv 1503.02531, NIPS 2014 DL Workshop）](https://arxiv.org/abs/1503.02531)
+  **蒸馏这个字的出处**，也是本课机制的原话来源。三句都要记住：
+  ① **机制**："Our more general solution, called **distillation**, is to **raise the temperature of the final softmax until the cumbersome model produces a suitably soft set of targets**. We thus use the same high temperature when training the small model to match these soft targets. We show later that matching the **logits** of the cumbersome model is actually **a special case of distillation**."（**温度 + 软标签**，而且"直接对齐 logit"只是它的特例）
+  ② **为什么这么做有用**（本课最值钱的一句）："When we are distilling the knowledge from a large model into a small one, however, **we can train the small model to generalize in the same way as the large model**. If the cumbersome model generalizes well because, for example, it is the average of a large ensemble of different models, a small model trained to generalize in the same way will typically do much better on test data than a small model trained on the original data by standard methods."（**学生学的不是答案，是"老师的泛化方式"**）
+  ③ **"错字上的分数不是噪声"的原文例子**：论文里说，把某个东西误认成 garbage truck，**"that mistake is still many times more probable than mistaking it for a carrot"**——非答案那几个的概率**编码了"哪个错更像对"**。
+  落地证据：摘要给了 MNIST 与**"significantly improve the acoustic model of a heavily used commercial system"**（一个在用的商业语音系统）。
+  ⚠ 提取方式：用代理下 PDF 再抽文字（`Invoke-WebRequest -Proxy 'http://127.0.0.1:7890'`），上面三句是**原文**，不是转述。
+- [DeepSeek-AI et al. — DeepSeek-R1（Nature 2025 · arXiv 2501.12948）](https://arxiv.org/abs/2501.12948)
+  **第 6 课已经引过这篇；但第 7 课要用它的附录 F 和"局限"那一段。**
+  ① **R1 的蒸馏是"搬回答"，不是"搬 logit"**：附录 A.2 原话"The reasoning trajectories discovered through this self-exploration are subsequently **distilled** and used to train other models"；附录 F 整节标题就是 **"F DeepSeek-R1 Distillation"**、F.1 是 **"Distillation v.s. Reinforcement Learning"**。**用来**：讲"蒸馏"今天至少有两个机制（软标签 / 搬大模型的输出），别混。
+  ② **对 agent 最要紧的一条自述局限**（第 7 课落点）："**Structure Output and Tool Use:** Currently, the structural output capabilities of DeepSeek-R1 remain **suboptimal** compared to existing models. Moreover, **DeepSeek-R1 cannot leverage tools**, such as search engines and calculators, to improve the performance of output."（**推理强 ≠ 工具调用强**——这条出自论文自己的局限章节，不是二手评论）
+  ③ 其他两条顺手记下：蒸馏模型"surpassing the performance of their **original instruction-tuned counterparts**"（超越的是它自己的**指令版**，不是超越大模型）；token 效率那条"it uses fewer tokens to solve simple tasks… **instances of excessive reasoning—manifested as overthinking—are still observed**"。
+- [DeepSeek-R1 官方仓库（README 评测表）](https://github.com/deepseek-ai/deepseek-r1)
+  **蒸馏模型的实测数字出处**（`Distilled Model Evaluation` 表）：`R1-Distill-Qwen-1.5B` — AIME 2024 pass@1 **28.9**、MATH-500 **83.9**、GPQA Diamond **33.8**、LiveCodeBench **16.9**、CodeForces rating **954**；`R1-Distill-Qwen-7B` — **55.5 / 92.8 / 49.1 / 37.6 / 1189**。**用来**：给"1.5B 的模型也能拿 55 分"这种说法一个可查的落点；**⚠ 报的是基准分，不是 agent 能力**，引用时别滑过去。
+- [Li et al. — "Textbooks Are All You Need II: phi-1.5 technical report"（arXiv 2309.05463）](https://arxiv.org/abs/2309.05463)
+  **用来防止把"小模型变强"全归给蒸馏。** 这条线（TinyStories → phi-1 → phi-1.5）走的是**另一条路**：用已有的大模型**生成"教科书级"数据**来训练 1.3B 的小模型（原文"use existing Large Language Models (LLMs) to generate 'textbook quality' data"），结果是"**performance on natural language tasks comparable to models 5x larger**"。
+  **所以"小模型为什么这么强"的诚实答案是三条路一起走**（合成数据 · 蒸馏 · 更好的后训练），**不是"全靠蒸馏"**。⚠ 它**不是** Hinton 那种软标签蒸馏，别当成同一种机制。
+
+### 会思考的模型（第 6 课）
+
+- [Anthropic — Thinking（Claude 平台文档）](https://platform.claude.com/docs/en/build-with-claude/thinking)
+  **本课的主来源**。原话（讲清"多出来的那一步"是什么）："A model that answers in a single pass has to get everything right on the first try: **no scratch work, no checking, no changing course halfway through**"；"When thinking is active, Claude works through the problem **in its own words** before answering: it **restates what is being asked, tries approaches, checks intermediate results, and abandons paths that do not hold up**"。
+  **三笔账的原话都在这里**：① 计费——"the tokens Claude spends reasoning are **billed as output tokens, even when the thinking text isn't returned to you**, and they count toward `max_tokens` alongside the response text"；② 你看到的 ≠ 你付的——"You're charged for the **full thinking tokens** generated by the original request, **not the summary tokens**"；③ 缓存/工具——"**Pass every `thinking` block back to the API complete and unmodified, alongside the `tool_use` block it accompanied**"，文档里还给了带 cache 断点的完整多轮示例。
+  预算规则：`budget_tokens` **下限 1024**，且**是目标不是硬上限**（实际用量随任务浮动）。
+  ⚠ **`platform.claude.com` 直连是地区限制页（"App unavailable in region"），要靠搜索索引拿正文**——见 1.1。
+- [Anthropic — "Claude's extended thinking"（研究博客，2025-02-24）](https://www.anthropic.com/research/visible-extended-thinking)
+  **「不是换了个模型」这句话的出处**，也是本课那句反直觉结论的依据："Extended thinking mode **isn't an option that switches to a different model** with a separate strategy. Instead, it's **allowing the very same model to give itself more time**, and expend more effort, in coming to an answer."
+  **收益是递减的**：原话"its accuracy on, for example, math questions improves **logarithmically** with the number of 'thinking tokens' that it's allowed to sample"。给了一个具体数：Claude 3.7 Sonnet 用 64k 思考预算（相当于 256 个独立采样的算力）拿到 GPQA **84.8%**（其中物理子项 96.5%）。
+  **「不能靠读思考过程判断它在想什么」的出处**——这是否定"思考过程＝真实推理"的硬证据：原话"models very often make decisions based on factors that they **don't explicitly discuss** in their thinking process. This means **we can't rely on monitoring current models' thinking** to make strong arguments about their safety"。另一句解释了为什么界面上的思考读起来"更冷淡、更像在陈述"：**思考过程没有做他们那套语气训练**，"we wanted to give Claude maximum leeway in thinking whatever thoughts were necessary"——所以"as with human thinking, Claude sometimes finds itself thinking some incorrect, misleading, or half-baked thoughts along the way"。
+- [DeepSeek-AI et al. — "DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning"（Nature 2025 · arXiv 2501.12948）](https://arxiv.org/abs/2501.12948)
+  **「会思考是被训练出来的」这个机制的出处**。原话："the reasoning abilities of LLMs can be incentivized through **pure reinforcement learning (RL), obviating the need for human-labeled reasoning trajectories**"；这个 RL 框架"facilitates the **emergent development** of advanced reasoning patterns, such as **self-reflection, verification, and dynamic strategy adaptation**"（自省、验证、动态换策略——注意这三个词正是界面上常看到的那种动作）。
+  **第 7 课（蒸馏）的钩子已经埋在这里**：原话"the emergent reasoning patterns exhibited by these large-scale models can be **systematically harnessed to guide and enhance the reasoning capabilities of smaller models**"。**用来**：讲"为什么现在的小模型也会思考"——不是它自己想通了，是大模型的思考被搬了过去。
+- [Lightman et al. — "Let's Verify Step by Step"（arXiv 2305.20050）](https://arxiv.org/abs/2305.20050)
+  **「给过程打分」和「只给结果打分」的对照实验**，本课讲"多出来的那一步凭什么更准"的机制依据。原话："we can turn either to **outcome supervision**, which provides feedback for a final result, or **process supervision**, which provides feedback for each intermediate reasoning step"；结论"**process supervision significantly outperforms outcome supervision** for training models to solve problems from the challenging MATH dataset"，具体数：过程监督的模型解出 MATH 测试子集的 **78%**。同时开源了 PRM800K（80 万条步级人工反馈）。
+  ⚠ 注意别把它和 R1 的做法混为一谈：**R1 用的是可自动验证的结果奖励**（答案对不对、代码跑不跑过），而这篇是**人去标注每一步**。两条路，别互相冒用出处。
+- [AWS — Claude on Bedrock：Extended thinking](https://docs.aws.amazon.com/bedrock/latest/userguide/claude-messages-extended-thinking.html)
+  同一套机制在 Bedrock 上的落地说明，**两条运维经验值**：预算**从下限起步逐步加**（"start at the minimum and increase incrementally"）；**预算超过 32K 建议走批量处理**，否则"causes long running requests that might result in system timeouts"。**用来**：讲"预算不是越大越好"以及顶格预算的工程后果。
+
+### 量化（第 5 课）
+
+- [llama.cpp — `tools/quantize/README.md`（官方仓库）](https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md)
+  **本课最重要的一条实测来源**。Llama-3.1-8B 在同一台机器上的完整对照表，每档都给了三个数：`bits/weight`（含刻度开销）、`size`、`prompt processing t/s @ 512` 与 `text generation t/s @ 128`。原值：**F16 = 16.0005 bit / 14.96 GiB / prefill 923.49 / decode 29.17**；Q8_0 = 8.5008 / 7.95 / 865.09 / **50.93**；Q6_K = 6.5633 / 6.14 / 812.01 / 58.67；Q5_K_M = 5.7036 / 5.33 / 758.69 / 67.23；**Q4_K_M = 4.8944 / 4.58 / 821.81 / 71.93**；Q3_K_M = 3.9960 / 3.74 / 783.44 / 71.68；Q2_K_S = 2.9697 / 2.78 / 798.91 / 90.01。
+  **这张表同时给出两个可直接上课的结论**：① decode 快 2.5 倍（29.17 → 71.93）而 **prefill 几乎没变**（923.49 → 821.81，甚至更慢）——**独立印证第 2 课进阶 Q3 的「prefill 算力受限 / decode 带宽受限」**；② 「4 bit」实测是 4.89 bit，因为缩放因子要占地方。
+  另有内存/磁盘表：8B **32.1 GB → 4.9 GB**、70B **280.9 → 43.1**、405B **1,625.1 → 249.1**（Q4_K_M）。README 开头两句也给了定义级说法："reduces the precision of model weights… shrinks the model's size and can speed up inference… may introduce some accuracy loss which is usually measured in Perplexity (ppl) and/or Kullback–Leibler Divergence (kld)"。
+  ⚠ **`raw.githubusercontent.com` 直连取不到，要带代理**（见 1.1）。
+- [Dettmers et al. — "LLM.int8(): 8-bit Matrix Multiplication for Transformers at Scale"（NeurIPS 2022）](https://arxiv.org/abs/2208.07339)
+  **int8 量化的原始出处，也是「离群值」这个现象的出处**。原话：int8 矩阵乘 "**cut the memory needed for inference by half while retaining full precision performance**"；做法是 "vector-wise quantization" 处理绝大多数特征，而对 **emergent outliers** 用混合精度分解、单独放进一个 16-bit 矩阵乘里，"**still more than 99.9% of values are multiplied in 8-bit**"。**用来**：讲"为什么朴素压到 8 bit 会掉分、后来者为什么必须特殊处理离群通道"。
+- [Frantar et al. — "GPTQ: Accurate Post-Training Quantization for Generative Pre-trained Transformers"（ICLR 2023）](https://arxiv.org/abs/2210.17323)
+  **"训练后量化（PTQ）"路线的代表作**。原话：**175B 参数模型约 4 GPU 小时**压到 **3 或 4 bit**，"with negligible accuracy degradation relative to the uncompressed baseline"；比此前的一次性量化方法"more than doubles the compression gains"；极端档位还能压到 **2-bit 甚至三值**。端到端加速原值：**A100 约 3.25×、A6000 约 4.5×**（相对 FP16）。**用来**：讲"压到 4 bit 还能用"这句话的出处与它成立的条件（逐层用二阶信息补偿），以及加速倍数的真实量级。
+- [Xiao et al. — "SmoothQuant: Accurate and Efficient Post-Training Quantization for LLMs"（ICML 2023）](https://arxiv.org/abs/2211.10438)
+  **给出 W8A8（权重与激活都压到 8 bit）这条路的关键事实判断**，原话："**weights are easy to quantize while activations are not**"，所以用"数学上等价的变换"把激活的离群值**迁移到权重那边**。实测原值：**最高 1.56× 加速、2× 内存下降**，精度损失可忽略。**用来**：讲"只压权重"和"连激活一起压"是两条不同的路，以及离群值为什么专挑激活出来。
+- [Lin et al. — "AWQ: Activation-aware Weight Quantization"（MLSys 2024 最佳论文）](https://arxiv.org/abs/2306.00978)
+  **"不是所有权重一样重要"的出处**。原话："**not all weights in an LLM are equally important. Protecting only 1% salient weights can greatly reduce quantization error**"；而且判断哪些通道重要**要看激活的分布、不是看权重**（"we should refer to the activation distribution, not weights"），做法是"数学上推导出的等价变换"放大关键通道——所以 **"does not rely on any backpropagation or reconstruction"**。配套 TinyChat 实测：桌面与移动 GPU 上相对 HuggingFace FP16 **超过 3× 加速**，并让 70B 跑进手机 GPU。**用来**：讲"格子粗不是均匀变糊——挑着压才划算"。
+- [vLLM — Quantization（官方文档）](https://docs.vllm.ai/en/latest/features/quantization/)
+  定义级原话："**Quantization trades off model precision for smaller memory footprint, allowing large models to be run on a wider range of devices.**"支持格式全表（AutoAWQ / GPTQ / BitsAndBytes / FP8 / INT4 / GGUF / TorchAO…）与**逐硬件支持矩阵**（AWQ 不支持 Volta、不支持 AMD GPU；GPTQ 不支持 Ada 之后…）。**用来**：讲"量化不是一个动作，是一堆互不兼容的格式"，以及选型时第一道门槛是硬件。
+- [vLLM — INT4 W4A16（官方文档）](https://docs.vllm.ai/en/latest/features/quantization/llm_compressor/int4/)
+  **"权重压 4 bit、激活保持 16 bit"这条路线的定位与代价**：这种量化"particularly useful for **reducing model size and maintaining low latency in workloads with low queries per second (QPS)**"；**需要 compute capability > 8.0**（Ampere / Ada / Hopper / Blackwell）。校准数据实践原话："**Start with 512 samples for calibration data, and increase if accuracy drops**"，默认长度 2048；示例里 `group_size=128`。⚠ 一条实用警告："**Quantized models can be sensitive to the presence of the `bos` token**"。**用来**：讲"为什么量化要喂样本、喂什么样本"，以及低 QPS 场景为什么偏爱权重-only。
+- [Kurt — "Which Quantization Should I Use? A Unified Evaluation of llama.cpp Quantization on Llama-3.1-8B-Instruct"（arXiv 2601.14277，2026-01）](https://arxiv.org/abs/2601.14277)
+  较新的统一评测：同一模型（Llama-3.1-8B-Instruct，FP16/GGUF）上覆盖 3–8 bit 的 K-quant 与 legacy 格式，同时测**下游任务分数、perplexity、CPU 吞吐（prefill 与 decoding 分开）、体积、压缩率、量化耗时**。**用来**：讲"别只问压到什么位，要问在你的任务上掉多少分"——本课若要加进阶版，这是唯一一份同口径横向对比。⚠ 单一模型、单一后端，结论不可外推。
 
 - [Vaswani et al. — "Attention Is All You Need" (2017)](https://arxiv.org/abs/1706.03762)
   Transformer 与注意力机制的原始论文。定义 Query/Key/Value、scaled dot-product attention（"输出是 Value 的加权和，权重由 Query 与 Key 的相似度决定"）、以及因果掩码（"每个位置只能注意到自己及之前的位置"）。**用来**：所有注意力相关说法的最终依据。
