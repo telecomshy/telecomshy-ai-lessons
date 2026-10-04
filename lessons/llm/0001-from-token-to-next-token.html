@@ -84,8 +84,7 @@ token        「天」 「气」 「很」
   <p>别覆盖，只增补——免得抄着抄着把自己弄丢了。</p>
 
   <h3>③ FFN：补充知识、推动概念</h3>
-  <p>注意力只是把别人的信息粗略混进来。FFN 接着对这串数字做一次<b>更细的改写</b>：出现某种模式，就往里补充对应的信息，把那个概念往上抬。<span style="color:var(--muted)">（它到底在改什么？<a href="0001-from-token-to-next-token-deep.html#q7-ffn">→ 看「FFN 到底在改什么」</a>；论文也爱把 FFN 形容成一张"键值记忆"表，<b>那和注意力那份 K/V 不是同一个东西</b>——<a href="0002-prefill-vs-decode-deep.html#q4-ffn">→ 第 2 课进阶 · Q4</a>）</span></p>
-  <p><b>它不是在"检查"什么</b>——要检查的那个结果，这时候还没算出来呢（要到最后一站才发生）。</p>
+  <p>注意力只是把别人的信息粗略混进来。FFN 接着对这串数字做一次<b>更细的改写</b>：出现某种模式，就往里补充对应的信息，把那个概念往上抬。<span style="color:var(--muted)">（它到底在改什么？<a href="0001-from-token-to-next-token-deep.html#q7-ffn">→ 看「FFN 到底在改什么」</a>；论文也爱把 FFN 形容成一张"键值记忆"表，<b>那和注意力那份 K/V 不是同一个东西</b>。）</span></p>
 
   <h3>④ 走完一层，换一层再来一遍</h3>
   <p>"注意力 → 残差 → FFN → 残差"合起来叫<b>一层</b>。真实模型叠几十层，<b>每一行数字被反复修改几十遍</b>，一次比一次更贴近"该说什么"。</p>
@@ -175,10 +174,11 @@ token        「天」 「气」 「很」
     <li><a href="0001-from-token-to-next-token-deep.html#q4-boundary">Q4 · 分词、查词表这两步，算不算「模型」的一部分？</a></li>
     <li><a href="0001-from-token-to-next-token-deep.html#q5-shape">Q5 · 为什么是「n 行 × d 列」的表，而不是拼成一根大向量？</a></li>
     <li><a href="0001-from-token-to-next-token-deep.html#q6-mask">Q6 · 表里的 n 行，互相能看到对方吗？（因果掩码）</a></li>
-    <li><a href="0001-from-token-to-next-token-deep.html#q7-ffn">Q7 · FFN 那一步到底在改什么？为什么说它不是「检查」？</a></li>
-    <li><a href="0001-from-token-to-next-token-deep.html#q8-layers">Q8 · 中间某一层的数字，能不能直接拿去用？</a></li>
-    <li><a href="0001-from-token-to-next-token-deep.html#q9-window">Q9 · 上下文窗口怎么算？没用满的宽度填什么？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q7-ffn">Q7 · FFN 那一步到底在改什么？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q8-layers">Q8 · 中间某一层的向量，能不能直接拿去用？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q9-window">Q9 · 上下文窗口是什么？它是哪一步的上限？</a></li>
     <li><a href="0001-from-token-to-next-token-deep.html#q10-sampling">Q10 · 「按百分比抽一个」到底是怎么抽的？temperature、top_p 调的是什么？</a></li>
+    <li><a href="0001-from-token-to-next-token-deep.html#q11-misconceptions">Q11 · 关于向量本身，哪五个地方最容易说错？</a></li>
   </ul>
 
   <div class="source">

@@ -18,6 +18,8 @@
   现代 agent 循环范式的原始论文：交替产生"推理轨迹"与"动作"。**用来**：讲清循环的理论来源。
 - [Anthropic — "Effective context engineering for AI agents"](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
   讲上下文是稀缺资源、如何管理。**用来**：讲记忆与上下文窗口的取舍。
+- [Anthropic — Claude Platform Docs："Context windows"](https://platform.claude.com/docs/en/build-with-claude/context-windows)
+  官方行为口径：**输入本身超过上下文窗口时，API 返回 400 `invalid_request_error`（"prompt is too long"）**——是把请求拒掉，不是截断、不是丢掉前面的。**用来**：回答"一次请求超了窗口会怎么处理"（`0001-deep` Q9）。
 - [DeepLearning.AI — "Agentic AI"（Andrew Ng）](https://www.deeplearning.ai/courses/agentic-ai)
   动手型课程，讲多步 agentic workflow 的构建。**用来**：作为需要视频+练习时的补充。
 

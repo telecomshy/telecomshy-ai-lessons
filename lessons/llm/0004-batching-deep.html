@@ -21,7 +21,7 @@
   </div>
 
   <h2 id="q1-knee">Q1 · 那个「拐点」长什么样？为什么批大了吞吐就不涨了？</h2>
-  <p>接着<a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q3</a>的<b>算术强度</b>往下推。一批 <code>N</code> 个请求走一步：</p>
+  <p>接着<a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a>的<b>算术强度</b>往下推。一批 <code>N</code> 个请求走一步：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">要搬的（约）</th>
@@ -121,7 +121,7 @@
     <a href="https://www.anyscale.com/blog/continuous-batching-llm-inference">Anyscale — How continuous batching enables 23x throughput</a>：vLLM 侧的 23× 实测，以及"权重搬一次服务多个请求"的讲法。<br>
     <a href="https://www.runpod.io/articles/guides/vllm-pagedattention-continuous-batching">Runpod — vLLM, PagedAttention and Continuous Batching</a>：PagedAttention 的工程落地。<br>
     <a href="https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices">Databricks — LLM Inference Performance Engineering</a>：Q1 那个拐点的实测（批 64 → 吞吐 14×、延迟 4×）。<br>
-    算术强度的推导见 <a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q3</a>。
+    算术强度的推导见 <a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a>。
   </div>
 
   <div class="ask-teacher">
@@ -130,7 +130,7 @@
 
   <p class="next">
     <b>回初学版</b>：<a href="0004-batching.html">LLM 底层 · 第 4 课 · 一趟装满的卡车</a><br>
-    <b>前置</b>：<a href="0002-prefill-vs-decode.html">第 2 课 · 一次请求的两段</a>（本文的拐点从那课的算术强度推出来）· <a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q3</a><br>
+    <b>前置</b>：<a href="0002-prefill-vs-decode.html">第 2 课 · 一次请求的两段</a>（本文的拐点从那课的算术强度推出来）· <a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a><br>
     <b>顺着往下</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么</a> · <a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（agent 慢的时候怎么区分是模型慢还是在排队）<br>
     术语表：<a href="../../reference/glossary.html#batching">批处理</a> · <a href="../../reference/glossary.html#throughput">吞吐</a> · <a href="../../reference/glossary.html#continuous-batching">连续批处理</a> · <a href="../../reference/glossary.html#arithmetic-intensity">算术强度</a>
   </p>

@@ -34,7 +34,7 @@
 
 - **LLM 底层 · 第 0 课**（[模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html)）
 - **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「十个追问」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)
-- **LLM 底层 · 第 2 课**（[一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html)）
+- **LLM 底层 · 第 2 课**（[一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html)）＋ [进阶版「里面到底在转什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)
 
 基础课和进阶版算同一课，改过一课就算这一课 `completed`。剩下的课会接着往下标。
 
@@ -85,7 +85,7 @@ python exercises/agent/0004-real-model-agent.py
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0000 | [模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html) —— **先导课，先读这个**　<code>completed</code>               |
 | 0001 | [从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html) —— **基石课**　<code>completed</code> |
-| 0002 | [一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢                      |
+| 0002 | [一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢　<code>completed</code> |
 | 0003 | [KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)                                |
 | 0004 | [一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html) —— 批处理怎么救 decode                                               |
 | 0005 | [会思考的模型：多出来的那一步](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html) —— 同一道题，3 秒答一个、30 秒答一个，后者还更对 |
@@ -97,8 +97,8 @@ python exercises/agent/0004-real-model-agent.py
 | 课       | 标题                                                                                                                                    |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | 0001 进阶 | [十个追问](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)　<code>completed</code> |
-| 0002 进阶 | [里面到底在转什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)                           |
-| 0003 进阶 | [五个绕人的细节](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)                  |
+| 0002 进阶 | [里面到底在转什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)　<code>completed</code> |
+| 0003 进阶 | [六个绕人的细节](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)                  |
 | 0004 进阶 | [拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                                    |
 
 ### Agent 原理篇

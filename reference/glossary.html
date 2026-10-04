@@ -129,7 +129,7 @@
     <dt id="positional-encoding"><strong>位置编码（positional encoding）</strong></dt>
     <dd>告诉模型"<b>这是第几个字</b>"的那份信息。<b>光有嵌入表不够</b>——「你」在第 1 位和在第 50 位，光看向量分不出来，所以送进模型的那一行是<b>词嵌入 ＋ 位置编码</b>（同一把尺子量出来的两根向量直接相加）。<br>
       <b>三件与 KV cache 有关的事</b>：① 位置<b>不是拼接时用的</b>——拼接只是沿序列轴首尾相接；位置在 <b>k 被算出来之前</b>就参与了计算，所以<b>每一行缓存里的 k 自己就带着它的位置</b>，接上去自然对上（只要顺序没错）。② <b>新 token 的位置 ＝ 已缓存的长度</b>——缓存里有几行，它的位置就是几，这是它跟缓存唯一的耦合点。③ 所以<b>位置会算错</b>的场合只有一处：位置没接在缓存长度之后，前缀的语义位置就整体错位。<br>
-      <span style="color:var(--muted)">（本课只补了推理期必需的这一条；<b>正弦/可学习的绝对位置编码</b>、后来的 RoPE 等做法，见 <a href="canonical-diagrams.html">权威图对照页</a>。为什么只讲这一条 → <a href="../lessons/llm/0002-prefill-vs-decode-deep.html#q2-overlap">第 2 课进阶 · Q2</a>）</span></dd>
+      <span style="color:var(--muted)">（本课只补了推理期必需的这一条；<b>正弦/可学习的绝对位置编码</b>、后来的 RoPE 等做法，见 <a href="canonical-diagrams.html">权威图对照页</a>。为什么只讲这一条 → <a href="../lessons/llm/0002-prefill-vs-decode-deep.html#q2-overlap">第 2 课进阶 · Q1</a>）</span></dd>
 
     <dt id="padding"><strong>填充（padding）/ 掩码（masking）</strong></dt>
     <dd>批量算多条长短不一的句子时，短的会被补上假 token（<b>填充</b>）凑齐长度；补的部分会被<b>遮住（掩码）</b>——模型看不见，也不参与计算。<b>空位上本来就没有东西。</b></dd>
