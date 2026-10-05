@@ -33,7 +33,7 @@
 目前标为 `completed` 的是：
 
 - **LLM 底层 · 第 0 课**（[模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html)）
-- **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「十个追问」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)
+- **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「十一个追问」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)
 - **LLM 底层 · 第 2 课**（[一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html)）＋ [进阶版「里面到底在转什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)
 - **LLM 底层 · 第 3 课**（[KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)）
 
@@ -97,7 +97,7 @@ python exercises/agent/0004-real-model-agent.py
 
 | 课       | 标题                                                                                                                                    |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 0001 进阶 | [十个追问](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)　<code>completed</code> |
+| 0001 进阶 | [十一个追问](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)　<code>completed</code> |
 | 0002 进阶 | [里面到底在转什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)　<code>completed</code> |
 | 0003 进阶 | [六个绕人的细节](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)                  |
 | 0004 进阶 | [拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                                    |

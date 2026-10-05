@@ -14,8 +14,9 @@
   退出码：0 全通过；1 有 FAIL（可直接当 CI 用）。
 
   约定：completed 只能由学习者明确说才标（NOTES 1.7）。本脚本只执行，不判断。
-        进阶版的 README 条目不自动生成 —— 卡上标题与 README 里人写的别名不一致
-        （卡上「十个问题」vs README「十个追问」），自动猜会写出另一个名字。
+        进阶版的别名以页面上的 data-alias 为唯一落点（2026-10-05 加）：
+        目录页卡片、<title>、README 三处都从它派生，audit 的 E 段核一致性。
+        改别名只改 data-alias 一处 —— 以前三处各抄一遍，抄漏过（NOTES 5.9）。
 #>
 [CmdletBinding()]
 param(
@@ -33,6 +34,31 @@ function No($m){ Write-Output "  [FAIL] $m"; $script:fail++ }
 function Note($m){ Write-Output "  [--]   $m" }
 function ReadText($rel){ [IO.File]::ReadAllText((Join-Path $root $rel), [Text.Encoding]::UTF8) }
 function WriteText($rel,$t){ [IO.File]::WriteAllText((Join-Path $root $rel), $t, $script:utf8) }
+
+# 进阶版的别名 = lesson-meta 上的 data-alias（唯一落点）。
+# 卡片标题、<title>、README 三处都该等于它，E 段负责核。
+function Get-Alias($rel){
+  $p = Join-Path $root "lessons/$rel"
+  if (-not (Test-Path $p)) { return $null }
+  $t = [IO.File]::ReadAllText($p, [Text.Encoding]::UTF8)
+  $m = [regex]::Match($t, '<div class="lesson-meta"[^>]*\bdata-alias="([^"]*)"')
+  if ($m.Success) { return $m.Groups[1].Value }
+  return $null
+}
+
+# 中文数字 -> 整数，认到九十九。认不出返回 $null（让调用方去提示人肉确认，别硬猜）。
+$CNNUM = @{ '零'=0; '〇'=0; '一'=1; '二'=2; '两'=2; '三'=3; '四'=4; '五'=5; '六'=6; '七'=7; '八'=8; '九'=9 }
+function ConvertFrom-CnNum([string]$s){
+  if ($s -match '^十([一二三四五六七八九])$') { return 10 + $script:CNNUM[$Matches[1]] }
+  if ($s -eq '十') { return 10 }
+  if ($s -match '^([二三四五六七八九])十([一二三四五六七八九])?$') {
+    $n = $script:CNNUM[$Matches[1]] * 10
+    if ($Matches[2]) { $n += $script:CNNUM[$Matches[2]] }
+    return $n
+  }
+  if ($s -match '^[一二两三四五六七八九]$') { return $script:CNNUM[$s] }
+  return $null
+}
 
 $TRACKS = @{ llm='LLM 底层'; agent='Agent 原理篇'; practice='Agent 技巧篇'; rag='RAG' }
 $SITE = 'https://telecomshy.github.io/telecomshy-ai-lessons/'
@@ -125,6 +151,48 @@ function Audit {
   ChkNum 'stat 门课'   '<b>(\d+)</b><span>门课'        ($nBasic+$nDeep)
   ChkNum 'stat 脚本'   '<b>(\d+)</b><span>个脚本'       $nPy
   ChkNum 'LLM 轨道'    "$llmBasic 门基础 · (\d+) 门进阶" $llmDeep
+
+  Write-Output "== E. 进阶版：别名三处一致 ＋ Q 编号连续 ＋ 问数对得上 =="
+  $deepCards = @($script:cards | Where-Object { $_.href -match '-deep\.html$' })
+  if ($deepCards.Count -eq 0) { Note "目录页里还没有进阶版卡片" }
+  foreach ($c in $deepCards) {
+    $bad = 0
+    $txt = ReadText ("lessons/" + $c.href)
+    $al  = Get-Alias $c.href
+    if (-not $al) { No "$($c.href) 的 lesson-meta 上没有 data-alias"; $bad++ }
+
+    # (1) 三处一致：data-alias / 目录页卡片 / <title> 尾段
+    if ($al) {
+      # 卡片标题形如「0001 进阶 · 十一个追问」——掐掉前缀拿别名
+      $cardAlias = ($c.title -replace '^\s*\d+\s*进阶\s*[·・]\s*', '').Trim()
+      if ($cardAlias -ne $al) { No "$($c.href) 卡片写「$cardAlias」，data-alias 是「$al」"; $bad++ }
+      $tt = [regex]::Match($txt, '(?s)<title>(.*?)</title>')
+      $tail = if ($tt.Success) { ($tt.Groups[1].Value -split '·')[-1].Trim() } else { '' }
+      if ($tail -ne $al) { No "$($c.href) <title> 尾段是「$tail」，data-alias 是「$al」"; $bad++ }
+    }
+
+    # (2) Q 编号必须连续 1..N —— 删过题就会留下断号，那是最难自己发现的残留
+    #     只数**带编号**的：「附 · 两个别误会」那种补丁块没有 Q 号，不算一问
+    $nums = @([regex]::Matches($txt, '<h2 id="q[^"]*"[^>]*>\s*Q(\d+)') | ForEach-Object { [int]$_.Groups[1].Value })
+    if ($nums.Count -gt 0 -and (Compare-Object (1..$nums.Count) $nums)) {
+      No "$($c.href) 的 Q 编号断了：$($nums -join ',')（应为 1..$($nums.Count)）"; $bad++
+    }
+
+    # (3) 别名以中文数字开头 = 按约定那个数字是「带编号的问」的个数
+    if ($al) {
+      $mn = [regex]::Match($al, '^([零〇一二两三四五六七八九十]+)')
+      if ($mn.Success) {
+        $claim = ConvertFrom-CnNum $mn.Groups[1].Value
+        if ($null -eq $claim) {
+          Note "$($c.href) 别名开头「$($mn.Groups[1].Value)」认不出是几，人肉确认一下"
+        } elseif ($claim -ne $nums.Count) {
+          No "$($c.href) 别名说「$($mn.Groups[1].Value)」＝ $claim 个问，带编号的 Q 只有 $($nums.Count) 个"; $bad++
+        }
+      }
+    }
+
+    if ($bad -eq 0) { Ok "$($c.href) = $al（带编号 Q $($nums.Count) 个）" }
+  }
 }
 
 Load
@@ -166,60 +234,83 @@ if ($Action -eq 'audit') {
   WriteText 'index.html' $newR; Ok "已写入：$($script:doneCards.Count + $delta) 门已定稿"
 
   Write-Output "== 改 3/3  README.md =="
-  if ($Lesson -match '-deep\.html$') {
-    No "进阶版的 README 条目不自动生成。"
-    No "原因：卡上标题是「$($card.title)」，README 那行用的是人起的别名（0001 那行写「进阶版「十个追问」」，卡上却是「十个问题」），自动生成会写出另一个名字。"
-    Note "徽章与主页计数已改好。README 请手动在对应那行末尾追加："
-    Note ("＋ [进阶版「<别名>」](" + $SITE + "lessons/" + $Lesson + ")")
-  } else {
-    $track = $Lesson.Split('/')[0]
-    $num   = [int][regex]::Match($Lesson, '(\d{4})').Groups[1].Value   # 去掉前导零：0003 -> 3
-    $name  = ($card.title -split '·', 2)[1].Trim()
-    if (-not $TRACKS.ContainsKey($track)) { No "不认识的轨道目录「$track」"; exit 1 }
-    $line = "- **$($TRACKS[$track]) · 第 $num 课**（[$name]($SITE" + "lessons/$Lesson)）"
-    if (-not $script:rdMatch.Success) { No "README 里定位不到清单块（锚点句或格式变了？）"; exit 1 }
-    $lst  = $script:rdMatch.Groups['list'].Value
-    $at   = $script:rdMatch.Groups['list'].Index
-    $tail = $script:readme.Substring($at + $lst.Length)
-    $head = $script:readme.Substring(0, $at)
-    $nl   = if ($lst.EndsWith("`r`n")) { "`r`n" } elseif ($lst.EndsWith("`n")) { "`n" } else { "`r`n" }
-    # 每行连同自己的换行符一起切出来。
-    # ⚠️ 不要用 Split($lst,'(?<=\r\n|\n|\r)') —— 那个 lookbehind 是「或」关系，
-    #    会在 \r 后和 \n 后各切一次，把每行劈成「内容+\r」和「单独一个 \n」两半。
-    #    后果：删某行时连 \r 一起删掉，剩下孤立的 \n（行数对、字节不对）。
-    #    用捕获组切再手工配对，行为唯一。
-    $parts = [regex]::Split($lst, '(\r\n|\n|\r)')
-    $rows  = @()
-    for ($i = 0; $i -lt ($parts.Count - 1); $i += 2) {
-      if ($parts[$i] -ne '') { $rows += ($parts[$i] + $parts[$i+1]) }
-    }
-    $url  = "$SITE" + "lessons/$Lesson"
-    $changed = 0
-
-    if ($Action -eq 'mark') {
-      $already = @($rows | Where-Object { $_.Contains("lessons/$Lesson") }).Count
-      if ($already -gt 0) { Note "README 已有这条（$already 处），跳过插入" }
-      else { $rows += ($line + $nl); $changed = 1 }   # 必须自带换行，否则会粘在上一行尾巴上
-    } else {
-      # 删掉引用本课的行。只有这一个链接 -> 整行删；同一行还有别的链接 -> 只摘掉这一条
-      $keep = @()
-      foreach ($r in $rows) {
-        if (-not $r.Contains("lessons/$Lesson")) { $keep += $r; continue }
-        $links = ([regex]::Matches($r, [regex]::Escape($SITE) + 'lessons/[^\s)]+\.html')).Count
-        if ($links -le 1) { $changed++; continue }
-        $r2 = [regex]::Replace($r, '(＋\s*)?\[[^\]]*\]\(' + [regex]::Escape($url) + '\)', '')
-        $r2 = $r2 -replace '（\s*）\s*$', ''          # 摘完别留空括号
-        if ($r2 -notmatch [regex]::Escape($SITE)) { $changed++; continue }   # 整行没链接了 -> 删
-        $keep += $r2; $changed++
-      }
-      $rows = $keep
-    }
-
-    if ($changed -eq 0) { No "README 清单没有可改动的行（$($rows.Count) 行清单，格式可能变了，先看 README.md）"; exit 1 }
-    $newM = $head + ($rows -join '') + $tail
-    WriteText 'README.md' $newM
-    if ($Action -eq 'mark') { Ok "已写入：$line" } else { Ok "已摘掉本课那条" }
+  if (-not $script:rdMatch.Success) { No "README 里定位不到清单块（锚点句或格式变了？）"; exit 1 }
+  $lst  = $script:rdMatch.Groups['list'].Value
+  $at   = $script:rdMatch.Groups['list'].Index
+  $tail = $script:readme.Substring($at + $lst.Length)
+  $head = $script:readme.Substring(0, $at)
+  $nl   = if ($lst.EndsWith("`r`n")) { "`r`n" } elseif ($lst.EndsWith("`n")) { "`n" } else { "`r`n" }
+  # 每行连同自己的换行符一起切出来。
+  # ⚠️ 不要用 Split($lst,'(?<=\r\n|\n|\r)') —— 那个 lookbehind 是「或」关系，
+  #    会在 \r 后和 \n 后各切一次，把每行劈成「内容+\r」和「单独一个 \n」两半。
+  #    后果：删某行时连 \r 一起删掉，剩下孤立的 \n（行数对、字节不对）。
+  #    用捕获组切再手工配对，行为唯一。
+  $parts = [regex]::Split($lst, '(\r\n|\n|\r)')
+  $rows  = @()
+  for ($i = 0; $i -lt ($parts.Count - 1); $i += 2) {
+    if ($parts[$i] -ne '') { $rows += ($parts[$i] + $parts[$i+1]) }
   }
+  $url  = "$SITE" + "lessons/$Lesson"
+  $changed = 0
+
+  $trackDir = $Lesson.Split('/')[0]
+  $num4     = [regex]::Match($Lesson, '(\d{4})').Groups[1].Value   # 保留前导零，用来定位文件
+
+  if ($Action -eq 'mark' -and $Lesson -notmatch '-deep\.html$') {
+    # 基础课：清单里追加一整行
+    if (-not $TRACKS.ContainsKey($trackDir)) { No "不认识的轨道目录「$trackDir」"; exit 1 }
+    $name = ($card.title -split '·', 2)[1].Trim()
+    $line = "- **$($TRACKS[$trackDir]) · 第 $([int]$num4) 课**（[$name]($url)）"
+    $already = @($rows | Where-Object { $_.Contains($url) }).Count
+    if ($already -gt 0) { Note "README 已有这条（$already 处），跳过插入" }
+    else { $rows += ($line + $nl); $changed = 1 }   # 必须自带换行，否则会粘在上一行尾巴上
+
+  } elseif ($Action -eq 'mark') {
+    # 进阶版：条目挂在**基础课那一行末尾**（README 约定两课并排一行）
+    $alias = Get-Alias $Lesson
+    if (-not $alias) { No "这一课没有 data-alias，别名无从取；先在 lesson-meta 上补一个"; exit 1 }
+    $basicFile = Get-ChildItem (Join-Path $root "lessons/$trackDir") -File -Filter "$num4-*.html" |
+                 Where-Object { $_.Name -notmatch '-deep\.html$' } | Select-Object -First 1
+    if (-not $basicFile) { No "找不到 $trackDir 第 $num4 课的基础课文件，进阶版的条目无处可挂"; exit 1 }
+    $anchorHref = "$SITE" + "lessons/$trackDir/$($basicFile.Name)"
+    $hit = -1
+    for ($i = 0; $i -lt $rows.Count; $i++) { if ($rows[$i].Contains($anchorHref)) { $hit = $i; break } }
+    if ($hit -lt 0) {
+      No "README 清单里找不到基础课那一行（$anchorHref）"
+      No "进阶版的条目必须跟在基础课后面 —— 先标基础课，或手写这一行"
+      exit 1
+    }
+    $frag = '＋ [进阶版「' + $alias + '」](' + $url + ')'
+    if ($rows[$hit].Contains($url)) { Note "README 已有这条，跳过插入" }
+    else {
+      # ⚠️ 每个 row 都自带自己的换行符，直接 + 会把片段甩到**下一行**去，
+      #    而 audit 的清单块只认「- 」开头的行 —— 于是链接存在却被判「README 缺」。
+      #    所以要把行尾换行符摘下来，插完再放回去。
+      $r  = $rows[$hit]; $eol = ''
+      if ($r -match '(\r\n|\n|\r)$') { $eol = $Matches[1]; $r = $r.Substring(0, $r.Length - $eol.Length) }
+      $rows[$hit] = $r + $frag + $eol
+      $changed = 1; $line = $frag
+    }
+
+  } else {
+    # unmark：两种都只是「把指向本课的那个链接摘掉」
+    $keep = @()
+    foreach ($r in $rows) {
+      if (-not $r.Contains($url)) { $keep += $r; continue }
+      $links = ([regex]::Matches($r, [regex]::Escape($SITE) + 'lessons/[^\s)]+\.html')).Count
+      if ($links -le 1) { $changed++; continue }
+      $r2 = [regex]::Replace($r, '(＋\s*)?\[[^\]]*\]\(' + [regex]::Escape($url) + '\)', '')
+      $r2 = $r2 -replace '（\s*）\s*$', ''          # 摘完别留空括号
+      if ($r2 -notmatch [regex]::Escape($SITE)) { $changed++; continue }   # 整行没链接了 -> 删
+      $keep += $r2; $changed++
+    }
+    $rows = $keep
+  }
+
+  if ($changed -eq 0) { No "README 清单没有可改动的行（$($rows.Count) 行清单，格式可能变了，先看 README.md）"; exit 1 }
+  $newM = $head + ($rows -join '') + $tail
+  WriteText 'README.md' $newM
+  if ($Action -eq 'mark') { Ok "已写入：$line" } else { Ok "已摘掉本课那条" }
 
   Write-Output ""
   Write-Output "== 写完读回来核验（NOTES 1.7）=="
