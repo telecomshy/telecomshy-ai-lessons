@@ -3,25 +3,25 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LLM 底层 · 第 3 课（进阶版）· 缓存那些绕人的细节</title>
+<title>LLM 底层 · 第 3 课（进阶版）· 六个绕人的细节</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta">LLM 底层 · 第 3 课 · 进阶版</div>
+  <div class="lesson-meta" data-alias="六个绕人的细节">LLM 底层 · 第 3 课 · 进阶版</div>
   <h1>KV Cache：六个绕人的细节</h1>
   <p class="subtitle">初学版讲「两回事」，这篇答「那具体到多轮、到工具、到断点，又是怎样」。<b>按需跳读。</b></p>
 
   <div class="note">
     <span class="label">怎么用这篇</span>
     <p>只收<b>读完初学版仍会冒出来</b>的疑问。有些还带真实的坑——踩过的人不少。</p>
-    <p style="color:var(--muted)">总链：<code>一次任务 → 很多次请求 → 每次请求里几百轮 decode</code>。三条："请求内复用"总是发生；"跨请求命中"要条件；<b>折扣跟着"这一轮是读缓存还是重算"走，不跟着"输入/输出"走</b>（上一轮的输出下一轮就是输入，所以它也打折）。</p>
+    <p style="color:var(--muted)">总链：<code>一次任务 → 很多次请求 → 每次请求里几百轮 decode</code>。"请求内复用"总是发生；"跨请求命中"要条件。</p>
   </div>
 
   <h2 id="q1-multiturn">Q1 · 多轮对话里，上一轮模型的回答会不会命中？</h2>
-  <p><b>会命中。</b>而且这正是多轮对话越聊越省的原因。官方文档给了张很清楚的表：</p>
+  <p><b>会命中。</b>官方文档给了张很清楚的表：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">第几次请求</th>
@@ -42,34 +42,32 @@
   </table>
   <p>看第 2 次那行的粗体：<b>"答2"是上一次模型的输出，这一次它被写进了缓存</b>。第 3 次它就变成"读缓存"的一部分了。</p>
   <div class="note">
-    <span class="label">所以那条铁律要再强调一次</span>
-    <p><b>只追加，不修改。</b>官方文档明确列了三种打断缓存的做法：<b>改早期消息、删消息、调换顺序</b>——全都会让从改动处往后的缓存作废。</p>
+    <span class="label">官方文档列的三种打断方式</span>
+    <p><b>改早期消息、删消息、调换顺序</b>——都会让从改动处往后的缓存作废。<b>注意后两种：它们一个字的内容都不改，只动结构，照样作废。</b></p>
   </div>
 
-  <h2 id="q2-tool">Q2 · 工具结果为什么算「输入」？为什么必须追加在末尾？</h2>
-  <p>因为送去匹配缓存的那段前缀里，<b>工具结果也在里面</b>：</p>
-  <blockquote style="border-left:3px solid var(--ink);margin:1rem 0;padding:0.2rem 0 0.2rem 1rem;font-size:0.95rem">
-    官方的说法是：送去匹配缓存的那段前缀，是<b>整个序列化后的请求</b>——系统消息、对话历史、<b>工具定义</b>、助手消息、<b>工具调用</b>、<b>工具结果</b>，全都算在里面。
-  </blockquote>
-  <p>所以：<b>工具结果 = 输入前缀的一部分</b>。它按输入计价，也能命中，而且会一直留在前缀里。</p>
-  <p>那为什么必须是<b>末尾追加</b>？因为缓存认的是"从头开始、一字不差"。<b>你只有往末尾加东西，前面那截才原封不动</b>——一旦插到中间去，后面每一格都得重算，等于把前面攒的便宜全吐回去。</p>
-  <div class="note">
-    <span class="label">顺带一个真实的坑</span>
-    <p>用<a href="0005-reasoning-models.html">会思考的模型</a>（会输出"思考过程"的那种）时，<b>上一轮的思考内容如果不原样带回去，缓存就断了</b>。这被列成多轮缓存失效的<b>头号原因</b>；而且有的厂商更严——<b>直接报错</b>，请求根本发不出去。<span style="color:var(--muted)">（为什么会思考、那笔账怎么算？<a href="0005-reasoning-models.html">→ 看 LLM 第 5 课</a>；<a href="../../reference/glossary.html#reasoning">术语表「思考 reasoning」</a>）</span></p>
-  </div>
-
-  <h2 id="q3-write">Q3 · 既然便宜 10 倍，那"缓存写入"为什么还要加钱？</h2>
-  <p>因为<b>写入和读取是两笔账</b>：</p>
+  <h2 id="q2-thinking">Q2 · 上一轮的思考内容会不会被丢掉？谁说了算？</h2>
+  <p>用<a href="0005-reasoning-models.html">会思考的模型</a>（会输出"思考过程"的那种）时，思考块（<b>thinking block</b>）算不算进你的前缀，<b>要看两边配合</b>——客户端和模型各管一半。</p>
+  <p><b>客户端那一侧：必须原样带回去。</b>官方规则写得很硬：<b>把 thinking block 完整、不改动地带回来</b>。而且要<b>原样回传那条助手消息</b>——官方原话是：重建了它、或者过滤掉里面的块，会直接 <b>400 报错</b>，请求根本发不出去。</p>
+  <p>那"网页版聊天和 harness 软件会不会自动带回去"？<b>能正常用，就说明它已经做了</b>——<span style="color:var(--muted)">（这是从"不带就报错"推出来的结论，不是对某个产品的实测。）</span></p>
+  <p><b>模型那一侧：留不留，取决于版本。</b>官方文档列得很清楚：</p>
   <ul>
-    <li><b>写入（cache write）</b>：第一次把这段前缀算好、存起来。有的服务商收得比普通输入还贵一点（因为多干了存储的活）；</li>
-    <li><b>读取（cache read）</b>：后面命中时直接读缓存，约 <b>0.1×</b>。</li>
+    <li><b>Opus 4.5+ 与 Sonnet 4.6+</b>：thinking block <b>默认保留</b>在上下文里，<b>缓存仍然有效</b>。</li>
+    <li><b>更早的 Opus / Sonnet 和所有 Haiku</b>：它们会被<b>剥掉</b>，而且<b>跟在其后的消息也从缓存里移除</b>。</li>
   </ul>
-  <p>所以"便宜 10 倍"的前提是<b>这段前缀会被反复用</b>。如果每次都变，你只付了更贵的写入、一次都没读到——<b>反而亏</b>。</p>
+  <p>被保留下来的 thinking block <b>算输入 token</b>——从缓存里读出来时也一样计入你的 usage。<span style="color:var(--muted)">（为什么会思考、那笔账怎么算？<a href="0005-reasoning-models.html">→ 看 LLM 第 5 课</a>；<a href="../../reference/glossary.html#reasoning">术语表「思考 reasoning」</a>）</span></p>
   <div class="note">
-    <span class="label">什么时候不适用</span>
-    <p><b>一次性请求</b>（这段前缀这辈子只用一次）——别开缓存，写入的钱白花。</p>
-    <p>这也是为什么现在很多服务商提供"<b>只在静态内容结尾打断点</b>"的做法：动态的那截干脆不写，省下写入费。</p>
+    <span class="label">比"带不带回去"更容易踩的坑</span>
+    <p><b>改 thinking 的配置会让缓存作废，而且是连着系统提示和工具定义一起作废。</b>换模式、改预算、改 effort 都算——因为<b>这份配置是被渲染进 prompt 的</b>。</p>
+    <p>所以"我只是想把思考深度调低一点"，代价可能是<b>整段前缀全部重算</b>。</p>
   </div>
+
+  <h2 id="q3-write">Q3 · 缓存到底省了什么？第一次用会不会更贵？</h2>
+  <p>先破一个误会：<b>缓存不是一块硬盘，不存在"存进去要交保管费"这回事。</b></p>
+  <p>第一次把某段前缀放进缓存时，那次请求<b>该跑的算力一点没少跑</b>——K/V 就是 prefill 算出来的。所以<b>写入那一遍照常按输入价计费</b>（Anthropic：5 分钟缓存写 <b>1.25×</b> 输入价、1 小时 <b>2×</b>）。</p>
+  <p>真正省下来的是<b>后面每一次</b>：读缓存约 <b>0.1×</b>。<b>所以这笔账取决于"这段前缀会被用几次"</b>——只用一次就别开缓存。</p>
+  <p>反过来还有个坑：<b>每次都变的前缀，开缓存等于倒贴。</b>你付了更贵的写入，却一次都没读到。</p>
+  <p>这也是为什么现在很多服务商提供"<b>只在静态内容结尾打断点</b>"的做法：<b>动态的那一截干脆不写</b>，省下写入费。</p>
 
   <h2 id="q4-lookback">Q4 · 前缀越长越好吗？有个真实的坑</h2>
   <p>直觉是"历史越长、能命中的越多"——<b>但有个反例，而且很坑。</b></p>
@@ -86,65 +84,66 @@
   </div>
   <p style="color:var(--muted)">（各家实现不同：有的用"块数"算窗口，有的按 token 增量、有的有断点数量上限。原则一样——<b>写入要有人打点，读取只认打过的点，窗口有限</b>。）</p>
   <div class="note">
-    <span class="label">好消息：这个坑 agent 基本碰不到</span>
+    <span class="label">一条官方例外：一轮里的并行工具调用只算一格</span>
     <p>官方文档专门写了一条例外：<b>连续的一串"工具调用"算一格，连续的一串"工具结果"也算一格。</b></p>
-    <p>翻译成人话：<b>哪怕你一轮里并行调了 20 个工具，官方也只当 1 格算</b>——<b>不会把上一轮的条目挤出窗口。</b></p>
-    <p>所以上面那个"塞 30 块就失效"的坑，<b>对多轮聊天是条真警告，对并行调工具的 agent 基本不成立</b>。别为它改坏了自己的架构。</p>
+    <p>翻译成人话：<b>哪怕你一轮里并行调了 20 个工具，官方也只当 1 格算</b>——<b>不会把上一轮的条目挤出这个查找窗口。</b></p>
   </div>
 
   <h2 id="q5-not-free">Q5 · 那"命中"到底能省多少？为什么不是免费？</h2>
-  <p>"白捡"听着很美，<b>但实际有三道折扣</b>。</p>
+  <p>别以为命中就是免费，<b>实际有三道折扣</b>。</p>
   <p>因为省的是<b>算 K/V 那部分工作</b>，而不是"不用送"。命中之后：</p>
   <ul>
-    <li>那段前缀<b>还是要塞进上下文、照样占位置</b>（它在窗口里——为什么，<a href="#q6-window">见 Q6</a>）；</li>
     <li>只是不用重新<b>算</b>——所以又快又便宜，但<b>不是零</b>；</li>
-    <li>缓存还有 <b>TTL</b>（几分钟到一小时），过期就没了；</li>
-    <li>而且<b>缓存不保证一定有</b>：可能被淘汰、可能路由到别的机器。</li>
+    <li>缓存<b>不保证一定有</b>：可能被淘汰、可能路由到别的机器。</li>
   </ul>
   <p>一句话：<b>命中是"打折"，不是"免费"；是"尽量"，不是"保证"。</b></p>
+  <p><b>那怎么确认自己真的命中了？看响应里的 usage 字段</b>——官方给的核对方法就是它：</p>
+  <ul>
+    <li><b>cache_read_input_tokens</b>：命中了多少（这次省了多少）</li>
+    <li><b>cache_creation_input_tokens</b>：写进去多少（这次多花了多少）</li>
+    <li>这两个加上 <b>input_tokens</b>，就是这次的总输入</li>
+  </ul>
+  <p>OpenAI 那边对应的字段是 <code>usage.input_tokens_details.cached_tokens</code> 和 <code>cache_write_tokens</code>；<b>命中率就是"累计命中的 ÷ 累计输入"</b>。</p>
+  <p><b>最要紧的一句：不命中不会报错。</b>官方原话是"如果 cache_creation_input_tokens 和 cache_read_input_tokens <b>都是 0</b>，这个 prompt 就<b>没有被缓存</b>"，多半是长度没到门槛。所以<b>别拿"没报错"当"命中了"</b>，一定要看数。</p>
   <div class="note">
     <span class="label">最常踩的一种"为什么不命中"：前缀太短</span>
     <p>各家都设了<b>最小可缓存长度</b>（按模型不同，512 / 1024 / 2048 / 4096 token 都有）。<b>不到这个长度，请求照常处理，但一点缓存都不建</b>——<b>而且不报错、不提示</b>。</p>
-    <p>所以"我怎么一次都没命中过"，先别急着查代码，<b>先去量一下你的稳定前缀到底多长</b>。它够长吗？</p>
+    <p>所以"我怎么一次都没命中过"，先别急着查代码，<b>先去 usage 里看那两个字段</b>。它俩是不是 0？</p>
     <p style="color:var(--muted)">（反直觉的一笔账：如果你的稳定前缀刚好卡在门槛下面一点，<b>把它补长到门槛以上反而更便宜</b>——因为跨过门槛之后，后面每一次都在打折。补的内容要是稳定且有用的，别拿废话凑。）</p>
   </div>
   <div class="note">
-    <span class="label">所以监控要盯两个数</span>
-    <p><b>缓存读取量</b>（省了多少）和 <b>缓存写入量</b>（花了多少）。只盯一个会误判。</p>
+    <span class="label">另一种"没命中"：请求是并发发出去的</span>
+    <p><b>缓存条目要等第一个响应开始之后才可用。</b>所以你<b>同时</b>发出几个请求（哪怕开头一样），后几个也<b>撞不上</b>——那一刻缓存里还没有那份前缀。</p>
+    <p>OpenAI 那边还多一层原因：<b>缓存存在某一台具体的机器上</b>，请求得被路由到那台才撞得上；而流量超过 <b>15 请求/分钟</b>可能触发溢出路由。<code>prompt_cache_key</code> 能让同一段前缀的请求归到一处——但官方紧接着说了：<b>它只影响路由，不保证命中</b>。</p>
+    <p style="color:var(--muted)">（程序这边该怎么配合 → <a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程 · 技巧五</a>）</p>
   </div>
 
   <h2 id="q6-window">Q6 · 如果前缀命中缓存了，还占不占用上下文窗口？</h2>
-  <p><b>占。</b>先说清一个容易缠上的点：<b>命中缓存和上下文窗口没有直接关系</b>——缓存省的是"<b>重算</b>"，不是"<b>行数</b>"。那段前缀的 K/V 正因为还留在显存里、占着窗口里的行数，才谈得上被"命中"。<b>窗口数的是行数，不是"算没算过"。</b></p>
+  <p><b>占。</b>先说清一个容易缠上的点：<b>命中缓存和上下文窗口没有直接关系</b>——缓存省的是"<b>重算</b>"，不是"<b>行数</b>"。那段前缀的 K/V 正因为<b>还占着窗口里的行数</b>，才谈得上被"命中"。<b>窗口数的是行数，不是"算没算过"。</b></p>
   <p>一条推论：<b>缓存救时间，不救窗口。</b>多轮会话越聊越长，命中率再高，前缀照样一段段摞进窗口——<b>顶到上限时，命中多少次都救不了你</b>，只能决定<b>往里塞什么、丢掉什么</b>（这一套叫<a href="../../reference/glossary.html#context">上下文工程</a>）。<span style="color:var(--muted)">（窗口是什么、里面装的是谁的 token，见 <a href="0001-from-token-to-next-token-deep.html#q9-window">第 1 课进阶 Q9</a>。）</span></p>
-
-  <h2 id="q-misconceptions">附 · 两个别误会</h2>
-  <div class="note">
-    <p><b>① 缓存不改变"怎么生成"，但不保证每次生成出同一个字。</b>官方原话是：缓存只省掉"重新处理前缀"这一步，<b>模型生成输出的方式一点没变</b>。至于同一个问题会不会每次答得一样——那是另一回事：<b>采样本来就是按百分比抽的，本来就有随机性</b>，跟缓存没关系。</p>
-    <p><b>② 缓存不等于"存了你的数据"。</b>存的是 K/V 张量（中间计算结果），不是可读的原文；而且会过期。</p>
-  </div>
 
   <h2>再来三个更难的</h2>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q1</span> 上一轮模型的回答，什么时候会被缓存命中？</p>
-    <button class="quiz-option" data-correct="true">它变成下一轮前缀的一部分时</button>
-    <button class="quiz-option">它被生成出来的那一刻立刻</button>
-    <button class="quiz-option">它从来没有被命中过一回</button>
-    <button class="quiz-option">只有在用户重新发送它的时候</button>
+    <p class="q"><span class="num">Q1</span> 一次响应的 usage 里，cache_read 和 cache_write 两个字段都是 0，说明什么？</p>
+    <button class="quiz-option" data-correct="true">这次完全没命中，而且不会报错</button>
+    <button class="quiz-option">缓存命中了，只是统计还没更新</button>
+    <button class="quiz-option">请求被服务商拒绝了</button>
+    <button class="quiz-option">说明这段前缀太短，不适合做缓存</button>
     <p class="feedback"
-       data-ok="对。输出在下一轮里就是前缀，所以会被复用、被命中。"
-       data-no="跨请求复用的前提是「它成了前缀」。上一轮的回答正是下一轮前缀的一部分。"></p>
+       data-ok="对。两个字段都是 0 就是没缓存，而且请求照常处理、不报错 —— 所以不能拿「没报错」当「命中了」。"
+       data-no="两个字段都是 0 时请求照常处理、不报错。要判断有没有命中，只能看这两个字段。"></p>
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q2</span> 为什么"每次前缀都在变"的请求，开缓存反而亏？</p>
-    <button class="quiz-option" data-correct="true">付了更贵的写入却一次没读到</button>
-    <button class="quiz-option">因为会触发服务商的限流机制</button>
-    <button class="quiz-option">因为写入会覆盖掉别人的缓存</button>
-    <button class="quiz-option">因为变了以后模型会答得更差</button>
+    <p class="q"><span class="num">Q2</span> 用会思考的模型时，上一轮的思考内容会不会留在上下文里？</p>
+    <button class="quiz-option" data-correct="true">看模型版本，新版默认保留</button>
+    <button class="quiz-option">看客户端有没有原样带回去</button>
+    <button class="quiz-option">一律会被丢掉，缓存一定断掉</button>
+    <button class="quiz-option">看这一轮提示词写了多长</button>
     <p class="feedback"
-       data-ok="对。缓存写入本身要钱，读不到就白花了。"
-       data-no="写入和读取是两笔账：只写不读，等于赔了。"></p>
+       data-ok="对。客户端必须原样带回，但留不留取决于模型版本：Opus 4.5+ / Sonnet 4.6+ 默认保留，更早的 Opus/Sonnet 和 Haiku 会剥除。"
+       data-no="两件事要分开：客户端负责「原样带回」，模型决定「留不留」——后者跟版本有关。"></p>
   </div>
 
   <div class="quiz">
@@ -160,8 +159,10 @@
 
   <div class="source">
     <b>这篇的一手资料</b>：<br>
-    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching（官方文档）</a>：那张多轮缓存表、断点机制、20 个位置的查找窗口，都出自这里。<br>
-    <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a>：前缀匹配、只追加不改写、工具结果算在前缀里、"缓存不改变输出"。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching（官方文档）</a>：那张多轮缓存表、断点机制、20 个位置的查找窗口、<b>Q2 里"哪些模型保留思考块"</b>、<b>Q3 的 1.25× / 2× 写入计价</b>、<b>Q5 的 usage 字段名与最小可缓存长度</b>，都出自这里。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/thinking-tool-workflows">Anthropic — Thinking in tool and multi-turn workflows</a>：<b>Q2 的客户端义务</b>——"完整、不改动地带回 thinking blocks""原样回传助手消息，否则 400 报错"。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching#thinking-blocks">Anthropic — Caching with thinking blocks</a>：<b>"改 thinking 配置会让缓存前缀作废，连系统提示和工具定义一起作废"</b>（因为配置被渲染进 prompt）。<br>
+    <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a>：前缀匹配、只追加不改写、工具结果算在前缀里、<b>Q5 的 <code>cached_tokens</code> / <code>cache_write_tokens</code> 字段</b>。<br>
     <a href="https://docs.x.ai/developers/advanced-api-usage/prompt-caching/multi-turn">xAI — 多轮场景的缓存</a>：三种打断缓存的真实例子（改、删、换顺序）。
   </div>
 

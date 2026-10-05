@@ -203,9 +203,15 @@
   白话定义："围在语言模型外面的**软件脚手架**——工具、记忆、沙箱、反馈回路——**把模型变成 agent**"。**用来**：给初学者的定义。
 
 - [Anthropic — Prompt caching（官方文档）](https://platform.claude.com/docs/en/build-with-claude/prompt-caching)
-  多轮对话的缓存表（**上一轮模型的回答会在下一轮成为前缀、被命中**）、断点机制、以及"往回最多查 20 个位置"的窗口。**用来**：讲多轮命中与"前缀越长不一定越好"的坑。
+  多轮对话的缓存表（**上一轮模型的回答会在下一轮成为前缀、被命中**）、断点机制、以及"往回最多查 20 个位置"的窗口。**2026-10-05 补核**：同一页还给出了 ① **哪些模型保留 thinking blocks**（Opus 4.5+ / Sonnet 4.6+ 默认保留、缓存仍有效；更早的 Opus/Sonnet 与所有 Haiku 剥除，并把跟在后面的消息也从缓存移除）② **改 thinking 配置会让缓存前缀作废、连系统提示与工具定义一起作废**（配置被渲染进 prompt）③ **写入计价 1.25×（5 分钟）/ 2×（1 小时）、读取约 0.1×** ④ **核对是否命中的官方方法：看 `cache_read_input_tokens` 与 `cache_creation_input_tokens`，两者都是 0 就是没缓存且不报错** ⑤ 最小可缓存长度按模型 512/1024/2048/4096 ⑥ **"缓存条目要等第一个响应开始之后才可用"——并发请求想命中就得等第一个响应回来**。**用来**：讲多轮命中与"前缀越长不一定越好"的坑；也是第 3 课进阶版 Q2/Q3/Q5 的出处。
+- [Anthropic — Thinking in tool and multi-turn workflows（官方文档）](https://platform.claude.com/docs/en/build-with-claude/thinking-tool-workflows)
+  多轮与工具场景下 thinking block 的处置规则：**"完整、不改动地把 thinking blocks 带回来"**、**"原样回传那条助手消息"——重建它或过滤掉里面的块会触发 400 报错**。**用来**：讲"思考内容带不带回去是客户端的义务"，以及为什么"能正常用就说明客户端已经做了"。
+- [Anthropic — Tool use with prompt caching（官方文档）](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-use-with-prompt-caching)
+  工具调用与缓存的配合（工具结果落在前缀的哪个位置、断点该打在哪）。**用来**：讲"工具结果算输入前缀的一部分"的官方依据。
+- [OpenAI — Prompt caching（API 指南）· 路由那一节](https://developers.openai.com/api/docs/guides/prompt-caching)
+  **2026-10-05 补核**：**"缓存状态存在单台机器上，一个请求只有被路由到那台持有匹配且未过期条目的机器才撞得上"**；流量超过 **15 请求/分钟**可能触发 overflow routing；`prompt_cache_key` **separates cache reuse between groups of requests and helps optimize cache routing**（GPT-5.6 及以后路由自动、不需要它），且官方明说 **"keys influence routing; they do not pin requests to a machine or guarantee a cache hit"**。**用来**：讲"为什么有时前缀一样却不命中"——答案常常不是 prompt 写错了，而是没落到同一台机器上。
 - [xAI — Prompt caching（多轮）](https://docs.x.ai/developers/advanced-api-usage/prompt-caching/multi-turn)
-  三种打断缓存的真实例子：改早期消息、删消息、调换顺序；并指出推理模型**不带回思考内容**是缓存失效的头号原因。**用来**：讲"只追加、不修改"的后果。
+  三种打断缓存的真实例子：改早期消息、删消息、调换顺序；并指出推理模型**不带回思考内容**是缓存失效的头号原因。⚠ **2026-10-05 更正**：这条只对**较老**的模型成立 —— 按 Anthropic 现行文档，Opus 4.5+ / Sonnet 4.6+ **默认保留**思考块、缓存不受影响。讲这一段时**以 Anthropic 那份为准**，xAI 这条只用来支撑"三种打断方式"。**用来**：讲"只追加、不修改"的后果。
 
 - [Anthropic — "Demystifying evals for AI agents"（官方工程文）](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents)
   **本缺口的首选答案**：跨框架、不讲具体工具，只讲方法论。四个概念（**task / trial / grader / evaluation harness**）；打分的两个对象（**transcript 轨迹** vs **outcome 结果**）；三类 grader（代码 / 模型 / 人）；**pass@k vs pass^k**（能力 vs 一致性）；**regression evals vs capability evals**；以及几条反直觉的忠告 —— "别拿固定步骤路径判分（会误杀好方案）""LLM 评委必须与人类专家校准，并给它 'Unknown' 这个出口""读 transcript 是 agent 开发的核心技能"。**用来**：讲"怎么量化一个 agent 变好了"。
