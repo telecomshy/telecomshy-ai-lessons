@@ -57,8 +57,8 @@
   <h2>3. 跨请求：条件满足了才叫「命中」</h2>
   <p>现在把镜头拉到请求之间。<a href="0002-prefill-vs-decode.html">第 2 课</a>结尾留了个话头：想让首字更快，可以"把每次都一样的开头缓存起来"。<b>这一节讲那是怎么做到的。</b></p>
   <p>实际上，你发出的第 2 次请求，开头很可能和第 1 次一模一样：同一份系统提示、同一批工具定义、同一段历史对话。那些算过的 K/V，能不能<b>接着用</b>？</p>
-  <p><b>能，但有条件。</b>服务商会把上次算好的 K/V 存起来；下次谁的开头跟它<b>一字不差</b>，就直接接着用，不必重算。这件事真的发生了，才叫<b>命中（cache hit）</b>。能被接着用的那一段叫<b>前缀（prefix）</b>——一次请求从第一个 token 开始的那一截，按官方的拼装顺序是<b>工具定义 → 系统提示 → 消息（历史 ＋ 你这一句）</b>，日常说的"提示词 ＋ 对话记录"基本就是它。</p>
-  <p>这里有笔账要分清，否则"便宜 10 倍"很容易被听成"免费"：<b>把这段前缀存进去，这一次照常计费</b>（有的服务商还收得更贵一点），<b>读缓存那一次才是折扣价</b>——约 <b>0.1×</b>，也就是便宜约 10 倍。<span style="color:var(--muted)">（<a href="0003-kv-cache-and-prompt-caching-deep.html#q3-write">缓存到底省了什么？</a>）</span>还有一件要记住：<b>缓存会过期</b>，通常几分钟到一小时，所以它不保证下次一定命中。</p>
+  <p><b>能，但有条件。</b>服务商会把上次算好的 K/V 存起来；下次谁的开头跟它<b>一字不差</b>，就直接接着用，不必重算。这件事真的发生了，才叫<b>命中（cache hit）</b>。能被接着用的那一段叫<b>前缀（prefix）</b>——一次请求从第一个 token 开始的那一截，按 <b>Anthropic 官方文档</b>给的拼装顺序是<b>工具定义 → 系统提示 → 消息（历史 ＋ 你这一句）</b>，日常说的"提示词 ＋ 对话记录"基本就是它。</p>
+  <p>这里有笔账要分清，否则"便宜 10 倍"很容易被听成"免费"：<b>把这段前缀存进去，这一次照常计费</b>（有的服务商还收得更贵一点），<b>读缓存那一次才是折扣价</b>——约 <b>0.1×</b>，也就是便宜约 10 倍。还有一件要记住：<b>缓存会过期</b>，通常几分钟到一小时，所以它不保证下次一定命中。</p>
   <p>还要说清一件容易误会的事：一次请求的 K/V <b>通常在请求结束时就被释放</b>——显存要腾出来给下一个请求用。跨请求还能接着用，是因为服务商特意留了"前缀缓存"这一份，它比普通缓存活得久一点，但同样会过期。</p>
 
   <h3>为什么非得是「前缀」，而且断一处就全废</h3>
@@ -78,7 +78,32 @@
   <h2>4. 输出的字，有缓存吗？</h2>
   <p>这个问题容易糊，因为<b>同一段文字会在好几笔账里反复出现</b>。跟着"上一轮模型写出来的那几个字"走一遍就清楚了。</p>
   <p>它刚被生成的那一次请求里，按<b>输出价</b>计费——输出 token 是最贵的那一档。</p>
-  <p>到了<b>下一轮</b>，这几个字不再由模型写，而是跟着历史对话一起送进去，于是它变成了<b>输入</b>。输入同样要钱，<b>但它已经算过一次了</b>：命中缓存就按缓存读价算，约 <b>0.1×</b>，比原价便宜约 10 倍。<span style="color:var(--muted)">（<a href="0003-kv-cache-and-prompt-caching-deep.html#q1-multiturn">上一轮的回答具体怎么命中？</a>）</span></p>
+  <p>到了<b>下一轮</b>，这几个字不再由模型写，而是跟着历史对话一起送进去，于是它变成了<b>输入</b>。输入同样要钱，<b>但它已经算过一次了</b>：命中缓存就按缓存读价算，约 <b>0.1×</b>，比原价便宜约 10 倍。</p>
+  <p>下面是 Anthropic 官方文档给的一个逐轮例子——<b>每一行是一次真实的 API 请求</b>：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">请求</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">这次送进去的内容</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">返回</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.5rem">缓存怎么动</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">请求 1</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">系统 + 问1</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>答1</b></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>系统 + 问1</b> 整段写进缓存</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">请求 2</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">系统 + 问1 + <b>答1</b> + 问2</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>答2</b></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">前面读缓存；<b>答1 + 问2 写进缓存</b></td></tr>
+      <tr><td style="padding:0.5rem">请求 3</td>
+          <td style="padding:0.5rem">系统 + 问1 + 答1 + 问2 + <b>答2</b> + 问3</td>
+          <td style="padding:0.5rem"><b>答3</b></td>
+          <td style="padding:0.5rem">前面读缓存；<b>答2 + 问3 写进缓存</b></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.85rem;color:var(--muted)">（表里的<b>系统</b> ＝ 每次请求都会原样重发的那一大段，包括系统提示词、工具定义、固定说明。）</p>
+  <p><b>答1 是"请求 1 的返回"，要到请求 2 才被送回去</b>——请求 1 送出去的时候只有系统提示和问1。所以<b>模型的回答总是慢一拍才进缓存</b>：它先作为响应返回，下一次请求才被写进去。</p>
   <p>可你要是<b>动了前缀</b>——换了工具定义、临时改了系统提示——从改动那一处往后的内容全部重新算，<b>之前模型写过的字也一起算进去</b>，这时候它们按<b>原价的输入价</b>收费，一分不省。</p>
   <p><b>那工具结果算哪一侧？</b>算输入——它是在下一次请求里作为提示词的一部分送进去的，所以按输入计价、也能命中。而且它加在<b>末尾</b>，只往后接、不动前面的，所以 agent 越跑，可命中的前缀越长（前提是前面的都没动）。</p>
   <p>所以"缓存只针对输入"这句直觉要改一个字：<b>折扣不跟着"输入还是输出"走，跟着"这一轮是读缓存还是重算"走。</b>机制上 K/V 也不挑作者——用户打的字和模型写的字，在它眼里没区别。</p>
@@ -180,12 +205,9 @@ for a, b in zip(cached, prompt):
   <h2>8. 想深挖？进阶版在等你</h2>
   <p>上面这些够你看懂全貌了。读的过程中如果冒出疑问，点对应的链接就行——<b>不用从头看进阶版</b>。</p>
   <ul>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q1-multiturn">Q1 · 多轮对话里，上一轮模型的回答会不会命中？</a></li>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q2-thinking">Q2 · 上一轮的思考内容会不会被丢掉？谁说了算？</a></li>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q3-write">Q3 · 缓存到底省了什么？第一次用会不会更贵？</a></li>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q4-lookback">Q4 · 前缀越长越好吗？有个真实的坑</a></li>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q5-not-free">Q5 · 那"命中"到底能省多少？为什么不是免费？</a></li>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q6-window">Q6 · 如果前缀命中缓存了，还占不占用上下文窗口？</a></li>
+    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q1-thinking">Q1 · 上一轮的思考内容会不会被丢掉？谁说了算？</a></li>
+    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q2-lookback">Q2 · 前缀越长越好吗？有个真实的坑</a></li>
+    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q3-not-free">Q3 · 那"命中"到底能省多少？为什么不是免费？</a></li>
   </ul>
 
   <div class="source">

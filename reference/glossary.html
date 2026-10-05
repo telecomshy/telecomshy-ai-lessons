@@ -227,7 +227,17 @@
     <dt id="reasoning"><strong>思考（reasoning）／ 会思考的模型</strong></dt>
     <dd>模型<b>在给答案之前先把问题想一遍</b>——先复述题意、试几种办法、检查中间结果、发现不对就放弃那条路。那段「想」是<b>真的 token</b>：按<b>输出</b>计费、占上下文、而且必须<b>原样带回去</b>（否则有的厂商直接报错、有的让前缀缓存断掉）。<b>它不是「更聪明的另一个模型」</b>，而是<b>同一个模型被允许多花时间</b>。
     <b>⚠ 中文有坑</b>：「推理」这两个字也指这个意思（中文里 <code>推理模型</code> 通常＝ reasoning model），<b>但本课程讲跑模型时说的是「推理引擎」＝ inference</b>。看到「推理」先分清是哪一个。
-    <b>也别把它想成人脑</b>：原厂自己说过，模型"very often make decisions based on factors that they <b>don't explicitly discuss</b> in their thinking process"，所以<b>读思考过程判断不了它在干什么</b>。见 <a href="../lessons/llm/0005-reasoning-models.html">LLM 第 5 课</a>。</dd>
+    <b>也别把它想成人脑</b>：原厂自己说过，模型"very often make decisions based on factors that they <b>don't explicitly discuss</b> in their thinking process"，所以<b>读思考过程判断不了它在干什么</b>。见 <a href="../lessons/llm/0005-reasoning-models.html">LLM 第 5 课</a>。
+    <br><b>？ 思考的深度怎么调</b>：厂商给一个旋钮让你调"想多少"。<b>Anthropic 的两个参数名</b>：<code>budget_tokens</code>（旧模式，给一个 <b>token 目标</b>——是目标不是硬上限，实际用多少随任务浮动）· <code>output_config: {effort: ...}</code>（新模式，按 <b>low / medium / high</b> 分档，文档原话"用它代替 token 预算来控制推理深度"，也就是<b>深度由模型自己定</b>）。⚠ <b>动这两个会让缓存前缀作废</b>——因为配置被渲染进 prompt 了，见 <a href="../lessons/llm/0003-kv-cache-and-prompt-caching-deep.html">第 3 课进阶 Q1</a>。别的厂商参数名不通用，<b>别照抄</b>。</dd>
+
+    <dt id="thinking-block"><strong>思考块（thinking block）／ 内容块（content block）</strong></dt>
+    <dd>模型一次回答<b>不是一整段文字，而是一串带类型的内容块按顺序排好</b>。思考是一类块（<code>type: "thinking"</code>），答案是另一类块（<code>type: "text"</code>）。<b>客户端就是靠块的类型认出思考的起止</b>——出现 thinking 块＝开始；这个块结束＝结束，之后才是答案（或工具调用）。请求里给的思考参数<b>只说「允许思考、预算多少」，不含任何位置信息</b>，所以边界只能在响应里读。
+    <b>⚠ 它不一定出现</b>：响应里可能<b>一个 thinking 块都没有</b>——那这次就是没想。<b>判断「有没有想」只能靠有没有这个块</b>，请求参数里读不出来；至于什么时候会跳过，<b>取决于模型和配置</b>（有些厂商支持让模型自己判断难易，固定预算的那种配置则每次都想）。开了工具之后它还可能<b>反复出现</b>（夹在工具调用之间），所以「一次沉默、然后给答案」是个简化模型。
+    <b>⚠ 看到的 ≠ 付的</b>：厂商可以只回一份<b>摘要</b>，甚至<b>完全不给文字</b>（只留签名），但<b>计费按原始全长算</b>。见 <a href="#reasoning">思考 reasoning</a>。</dd>
+
+    <dt id="signature"><strong>签名（signature）</strong></dt>
+    <dd>思考块里<b>加密的完整思考</b>。服务端靠它验证「这个块确实是这个模型生成的」——<b>这就是思考块必须原样带回去、改一个字就报错的原因</b>：不是规矩，是<b>有一把锁在查</b>。流式下它在思考块结束前单独作为一条事件到达。
+    <b>⚠ 别去解析它</b>：厂商明说这个字段是<b>不透明的（opaque）</b>。它的作用是<b>证明来源</b>，不是给你读的。</dd>
   </dl>
 
   <p class="next"><a href="../lessons/agent/0001-what-is-an-agent.html">← 回到 Agent 原理篇 · 第 1 课</a></p>

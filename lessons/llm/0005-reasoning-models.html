@@ -49,7 +49,7 @@
     </tbody>
   </table>
   <p><b>本课程的口径</b>：讲「跑模型」时用「<b>跑</b>」字（跑模型、跑一轮）；讲「想事情」时用「<b>思考</b>」字（思考内容、会思考的模型）。所以<a href="../../reference/glossary.html#inference">术语表里「推理引擎」</a>和<a href="../../reference/glossary.html#reasoning">「思考」</a>是两条，不是一条。</p>
-  <p>为什么现在要钉它？因为<a href="0003-kv-cache-and-prompt-caching-deep.html#q4-lookback">第 3 课进阶</a>里已经埋了一句「用推理模型时，上一轮的思考内容不原样带回去，缓存就断了」——<b>那个坑就长在这个二义性上</b>：你以为在讲「跑模型的引擎」，其实在讲「会思考的那种模型」。这一课就是把它讲完。</p>
+  <p>为什么现在要钉它？因为<a href="0003-kv-cache-and-prompt-caching-deep.html#q2-lookback">第 3 课进阶</a>里已经埋了一句「用推理模型时，上一轮的思考内容不原样带回去，缓存就断了」——<b>那个坑就长在这个二义性上</b>：你以为在讲「跑模型的引擎」，其实在讲「会思考的那种模型」。这一课就是把它讲完。</p>
 
   <h2>2. 多出来的那一步，到底在做什么</h2>
   <p>官方文档有一句话把整件事说透了，那是<b>一次答完</b>的模型面对的处境：</p>
@@ -70,7 +70,31 @@
     <p style="margin-top:0.8rem">所以诚实的说法是：<b>它没有学会「像人一样思考」。它学会了两条让答案更对的路——一条是从前文抄套路，一条是多花 token 试出来。</b></p>
   </div>
 
-  <h2>3. 那「想」凭什么更准</h2>
+  <h2>3. 客户端怎么知道思考开始了、结束了</h2>
+  <p>先回答一个很具体的疑问：<b>请求里只告诉了模型「允许思考、预算多少」，那客户端凭什么知道屏幕上那段思考从哪开始、到哪结束？</b></p>
+  <p><b>答案在响应里，不在请求里。</b>模型的一次回答不是一整段文字，而是<b>一串带类型的内容块</b>（content block）按顺序排好——<b>思考是一类块，答案是另一类块。</b></p>
+  <pre><code>"content": [
+  { "type": "thinking", "thinking": "...", "signature": "WaUjzkyp..." },
+  { "type": "text",     "text": "..." }
+]</code></pre>
+  <p><b>块的类型就是这个信号</b>：出现一个 <code>thinking</code> 块＝<b>思考开始</b>；这个块结束＝<b>思考结束</b>，之后才是答案。流式传输时这条边界由一串事件逐条标出来，下面是真实的事件序列：</p>
+  <pre><code>content_block_start    index=0   type = thinking    ← 思考开始
+content_block_delta    delta = thinking_delta  ×N   ← 思考内容
+content_block_delta    delta = signature_delta      ← 签名落定
+content_block_stop     index=0                      ← 思考结束
+content_block_start    index=1   type = text        ← 答案开始
+content_block_delta    delta = text_delta  ×N</code></pre>
+  <p><span style="color:var(--muted)">（那两个 <code>content_block_start</code> / <code>content_block_stop</code> 就是<b>「切」这个动作本身</b>，而它跟<a href="../agent/0002-tool-use.html">Agent 第 2 课的工具调用是同一招</a>：<b>模型不声明「我在思考」，服务端也不判断哪段是思考</b>——两边都只认形状。那个「记号」长什么样是我从规则反推的，厂商没公开内部实现。）</span></p>
+  <div class="note">
+    <span class="label">边界不来自请求 —— 这一点最容易想反</span>
+    <ul>
+      <li><b>请求里没有任何位置信息。</b>它只说了「允许思考、预算多少」。边界是模型<b>抽 token 抽出来的</b>，服务端再把它<b>包装成块结构</b>返回——所以它只能在响应里读。</li>
+      <li><b>思考块不一定出现。</b>响应里<b>可能一个 <code>thinking</code> 块都没有</b>——那这一次就是没想。<b>客户端判断「有没有想」，只能靠有没有这个块</b>，请求参数里读不出来。</li>
+    </ul>
+    <p style="margin-top:0.8rem">所以后面讲<b>四笔账</b>那一节里说的<b><a href="../../reference/glossary.html#thinking-block">思考块</a></b>，就是上面这个块——<b>你的程序要存的不是那段文字，是整个块</b>。</p>
+  </div>
+
+  <h2>4. 那「想」凭什么更准</h2>
   <p>这一节只讲机制，<b>不碰强化学习那一套体系</b>（那是另一门课）。你需要知道的只有一件事：<b>以前要人做一件很贵的事，现在不用了。</b></p>
   <ul>
     <li><b>早先的做法</b>：人先写出一段完整的思考过程（"这道题先这么算、再那么算"），然后让模型照着学。<b>代价是：要人标注。</b></li>
@@ -84,7 +108,7 @@
     <p><b>但代价是又回到「要人标注」</b>。所以工业界选了另一条更省钱的路。<b>两条路都真实存在，别把它们混成一条。</b></p>
   </div>
 
-  <h2>4. 四笔账</h2>
+  <h2>5. 四笔账</h2>
   <p>现在算账。<b>关键前提只有一句：那段思考是<b>真的 token</b>，走的还是同一条流水线、还是逐个往外吐。</b>所以它进的是和答案<b>一模一样的账本</b>。</p>
 
   <figure class="figure">
@@ -115,7 +139,7 @@
   </ul>
   <p><b>所以「让模型思考」不只是多给一个参数——上一轮的思考块你得存下来、原样送回去。</b>忘了这件事，agent 会从「慢一点」变成「跑不起来」。</p>
 
-  <h2>5. 收益是递减的，所以它是旋钮不是开关</h2>
+  <h2>6. 收益是递减的，所以它是旋钮不是开关</h2>
   <p>「多花 token 换准确率」这句话，容易被读成「多花就更好」。<b>不是。</b>原厂给的措辞是：数学题上的准确率随思考 token 数<b>呈对数级提升</b>（<b>logarithmically</b>）——<b>翻一倍预算，好一点，而不是好一点半。</b></p>
   <p>顺带一个具体数，好让你有个量感：Claude 3.7 Sonnet 用<b>6.4 万</b>思考预算（相当于 256 个独立采样的算力）拿到 GPQA <b>84.8%</b>。而顶格预算还有工程后果——云厂商的文档建议<b>预算超过 3.2 万就走批量处理</b>，否则容易超时断连。</p>
   <div class="goal">
@@ -123,7 +147,7 @@
     <p><b>从最低档起步，按自己的任务实测着加。</b>这是文档给的建议（预算有下限，通常 1024；而且它<b>是目标不是硬上限</b>，实际用量随任务浮动）。<b>别一上来就顶格</b>——你多半在为一个用不上的准确率按分钟付钱。</p>
   </div>
 
-  <h2>6. 什么时候开、什么时候关</h2>
+  <h2>7. 什么时候开、什么时候关</h2>
   <ul>
     <li><b>值得开</b>：难，而且<b>有客观对错可以查</b>的活——数学、代码、复杂分析、多步 agent 任务。官方文档点名的就是「数学、编码、分析、长流程的 agent 活」。</li>
     <li><b>不值得开</b>：简单任务、按分钟计的交互链路、已经很熟练的常规活。<b>在这些地方开思考，等于按分钟付钱买一点用不上的准确率。</b></li>
@@ -135,7 +159,7 @@
     <p>所以别把「它会思考」当成免检。<span style="color:var(--muted)">（怎么测：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>）</span></p>
   </div>
 
-  <h2>7. 动手跑一遍</h2>
+  <h2>8. 动手跑一遍</h2>
   <p>脚本在工作区：<code>exercises/llm/0005-reasoning-cost.py</code>。<b>只用 Python 标准库</b>，不联网——它<b>直接把思考 token 加进第 2 课那套账里</b>（同样的时间模型和价格模型），所以结论是算出来的，不是讲出来的。</p>
   <pre><code>python exercises/llm/0005-reasoning-cost.py</code></pre>
   <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
@@ -186,7 +210,7 @@
     <li><b>第 5 节那两种后果</b>是本课最容易漏的一笔：<b>不是慢一点，是报错或者缓存断。</b></li>
   </ul>
 
-  <h2>8. 检查一下你懂了没</h2>
+  <h2>9. 检查一下你懂了没</h2>
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 「会思考的模型」和普通模型，最本质的区别是什么？</p>
@@ -256,7 +280,7 @@
 
   <div class="source">
     <b>这节课的一手资料</b>：<br>
-    <a href="https://platform.claude.com/docs/en/build-with-claude/thinking">Anthropic — Thinking（Claude 平台文档）</a>——<b>本课主来源</b>。「一次答完就没有草稿、没有检查、没有中途改道」、思考做的四件事、<b>按输出计费</b>（<b>即使不返回给你</b>）、<b>按全长而不是摘要计费</b>、<b>每个思考块必须完整带回</b>——第 2、3、4 节的原话都出自这里。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/thinking">Anthropic — Thinking（Claude 平台文档）</a>——<b>本课主来源</b>。「一次答完就没有草稿、没有检查、没有中途改道」、思考做的四件事（第 2 节）；<b>思考块这个结构、流式那串事件、模型可以整个跳过思考</b>（第 3 节）；<b>按输出计费</b>（<b>即使不返回给你</b>）、<b>按全长而不是摘要计费</b>、<b>每个思考块必须完整带回</b>、<b>签名里是加密的完整思考</b>（第 5 节）——原话都出自这里。<br>
     <a href="https://www.anthropic.com/research/visible-extended-thinking">Anthropic — "Claude's extended thinking"（研究博客）</a>——<b>「不是换个模型」</b>和<b>「收益是对数级」</b>这两句的出处；也是「读思考判断不了它在干什么」「思考里也有错的」那三条的依据。<br>
     <a href="https://arxiv.org/abs/2501.12948">DeepSeek-AI et al. — DeepSeek-R1（Nature 2025）</a>——<b>「只给结果打分就能长出推理能力」</b>的出处，以及界面上那三类动作（自省／验证／动态换策略）的原词。<br>
     <a href="https://arxiv.org/abs/2305.20050">Lightman et al. — "Let's Verify Step by Step"</a>——<b>逐步打分 vs 只看结果</b>的对照实验（78% 那条）。<br>
@@ -264,7 +288,7 @@
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"思考是从第 0 课的「接下一个字」里多出来的吗，还是训练时另一套？""它思考的那些 token 会不会也进 KV cache？""我自己写一段「让我们一步步想」提示词，和这个是一回事吗？""深度学习里那个'推理'和这里的'推理'到底差在哪？""顶格预算会超时，那我线上到底该给多少？"
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"思考是从第 0 课的「接下一个字」里多出来的吗，还是训练时另一套？""它思考的那些 token 会不会也进 KV cache？""我自己写一段「让我们一步步想」提示词，和这个是一回事吗？""深度学习里那个'推理'和这里的'推理'到底差在哪？""顶格预算会超时，那我线上到底该给多少？""一次回答里思考块会不会出现好几次？""厂商要是不给我看思考文字，客户端怎么显示'它正在思考'？"
   </div>
 
   <p class="next">
@@ -272,7 +296,7 @@
     <b>顺着往下</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化</a>（另一件「拿什么换什么」的工程取舍：省字节）→ <a href="0007-distillation.html">第 7 课 · 蒸馏</a>（能力怎么从大模型搬到小模型）<br>
     <b>相关</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（开了思考要不要重测）<br>
     <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
-    术语表：<a href="../../reference/glossary.html#reasoning">思考 reasoning</a> · <a href="../../reference/glossary.html#inference">推理引擎 inference</a> · <a href="../../reference/glossary.html#ttft">TTFT</a> · <a href="../../reference/glossary.html#tpot">TPOT</a>
+    术语表：<a href="../../reference/glossary.html#reasoning">思考 reasoning</a> · <a href="../../reference/glossary.html#thinking-block">思考块 thinking block</a> · <a href="../../reference/glossary.html#signature">签名 signature</a> · <a href="../../reference/glossary.html#inference">推理引擎 inference</a> · <a href="../../reference/glossary.html#ttft">TTFT</a> · <a href="../../reference/glossary.html#tpot">TPOT</a>
   </p>
 
   <footer>AI Agent 原理与工程 · LLM 底层 · 第 5 课（初学版）· <a href="../index.html">课程目录</a></footer>

@@ -51,6 +51,10 @@
     <li>计费：cache <b>read</b>（命中读取）≈ <b>0.1×</b> 输入价；cache <b>write</b>（首次写入）Anthropic 约 1.25×，OpenAI 新版也可能收费。</li>
     <li>OpenAI：前缀 ≥ 1024 token 才可缓存，命中按 128-token 粒度；可用 <code>prompt_cache_key</code> 影响路由。</li>
     <li>Anthropic：用 <code>cache_control</code> 显式标断点；缓存有 TTL（默认约 5 分钟，可延长）。</li>
+    <li><b>哪些改动会打断缓存</b>：<b>改早期消息、删消息、调换顺序</b>——都会让从改动处往后的缓存作废（xAI 文档列的三种）。<b>注意后两种：它们一个字的内容都不改，只动结构，照样作废。</b></li>
+    <li><b>并发请求撞不上</b>：Anthropic —— <b>缓存条目要等第一个响应开始之后才可用</b>，所以同时发几个请求（哪怕开头一样），后几个都读不到。<b>OpenAI</b> —— 缓存存在<b>某一台具体的机器</b>上，请求得被路由到那台才撞得上；流量超过 <b>15 请求/分钟</b>可能触发溢出路由。<code>prompt_cache_key</code> 能让同一段前缀的请求归到一处，但 OpenAI 文档明说<b>它只影响路由，不保证命中、不锁机器</b>（GPT-5.6 及以后路由自动处理，不需要这个 key）。</li>
+    <li><b>怎么核对有没有命中</b>：Anthropic —— <code>cache_creation_input_tokens</code> 与 <code>cache_read_input_tokens</code>，<b>两者都是 0 就是没缓存，而且不报错</b>。OpenAI —— <code>usage.input_tokens_details.cached_tokens</code> 与 <code>cache_write_tokens</code>；命中率 = 累计 cached ÷ 累计 input。</li>
+    <li><b>最小可缓存长度</b>：Anthropic 按模型 512 / 1024 / 2048 / 4096 token；不到就不建缓存、不报错。</li>
   </ul>
 
   <h2>对 agent 的工程结论（重点）</h2>
@@ -63,6 +67,7 @@
   <div class="source">
     <b>来源</b>：<br>
     <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a> ·
+    <a href="https://docs.x.ai/developers/advanced-api-usage/prompt-caching/multi-turn">xAI — 多轮场景的缓存</a>（三种打断方式的出处）·
     <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching</a> ·
     <a href="https://magazine.sebastianraschka.com/p/coding-the-kv-cache-in-llms">Sebastian Raschka — Understanding and Coding the KV Cache</a> ·
     <a href="https://huggingface.co/blog/not-lain/kv-caching">HuggingFace — KV Caching Explained</a>
