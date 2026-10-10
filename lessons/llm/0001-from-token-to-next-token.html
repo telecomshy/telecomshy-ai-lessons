@@ -59,7 +59,7 @@ token        「天」 「气」 「很」
   <ul>
     <li><b>token</b>：切成的小零件。<b>分词（tokenization）</b>是切的动作，<b>分词器（tokenizer）</b>是那把刀。切法不等于"词"——长词生僻词会被切碎，空格、标点、表情也算。</li>
     <li><b>编号（ID）</b>：去<b>词表（vocabulary）</b>——模型认识的全部 token 的名单——里对号，只表示"它排第几"，没有含义。<span style="color:var(--muted)">（<a href="0001-from-token-to-next-token-deep.html#q1-vocab">词表多大？生词怎么办？</a>）</span></li>
-    <li><b>向量</b>：拿编号去<b>嵌入表</b>查第 N 行，得到一串数字。这动作叫<b>词嵌入（embedding）</b>。<span style="color:var(--muted)">（<a href="0001-from-token-to-next-token-deep.html#q2-embedding">嵌入表是什么？查表怎么就查出向量了？</a>）</span></li>
+    <li><b>向量</b>：拿编号去<b>嵌入表</b>查第 N 行，得到一串数字<span style="color:var(--muted)">（<a href="0000-how-models-learn.html">第 0 课</a>比喻里"字典上的坐标"，就是这一行）</span>。这动作叫<b>词嵌入（embedding）</b>。<span style="color:var(--muted)">（<a href="0001-from-token-to-next-token-deep.html#q2-embedding">嵌入表是什么？查表怎么就查出向量了？</a>）</span></li>
   </ul>
 
   <p>上面那张图里，<b>一个 token 对应一行向量</b>——「天气很」是 3 个 token，所以是 3 行。把所有行摞起来，才是<b>一张「n 行 × d 列」的数字表</b>（n ＝ token 数，d ＝ 每串向量的长度），这张表学名叫<b>张量（tensor）</b>（二维的也叫<b>矩阵 matrix</b>）。</p>

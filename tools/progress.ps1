@@ -1,7 +1,7 @@
 <#
   progress.ps1 —— 课程进度三处落点的唯一执行入口
 
-  背景：标 completed 要改三个文件（见 NOTES 1.7），漏一处就会自相矛盾。
+  背景：标 completed 要改三个文件（见 NOTES 1.7 与 notes/rules/mark-completed.md），漏一处就会自相矛盾。
         2026-10-03 主页那个「N 门已定稿」就是这么被漏掉的，而且错了三个提交
         都没人发现 —— 因为没有任何东西会检查它。本脚本的 audit 模式就是补这个洞。
 
@@ -16,7 +16,7 @@
   约定：completed 只能由学习者明确说才标（NOTES 1.7）。本脚本只执行，不判断。
         进阶版的别名以页面上的 data-alias 为唯一落点（2026-10-05 加）：
         目录页卡片、<title>、README 三处都从它派生，audit 的 E 段核一致性。
-        改别名只改 data-alias 一处 —— 以前三处各抄一遍，抄漏过（NOTES 5.9）。
+        改别名只改 data-alias 一处 —— 以前三处各抄一遍，抄漏过（NOTES 存档 5.10）。
 #>
 [CmdletBinding()]
 param(
@@ -192,6 +192,42 @@ function Audit {
     }
 
     if ($bad -eq 0) { Ok "$($c.href) = $al（带编号 Q $($nums.Count) 个）" }
+  }
+
+  Write-Output "== F. NOTES 卫生：历史进 notes/history/，NOTES.md 只留规矩与索引 =="
+  $notes = ReadText 'NOTES.md'
+  $noteLines = @($notes -split '\r?\n')
+
+  # (1) 第 5 节只许是索引 —— 冒出 ### 5.x / #### 5.x.y 就是历史正文又写回 NOTES.md 了
+  $parts = $notes -split '(?m)^## 5\.'
+  if ($parts.Count -lt 2) {
+    No "NOTES.md 里找不到「## 5.」节"
+  } else {
+    $stray = @([regex]::Matches($parts[1], '(?m)^#{3,4}\s+5\.\d'))
+    if ($stray.Count -gt 0) {
+      No "NOTES.md 第 5 节里有 $($stray.Count) 个历史正文标题（如「$($stray[0].Value.Trim())」），挪去 notes/history/（NOTES 1.9）"
+    } else {
+      Ok "第 5 节只有索引，没有历史正文"
+    }
+  }
+
+  # (2) 索引 <-> notes/history/ 双向一致：新存档必须挂进索引，索引不许指空文件
+  $histDir = Join-Path $root 'notes/history'
+  if (-not (Test-Path $histDir)) {
+    No "notes/history/ 不存在（历史存档目录）"
+  } else {
+    $files  = @(Get-ChildItem $histDir -Filter '*.md' -Name | Sort-Object)
+    $linked = @([regex]::Matches($notes, '\((notes/history/[^)]+\.md)\)') | ForEach-Object { Split-Path $_.Groups[1].Value -Leaf })
+    foreach ($f in $files)  { if ($linked -notcontains $f) { No "notes/history/$f 存在，但 NOTES 第 5 节索引里没有它的链接" } }
+    foreach ($l in $linked) { if ($files -notcontains $l) { No "NOTES 第 5 节索引链到 notes/history/$l，文件不存在" } }
+    if ($files.Count -gt 0 -and $linked.Count -eq $files.Count) { Ok "索引与 notes/history/ 双向一致（$($files.Count) 篇）" }
+  }
+
+  # (3) 体量阈值 —— 再涨就该挪东西出去（历史→notes/history/、操作细节→notes/rules/）
+  if ($noteLines.Count -gt 400) {
+    No "NOTES.md 已 $($noteLines.Count) 行（阈值 400）：历史进 notes/history/、操作细节进 notes/rules/（NOTES 1.9）"
+  } else {
+    Ok "NOTES.md $($noteLines.Count) 行（阈值 400）"
   }
 }
 

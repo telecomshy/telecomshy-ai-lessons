@@ -105,7 +105,7 @@ python exercises/agent/0004-real-model-agent.py
 | 0003 进阶 | [三个绕人的细节](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)                  |
 | 0004 进阶 | [批从哪来、拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                        |
 | 0005 进阶 | [谁写的、怎么切的、谁收着、怎么练出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)                          |
-| 0006 进阶 | [压法是什么、KV 是什么精度](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization-deep.html)                          |
+| 0006 进阶 | [压法是什么、误差怎么救回来、KV 是什么精度](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization-deep.html)                          |
 
 ### Agent 原理篇
 
@@ -168,7 +168,9 @@ python exercises/agent/0004-real-model-agent.py
 
 ```
 MISSION.md            为什么做这个（这个仓库的一切都挂在它下面）
-NOTES.md              课程开发标准、约定、决策与教训存档
+NOTES.md              课程开发标准、约定与待办
+notes/rules/          开发操作细节（联网取材 · 标 completed 的步骤），用到才读
+notes/history/        决策与教训存档（5.1～5.19 一节一篇），NOTES.md 第 5 节只有索引
 RESOURCES.md          全部一手资料来源，注明「用来干什么」
 lessons/<轨道>/       课程本体，自包含 HTML
 exercises/<轨道>/     配套脚本，命名与课号对应
@@ -176,7 +178,7 @@ reference/            术语表与速查（贴墙清单）
 assets/               共享样式表、测验组件、SVG 插图、演示动画（mp4 + poster）
 ```
 
-想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 本身就是一份有趣的文档 —— 里面记了每条教学规矩背后的原因，包括不少「我一开始写错了，后来改对」的反面案例。
+想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 记着每条教学规矩本身，[`notes/history/`](notes/history/) 记着它们背后的原因 —— 包括不少「我一开始写错了，后来改对」的反面案例。
 
 ---
 

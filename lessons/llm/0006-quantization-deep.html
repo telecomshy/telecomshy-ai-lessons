@@ -3,24 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LLM 底层 · 第 6 课（进阶版）· 压法是什么、KV 是什么精度</title>
+<title>LLM 底层 · 第 6 课（进阶版）· 压法是什么、误差怎么救回来、KV 是什么精度</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta" data-alias="压法是什么、KV 是什么精度">LLM 底层 · 第 6 课 · 进阶版</div>
-  <h1>量化：压法是什么、KV 是什么精度</h1>
-  <p class="subtitle">初学版讲「量化是什么、会造成什么影响」。这篇答两个更细的问：<b>「压法」到底是什么、AWQ 和 GPTQ 各是怎么压的</b>；<b>一个 int4 的模型，KV 到底存多少位</b>。<b>按需跳读</b>——每问都能从<a href="0006-quantization.html">初学版</a>末尾那份清单直达。</p>
+  <div class="lesson-meta" data-alias="压法是什么、误差怎么救回来、KV 是什么精度">LLM 底层 · 第 6 课 · 进阶版</div>
+  <h1>量化：压法是什么、误差怎么救回来、KV 是什么精度</h1>
+  <p class="subtitle">初学版讲「量化是什么、会造成什么影响」。这篇答三个更细的问：<b>「压法」到底是什么、AWQ 和 GPTQ 各是怎么压的</b>；<b>4 bit 那么粗，为什么还能用</b>；<b>一个 int4 的模型，KV 到底存多少位</b>。<b>按需跳读</b>——每问都能从<a href="0006-quantization.html">初学版</a>末尾那份清单直达。</p>
 
   <div class="note">
     <span class="label">怎么用这篇</span>
-    <p>只收<b>读完初学版仍会冒出来</b>的疑问；初学版讲过的（每个数四舍五入到最近的可挑值、<b>4 bit 不止 4 bit</b>、语义和格式都会掉）这里不重复。</p>
+    <p>只收<b>读完初学版仍会冒出来</b>的疑问；初学版讲过的（每个数四舍五入到最近的可挑值、<b>小数被压扁、4 bit 不止 4 bit</b>、语义和格式都会掉）这里不重复。</p>
+    <p>三问之间不连着讲，<b>每问开头都先交代它在问什么</b>——跳进任何一问都能读下去。</p>
   </div>
 
   <h2 id="q1-method">Q1 · 「压法」是什么？AWQ、GPTQ 各是怎么压的？</h2>
-  <p><b>先分清两根轴。「压法」说的是「怎么压」，不是「压到几个比特」。</b>压多狠（8 bit／4 bit／2 bit）是一根轴；下面这四件事怎么做，是另一根轴——<b>做法不同，就换一个名字</b>：</p>
+  <p>你在下载站上找一个模型，同一个模型常挂着好几个版本：原始版（几十 GB）和一串「压缩版」——<code>Q4_K_M</code>、<code>AWQ</code>、<code>GPTQ</code>…。<b>把原始版换成这些小版的那套做法，就叫「压法」。</b>动手压的是专门的量化工具，压出来的文件要交给跑模型的软件（<b>vLLM</b>、<b>llama.cpp</b> 这些）去读——<b>名字五花八门的根源就在这儿：做法不止一种，各家的文件还互不通用。</b></p>
+  <p>那就先分清两根轴：<b>「压法」说的是「怎么压」，不是「压到几个比特」。</b>压多狠（8 bit／4 bit／2 bit）是一根轴；下面这四件事怎么做，是另一根轴——<b>做法不同，就换一个名字</b>：</p>
   <ul>
     <li>每个数换成<b>什么近似值</b>（直接四舍五入？还是算完再补？）；</li>
     <li><b>哪几个数共用一套可挑的值</b>（整张表一套？还是一小群一套？）；</li>
@@ -39,11 +41,11 @@
       <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>四舍五入</b>（最老实的做法，论文里叫 RTN）</td>
           <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">定一套可挑的值，每个数就近取一个，抹掉的零头不要了。<b>初学版脚本做的就是它。</b></td></tr>
       <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>GPTQ</b></td>
-          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">抹掉的误差<b>拿后面几个数补回来一点</b>（论文用的是「二阶信息」逐个补偿）。175B 的模型约 4 GPU 小时压到 3–4 bit，论文说掉分"可忽略"。</td></tr>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">抹掉的误差<b>拿还没压的邻居数补回来一点</b>——按每个数对误差的「敏感程度」逐个补，论文管这套补法叫「二阶信息」。175B 的模型约 4 GPU 小时压到 3–4 bit，论文说掉分"可忽略"。</td></tr>
       <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>AWQ</b></td>
-          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>先看「激活」的分布挑出那 1% 关键权重，保住它们</b>，别处照常压。原话："保护 1% 关键的权重就能大幅降低误差"。</td></tr>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>先看「激活」（模型算的时候那些中间数）的分布，挑出那 1% 关键权重保住</b>，别处照常压。原话："保护 1% 关键的权重就能大幅降低误差"。</td></tr>
       <tr><td style="padding:0.55rem"><b>llama.cpp 的 K-quant</b>（<code>Q4_K_M</code> 这类名字）</td>
-          <td style="padding:0.55rem">256 个数一个超块；<b>几档混着用</b>——压不得的那些权重存细一点。它的工具说明里写着：加 <code>--pure</code> 才会把所有权重压成同一档。</td></tr>
+          <td style="padding:0.55rem">把 256 个数打包成一大组，<b>组里几档混着用</b>——要紧的那些权重存细一点。它的工具说明里写着：加 <code>--pure</code> 才会把所有权重压成同一档。</td></tr>
     </tbody>
   </table>
 
@@ -73,14 +75,27 @@
   </table>
   <p><span style="color:var(--muted)">（⚠ <b>这张表是活的</b>：2026-10-10 抓的时候 GPTQ 已经支持到 Hopper，而早先的记录还写着"不支持 Ada 之后"。<b>要动手之前重新抓一次原表</b>，别信任何转述——原表在 vLLM 文档的 Quantization 一节，还有 Intel／x86／Arm 那几列。<a href="https://docs.vllm.ai/en/latest/features/quantization/">原表</a>）</span></p>
 
-  <h2 id="q2-kv">Q2 · 一个 int4 的模型，KV 到底存多少位？</h2>
+  <h2 id="q2-recover">Q2 · 4 bit 为什么还能用？误差是怎么被「救」回来的？</h2>
+  <p>初学版留了个口子：4 bit 只有 16 种可挑的值，每个数都被四舍五入过一遍，<b>照理该糊得没法用——可实际上 4 bit 的模型照样能干活。</b>误差是被谁救回来的？答案是两招。</p>
+  <p><b>第一招：一小群数用一小套取值。</b>如果<b>整张表共用一套可挑的值</b>，模型里少数几个天生特别大的数会把这套值的范围撑到最大，剩下的普通数全被挤在最边上的一小段里——挤没了。所以真实做法是<b>一小群数用一小套取值</b>：范围一小，16 个值就能分得更细。<b>误差掉一个数量级</b>（脚本第 4 节那张表：整表一套差 3.4%，分组之后掉到 0.2% 上下）。代价是每一小群要多存一份换算说明——这就是初学版「4 bit 不止 4 bit」的来处。</p>
+  <p><span style="color:var(--muted)">（顺带一个反直觉的小坑，脚本第 4 节注着：那张假表里「每列一组」反而比「每 32 个一组」更准——因为假表每列的量级本来就整齐。真实权重矩阵一列之内量级并不整齐，所以才轮到「每 32 个一组」这种折中。）</span></p>
+  <p><b>第二招：挑着压。</b>差别被并掉的地方不是均匀的——有的地方几乎没伤着、有的地方伤得特别重。而各处的数<b>重要性差得很远</b>，所以<b>重点保住，别处粗一点没关系</b>。<a href="https://arxiv.org/abs/2306.00978">AWQ 那篇论文（MLSys 2024 最佳论文）</a>的原话：<b>「不是所有权重都一样重要，保护那 1% 关键的权重，就能大幅降低误差。」</b>它还补了一句很反直觉的：<b>判断哪些通道关键，要看「激活」（模型算的时候那些中间数）的分布，不是看权重本身</b>。</p>
+  <p><b>这就是 4 bit 的模型还能用的全部原因</b>——不是 4 bit 够准，是这两招把力气花在了要紧的地方。<span style="color:var(--muted)">（激活是什么、为什么它比权重还难压，见<a href="../../reference/glossary.html#activation">术语表</a>；<a href="https://arxiv.org/abs/2211.10438">SmoothQuant</a> 那篇的判断很直接：<b>权重好压，激活难压</b>。）</span></p>
+  <p><b>自己动手压，还有两条实操</b>（都是 vLLM 的说明书里的原话）：</p>
+  <ul>
+    <li><b>要喂样本，而且要喂贴近你活的那类。</b>vLLM 给的起点是<b>先 512 条</b>，准确率掉了就加——喂的是"你实际会输入的东西"，压出来的模型才适合你的场景。</li>
+    <li><b>压完评测时，小心句首那个特殊记号（行话叫 <code>bos</code>）。</b>忘了加，它会给你一个偏低的分数——<b>那个分数是评测配错的，不是模型真变差了</b>。</li>
+  </ul>
+
+  <h2 id="q3-kv">Q3 · 一个 int4 的模型，KV 到底存多少位？</h2>
+  <p>第 3 课讲过 KV：模型写答案时，把每个字算出来的 Key／Value 留在显存里，免得下一轮重算。<b>它是跑起来临时算出来的数，跟权重不是一回事。</b>那问题就来了——<b>权重压到 4 bit 了，这些临时数存多少位？也跟着变 4 bit 吗？</b></p>
   <p><b>先给答案：16 bit（float16）——既不是 float32，也不是 4 bit。</b>这件事要拆成两层看，混起来就会想反。</p>
   <p><b>第一层：存的档位。</b>K/V 是「算出来再存」的中间结果，跟权重的存法是<b>两笔账</b>，它有自己的默认值：</p>
   <ul>
-    <li><b>llama.cpp</b>：服务程序的 <code>--cache-type-k</code>／<code>--cache-type-v</code>（"KV cache data type for K/V"），可选 <code>f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1</code>，<b>默认 f16</b>。</li>
-    <li><b>vLLM</b>：<code>cache_dtype</code> 默认 <code>"auto"</code>，文档原话是 "If 'auto', <b>will use model data type</b>"。而 <code>W4A16</code> 这个格式名本身就是答案——<b>权重 4 bit、激活 16 bit</b>（激活＝模型算的时候那些中间数），K/V 就是拿激活算出来的。</li>
+    <li><b>llama.cpp</b>：服务程序有两个开关，意思是「K/V 缓存用什么类型存」（<code>--cache-type-k</code>／<code>--cache-type-v</code>），可选 <code>f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1</code>，<b>默认 f16</b>。</li>
+    <li><b>vLLM</b>：<code>cache_dtype</code> 默认 <code>"auto"</code>，文档原话是 "If 'auto', <b>will use model data type</b>"（用模型自己的数据类型）。而 <code>W4A16</code> 这个格式名本身就是答案——<b>权重 4 bit、激活 16 bit</b>（激活＝模型算的时候那些中间数），K/V 就是拿激活算出来的。</li>
   </ul>
-  <p><b>第二层：值的干净程度。</b><code>k = 那一行的向量 × W_k</code>——而嵌入表和 <code>W_k</code> 都已经压过了。<b>所以存的是 16 bit，值里却已经带着误差</b>。初学版那句"数值会被波及"说的就是这层。</p>
+  <p><b>第二层：值的干净程度。</b>K 是拿那行向量乘上 <code>W_k</code> 算出来的（<code>k = 那一行的向量 × W_k</code>）——而嵌入表和 <code>W_k</code> 都已经压过了。<b>所以存的是 16 bit，值里却已经带着误差</b>。初学版那句"数值会被波及"说的就是这层。</p>
   <p><b>想让 KV 也小？那是另一个开关</b>，跟权重量化互不替代：vLLM 那个叫 <code>kv_cache_dtype</code>（可以设成 <code>fp8</code> 等），llama.cpp 那个就是上面的 <code>--cache-type-k</code>（可以设成 <code>q8_0</code> 等）。⚠ vLLM 打开它时会自己警告："it may cause accuracy drop without a proper scaling factor"——<b>又是一道「省多少、换掉多少精度」的选择题</b>。</p>
 
   <h2>检查一下</h2>
@@ -97,7 +112,18 @@
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q2</span> 一个 int4 的量化模型，默认情况下 KV 存多少位？</p>
+    <p class="q"><span class="num">Q2</span> 4 bit 那么粗，为什么模型还能用？</p>
+    <button class="quiz-option">因为 4 bit 本来就已经够准了</button>
+    <button class="quiz-option">因为压完会自动补回一部分精度</button>
+    <button class="quiz-option" data-correct="true">分组压 ＋ 挑着压，把要紧的地方保住了</button>
+    <button class="quiz-option">因为模型本来就用不上那些小数</button>
+    <p class="feedback"
+       data-ok="对。一小群数一套取值（救误差一个数量级），再把 1% 关键权重保住——力气花在了要紧的地方。"
+       data-no="4 bit 本身并不准；是「分组」和「挑着压」这两招把它救回来的。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 一个 int4 的量化模型，默认情况下 KV 存多少位？</p>
     <button class="quiz-option">4 bit，跟着权重一起压</button>
     <button class="quiz-option">float32，反正是算出来的中间结果</button>
     <button class="quiz-option" data-correct="true">16 bit，跟激活一个档</button>
@@ -110,11 +136,13 @@
   <div class="source">
     <b>这篇的一手资料</b>：<br>
     <a href="https://docs.vllm.ai/en/latest/features/quantization/">vLLM — Quantization（官方文档）</a>——Q1 那张硬件对照表出自它的 "Supported Hardware" 一节（⚠ 会变，引用前重抓）；支持的格式全表也在那页。<br>
-    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md">llama.cpp — <code>tools/server/README.md</code></a>——Q2 的 <code>--cache-type-k</code>／<code>--cache-type-v</code> 参数表与 <b>default: f16</b>。<br>
-    <a href="https://docs.vllm.ai/en/latest/api/vllm/config/">vLLM — Config API</a>——Q2 的 <code>cache_dtype</code> 默认 <code>"auto"</code>（"will use model data type"）与量化时的那句警告。<br>
     <a href="https://arxiv.org/abs/2210.17323">Frantar et al. — GPTQ</a>——Q1 表里 GPTQ 那行（二阶信息逐个补偿；175B 约 4 GPU 小时压到 3–4 bit，极端到 2-bit）。<br>
-    <a href="https://arxiv.org/abs/2306.00978">Lin et al. — AWQ</a>——Q1 表里 AWQ 那行（按激活分布保护 1% 关键权重）。<br>
-    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp — <code>tools/quantize/README.md</code></a>——Q1 表里 K-quant 那行（<code>--pure</code> 关掉"混合档"）。全部在 <code>RESOURCES.md</code> 里。
+    <a href="https://arxiv.org/abs/2306.00978">Lin et al. — AWQ</a>——Q1 表里 AWQ 那行，也是 Q2「挑着压」的出处（按激活分布保护 1% 关键权重）。<br>
+    <a href="https://arxiv.org/abs/2211.10438">Xiao et al. — SmoothQuant</a>——Q2 的「权重好压、激活难压」。<br>
+    <a href="https://docs.vllm.ai/en/latest/features/quantization/llm_compressor/int4/">vLLM — INT4 W4A16（文档）</a>——Q2 末尾那两条实操（校准样本<b>先 512 条</b>、<code>bos</code> 敏感）。<br>
+    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp — <code>tools/quantize/README.md</code></a>——Q1 表里 K-quant 那行（<code>--pure</code> 关掉"混合档"）。<br>
+    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md">llama.cpp — <code>tools/server/README.md</code></a>——Q3 的 <code>--cache-type-k</code>／<code>--cache-type-v</code> 参数表与 <b>default: f16</b>。<br>
+    <a href="https://docs.vllm.ai/en/latest/api/vllm/config/">vLLM — Config API</a>——Q3 的 <code>cache_dtype</code> 默认 <code>"auto"</code>（"will use model data type"）与量化时的那句警告。全部在 <code>RESOURCES.md</code> 里。
   </div>
 
   <div class="ask-teacher">

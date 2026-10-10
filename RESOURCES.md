@@ -239,6 +239,8 @@
 
 - [fast.ai — "Let's Build the GPT Tokenizer"（Karpathy 系列整理）](https://www.fast.ai/posts/2025-10-16-karpathy-tokenizers)
   明确切分边界："tokenizer 是把字符串翻译成 token ID 的独立程序"；而<b>嵌入表的每一行是可训练参数，靠反向传播优化</b>，喂给 transformer 的是这些向量。**用来**：讲清"什么算模型、什么不算"。
+- [Mikolov et al. — "Efficient Estimation of Word Representations in Vector Space"（arXiv 1301.3781）](https://arxiv.org/abs/1301.3781) · [Mikolov, Yih & Zweig — "Linguistic Regularities in Continuous Space Word Representations"（NAACL 2013）](https://aclanthology.org/N13-1090/)（2026-10-10 核）
+  **「向量＝空间里的一个点、向量近＝意思近」的出处**。摘要原话：「computing **continuous vector representations of words** from very large data sets」；表示的质量就是在「a **word similarity task**」上量的，「**syntactic and semantic word similarities**」都靠它——**两个词的向量近，就是意思近**。后一篇标题即「**Continuous Space** Word Representations」（词的表示就在连续空间里）。**用来**：`llm/0000` 外星人比喻（"每个字是高维空间里的一个点"）落地前的出处核查（5.7：框架性比喻查不到出处不进课件）。⚠ 凭记忆写的编号当场翻车过一次（1308.0750 是物理论文）——**引用编号必须打开核对**。
 
 - [OpenAI — "Function calling"（官方指南）](https://developers.openai.com/api/docs/guides/function-calling)
   官方机制说明：把函数写成 **JSON schema**（名字 + 描述 + 参数）传给模型，模型返回一份"要调哪个函数、参数是什么"的**结构化输出**，由你的应用去执行。**用来**：讲工具调用的完整来回。
