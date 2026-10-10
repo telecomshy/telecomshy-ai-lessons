@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 450" width="720" height="450" role="img" aria-label="请求先排队，轮到谁就从排队的人里挑一批，共用同一份模型权重的搬运：甲乙丙丁四个人的 KV 并排坐在同一批里，写答案的第 1 到第 5 轮，每轮每人各往外蹦一个字，往右是时间">
+  <rect x="0" y="0" width="720" height="450" fill="#fdfcf8"/>
+
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+    <marker id="arDim" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#a9a396"/>
+    </marker>
+  </defs>
+
+  <!-- ① 排队 -->
+  <text x="20" y="34" font-family="sans-serif" font-size="12.5" fill="#6c675e">① 你的请求到了，先排队等着</text>
+
+  <rect x="20"  y="46" width="84" height="38" rx="7" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <rect x="118" y="46" width="84" height="38" rx="7" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <rect x="216" y="46" width="84" height="38" rx="7" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <rect x="314" y="46" width="84" height="38" rx="7" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+
+  <text x="62"  y="72" font-family="serif" font-size="19" fill="#8a2b06" text-anchor="middle" font-weight="600">甲</text>
+  <text x="160" y="72" font-family="serif" font-size="19" fill="#1b1a17" text-anchor="middle">乙</text>
+  <text x="258" y="72" font-family="serif" font-size="19" fill="#1b1a17" text-anchor="middle">丙</text>
+  <text x="356" y="72" font-family="serif" font-size="19" fill="#1b1a17" text-anchor="middle">丁</text>
+
+  <text x="20" y="100" font-family="sans-serif" font-size="10.5" fill="#6c675e">排在同一个队里的，不会全跟你一起算</text>
+
+  <line x1="217" y1="110" x2="217" y2="134" stroke="#8a2b06" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="230" y="128" font-family="sans-serif" font-size="11" fill="#8a2b06">轮到你了：从排队的人里挑一批</text>
+
+  <!-- ② 一批共用一趟搬运 -->
+  <rect x="20" y="140" width="680" height="290" rx="8" fill="#fff" stroke="#8a2b06" stroke-width="1.8"/>
+  <text x="34" y="166" font-family="sans-serif" font-size="12.5" font-weight="600" fill="#8a2b06">② 这一批人一起被算，共用同一份权重</text>
+
+  <!-- 权重：所有人共用，只搬这一次 -->
+  <rect x="34" y="180" width="632" height="32" rx="6" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.4"/>
+  <text x="350" y="201" font-family="sans-serif" font-size="12.5" font-weight="600" fill="#8a2b06" text-anchor="middle">模型权重 · 整批人共用这一份 · 这一趟只搬一次</text>
+
+  <!-- 轮次表头 -->
+  <text x="195" y="246" font-family="sans-serif" font-size="11" fill="#6c675e" text-anchor="middle">第 1 轮</text>
+  <text x="301" y="246" font-family="sans-serif" font-size="11" fill="#6c675e" text-anchor="middle">第 2 轮</text>
+  <text x="407" y="246" font-family="sans-serif" font-size="11" fill="#6c675e" text-anchor="middle">第 3 轮</text>
+  <text x="513" y="246" font-family="sans-serif" font-size="11" fill="#6c675e" text-anchor="middle">第 4 轮</text>
+  <text x="619" y="246" font-family="sans-serif" font-size="11" fill="#6c675e" text-anchor="middle">第 5 轮</text>
+
+  <!-- 甲 -->
+  <rect x="34" y="258" width="100" height="30" rx="6" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.6"/>
+  <text x="84" y="278" font-family="serif" font-size="15" font-weight="600" fill="#8a2b06" text-anchor="middle">甲 的 KV</text>
+  <rect x="148" y="258" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="254" y="258" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="360" y="258" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="466" y="258" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="572" y="258" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <text x="195" y="279" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">是</text>
+  <text x="301" y="279" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">天</text>
+  <text x="407" y="279" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">气</text>
+  <text x="513" y="279" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">不</text>
+  <text x="619" y="279" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">错</text>
+
+  <!-- 乙 -->
+  <rect x="34" y="294" width="100" height="30" rx="6" fill="#faf9f5" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="84" y="314" font-family="serif" font-size="15" fill="#1b1a17" text-anchor="middle">乙 的 KV</text>
+  <rect x="148" y="294" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="254" y="294" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="360" y="294" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="466" y="294" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="572" y="294" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <text x="195" y="315" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">好</text>
+  <text x="301" y="315" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">的</text>
+  <text x="407" y="315" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">我</text>
+  <text x="513" y="315" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">帮</text>
+  <text x="619" y="315" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">你</text>
+
+  <!-- 丙 -->
+  <rect x="34" y="330" width="100" height="30" rx="6" fill="#faf9f5" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="84" y="350" font-family="serif" font-size="15" fill="#1b1a17" text-anchor="middle">丙 的 KV</text>
+  <rect x="148" y="330" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="254" y="330" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="360" y="330" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="466" y="330" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="572" y="330" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <text x="195" y="351" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">你</text>
+  <text x="301" y="351" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">要</text>
+  <text x="407" y="351" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">查</text>
+  <text x="513" y="351" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">哪</text>
+  <text x="619" y="351" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">城</text>
+
+  <!-- 丁 -->
+  <rect x="34" y="366" width="100" height="30" rx="6" fill="#faf9f5" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="84" y="386" font-family="serif" font-size="15" fill="#1b1a17" text-anchor="middle">丁 的 KV</text>
+  <rect x="148" y="366" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="254" y="366" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="360" y="366" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="466" y="366" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <rect x="572" y="366" width="94" height="30" rx="5" fill="#f6f4ee" stroke="#ddd8cc" stroke-width="1.2"/>
+  <text x="195" y="387" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">北</text>
+  <text x="301" y="387" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">京</text>
+  <text x="407" y="387" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">三</text>
+  <text x="513" y="387" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">度</text>
+  <text x="619" y="387" font-family="serif" font-size="16" fill="#1b1a17" text-anchor="middle">吧</text>
+
+  <!-- 时间轴 -->
+  <line x1="148" y1="412" x2="666" y2="412" stroke="#a9a396" stroke-width="1.4" marker-end="url(#arDim)"/>
+  <text x="136" y="416" font-family="sans-serif" font-size="10.5" fill="#a9a396" text-anchor="end">时间</text>
+</svg>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 8 课 · 这件事到底是谁干的</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">LLM 底层 · 第 8 课 · 初学版</div>
+  <h1>这件事到底是谁干的</h1>
+  <p class="subtitle">同一段提示词，换个产品答案就变了 —— 因为你看到的很多「模型的本事」，<b>其实是外面几层软件干的</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你有没有过这种时刻：把同一段提示词扔进两个不同的产品，<b>一个好好地给你 JSON，另一个让你自己修格式</b>。或者同一道题，一个产品三秒答完但说错了，另一个三十秒才开口、结果是对的。</p>
+    <p>大多数人第一反应是「它们的模型不一样」。<b>但真实原因常常是：模型一样，围着它的软件不一样。</b></p>
+    <p style="margin-top:0.7rem">拆穿了就是一句大白话：<b>你从接口上看到的每一个行为，背后都有一个人在干活。你要分清是谁。</b>那个人的名字，叫<b>推理引擎</b>。</p>
+    <p><b>学完这课，你能</b>：看到一个不对劲的行为，先判断它出自哪一层；并且知道四条跟 agent 直接相关的坑 —— 以及其中两条的正确修法根本不在模型身上。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">一条主线，记住它就不会晕</span>
+    <p><b>整门课只问一句话：这件事，是哪一层做的？</b></p>
+    <p>你发出的一个请求，其实穿过了<b>四层</b>。每层都干自己的活、干完交给下一层。<b>模型只占最里面那一层，而且只干一件很窄的事。</b></p>
+  </div>
+
+  <h2>1. 你的请求穿过了四层</h2>
+  <p>先把四层摆出来。<b>从上到下（也就是从外到里）</b>是：<b>① 你的程序（harness）</b> · <b>② API 网关</b> · <b>③ 推理引擎</b> · <b>④ 模型权重</b>。</p>
+
+  <figure class="figure">
+    <img src="../../assets/who-does-what.svg" alt="四层堆叠图，从上到下依次是：你的 harness，它管拼提示词、装工具、管上下文、决定停在哪一步、失败怎么重试；API 网关，它管鉴权、限流、计费、把请求转给哪台机器；推理引擎，它管排队、拼车、复用缓存、从分表里挑字、按语法划掉非法字、小模型打草稿再由大模型一次验收；最里面是模型权重，它只干一件——把已收到的这些字算成下一张分数表">
+    <figcaption>从外到里四层。<b>越靠上的层越「你的」，越靠下的层越「服务商的」</b>。右边两根箭头是本课最要紧的两句话：引擎干的那些活，<b>权重一个字节都不管</b>；而权重<b>交出分表就下班</b>，后面发生的事全不是它干的。</figcaption>
+  </figure>
+
+  <p>逐层点名，看清各自的领地：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem;width:30%">这一层</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">它真正干的活</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule);vertical-align:top"><b>你的 harness</b><br>
+          <span style="color:var(--muted)">跑 agent 的那段程序</span></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">拼提示词 · 装上工具 · 管上下文 · <b>决定什么时候停</b> · 失败了自己重试。<a href="../agent/0006-harness.html">Agent 原理篇第 6 课</a>讲的就是它</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule);vertical-align:top"><b>API 网关</b><br>
+          <span style="color:var(--muted)">大多数人不把它当一层</span></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">鉴权 · <b>限流</b> · 计费 · 决定把你的请求转给哪台机器</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule);vertical-align:top"><b>推理引擎</b><br>
+          <span style="color:var(--muted)">本课的主角</span></td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)"><b>排队 · 拼车 · 复用缓存</b>（<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>、<a href="0004-batching.html">第 4 课</a>）· <b>从分表里挑字</b>（<a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶</a>）· <b>按语法划掉非法字</b> · <b>打草稿加速</b></td></tr>
+      <tr><td style="padding:0.5rem;vertical-align:top"><b>模型权重</b><br>
+          <span style="color:var(--muted)">训练学出来的那份参数</span></td>
+          <td style="padding:0.5rem"><b>只干一件：把已经收到的这些字，算成下一张分数表。</b>交出这张表，它就下班了</td></tr>
+    </tbody>
+  </table>
+
+  <p>最后那行值得停一下。<a href="0001-from-token-to-next-token.html">第 1 课</a>那张流水图的底色带就钉着这条边界：<b>从「查嵌入表」到「原始分」之间是模型，之后 softmax、挑字、拼字符串，全不是它。</b>模型交出的是一张「哪个字有多少分」的表 —— <b>至于从这张表里挑哪个字，它说了不算。</b></p>
+
+  <div class="note">
+    <span class="label">为什么这张表比「模型 vs harness」两分法更有用</span>
+    <p>常见的说法是「Agent ＝ 模型 ＋ 外壳」，把世界切成两块。<b>可你排查问题的时候，需要的不止那条缝 —— 你需要知道服务端那边还有一层叫引擎。</b></p>
+    <p>举个你已经遇过的：<b>「同一个模型换一家部署，同样的参数不保证挑出一模一样的字」</b>（<a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 Q10</a>）。那句话里的「换一家部署」，换掉的就是引擎这一层。</p>
+  </div>
+
+  <h2>2. 引擎干的四件事，其中三件你已经很熟</h2>
+  <p>引擎不是一样神秘的东西。它干的活可以归成四类，<b>而前三类你已经学过了</b>：</p>
+  <ol>
+    <li><b>排队与拼车</b>　——　把撞在一起的请求凑成一批，共用一趟权重搬运。这是<a href="0004-batching.html">第 4 课</a>整节课。</li>
+    <li><b>复用缓存</b>　——　认出你这次发来的前半截和上次一样，直接搬用，不重算。这是<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>。</li>
+    <li><b>从分表里挑字</b>　——　温度、<code>top_p</code>、<code>top_k</code>、种子都是它执行的旋钮（<a href="../../reference/sampling-params.html">速查页</a>）。</li>
+    <li><b>按语法划掉非法字</b>　——　这一件是新的，下一节讲。</li>
+  </ol>
+  <p>你会发现<b>「同一个模型，两次答案不一样」这件事，根源就在这里</b>：它本来就不该一样。挑字是引擎在动手，而不同引擎的默认值、精度、执行顺序都可能不同。</p>
+
+  <h2>3. 新的一件：它能把不可能的字直接划掉</h2>
+  <p>第 1 课那张分数表上，模型给<b>整张词表</b>都打了分。如果你要的是一份格式严格的 JSON，那么<b>大部分字都是「拼下去就废了」的</b> —— 但它们照样在表上、照样有分数。</p>
+  <p>引擎的新本事是：<b>在挑字之前，先拿一张语法规则把所有「拼下去会废」的字从表上划掉</b>，只在剩下的里面挑。这一招叫<b>约束解码</b>（constrained decoding），各家给它起的用户侧名字是<b>结构化输出</b>（structured outputs）。</p>
+  <p>Anthropic 官方文档的原话是：结构化输出「<b>通过约束解码来保证回答符合 schema</b>」。另一家 vLLM 的文档写得更直白：它的后端就是专门干这个的引擎，作用是「<b>保证输出 100% 的结构正确</b>」。</p>
+  <p>这里的关键是<b>「保证」两个字</b>。它不是「让模型更小心地写对」，而是<b>在数学上让写错这条路不存在</b> —— 错字根本没有出现在候选里。Anthropic 也把这句写进了文档：<b>开了之后不会再有 <code>JSON.parse()</code> 的报错。</b></p>
+    <p><b>但这个保证有一个例外，值得知道</b>：模型<b>拒答</b>的时候，拒答那句话优先于格式约束 —— 那次回答照样合法地告诉你「我不答」，只是不是你要的形状。<b>所以代码里仍然要检查「我到底有没有拿到数据」，不能假设开了就一定有。</b></p>
+
+  <div class="note">
+    <span class="label">它是引擎的活，但它不是免费的午餐</span>
+    <p><b>要先把语法「编译」成机器能跑的规则。</b>Anthropic 文档给了三条实情：<b>同一个 schema 第一次用时会多花一点时间</b>（正在编译）· 编译结果<b>按 24 小时缓存</b> · <b>改了 schema 就得重编</b>，而改 schema 还会<b>让这一轮对话的前缀缓存作废</b>。</p>
+    <p>还有一条容易忽略的：<b>schema 太复杂会被直接拒掉</b>，官方给的说法是「编译不出来」，另配一个 180 秒的兜底超时。所以<b>参数别一口气堆满</b>——尤其<b>可选参数别乱加</b>，官方明说每加一个可选参数，编译要付出的代价会翻一倍级别。</p>
+  </div>
+
+  <p>另有一件事，属于同一层但方向相反：<b>引擎还能拿小模型打草稿、大模型一次验收，以此加快速度</b>（<a href="../../reference/glossary.html#speculative-decoding">术语表</a>）。这招叫<b>投机解码</b>，它的卖点恰恰是<b>「输出完全不变」</b> —— 论文的原话是「在<strong>不改变任何输出</strong>的前提下更快地采样」，在 T5-XXL 上测到 2～3 倍。</p>
+  <p>为什么这值得知道？因为它是本课的一个反证：<b>引擎可以大幅改变速度，却不该改变答案。</b>上面那个「按语法划字」的招，性质就完全不同 —— 它<b>就是</b>在改答案（只是改成「你要求的那个形状」）。<b>一个是加速，一个是改行为，别混成一件。</b></p>
+
+  <h2>4. 四件跟 agent 直接相关的事</h2>
+  <p>前面是地图，这四节是拿地图去排查。<b>每一条的修法都不在模型身上</b> —— 这是本课最实用的部分。</p>
+
+  <h3>① 工具调用返回的 JSON 不合法，你的 agent 直接崩</h3>
+  <p>你在<a href="../agent/0002-tool-use.html">Agent 原理篇第 2 课</a>学到的流程是：模型说「要调哪个工具、参数是什么」，<b>你的代码去解析它、去执行</b>。Anthropic 文档开头写的就是这个痛点：<b>不开结构化输出，Claude 会吐出坏 JSON 和不合法的工具参数，让你的程序崩掉</b> —— 光是提示词写得再仔细也躲不掉。</p>
+  <p>所以修法不是改提示词、不是换更大的模型，而是<b>让接口帮你把格式钉住</b>。Anthropic 还有一条更直接的功能：工具参数也能这么钉（原话是「用语法约束采样来强制工具参数符合 JSON Schema」），和结构化输出一起用，就能<b>既要可靠的工具调用，又要可靠的最终答案</b>。</p>
+  <p><b>一句要记住的话</b>：<b>「模型很听我的话、格式很稳」这个结论，前提常常是接口帮你钉着格式。</b>把它当成模型的功劳，你就找不到修法了。</p>
+
+  <h3>② 模型不会自己停 —— 停在哪是引擎说了算</h3>
+  <p>你可能会以为模型自己知道什么时候说完了。<b>不是的。</b>每次回答回来都带一个字段说明「为什么停了」，Anthropic 把它列成一张小表：答完了 · <b>撞到上限了</b> · <b>碰上了你设的停止字</b> · 要调工具 · <b>拒答</b> · <b>把上下文窗口填满了</b>。</p>
+  <p><b>对 agent 来说，其中一条要命</b>：<b>如果撞上限时那份回答里有个没写完的工具调用，那份工具调用是坏的</b>，直接执行会出错。官方给的处置是<b>把上限调大、重发一次</b>。</p>
+  <p>也就是说：<b>「工具调用参数不完整」有一种成因不在模型，在引擎那层的上限设置。</b>遇到这类坏调用，先看你给的上限够不够，再去怀疑模型。</p>
+
+  <h3>③ 429 和「过载」：都不是你的错，都在网关和引擎那层</h3>
+  <p>服务商有两种常见报错，含义完全不同，<b>处置也不同</b>：</p>
+  <ul>
+    <li><b>429（限流）</b>　——　你把配额用超了。官方文档提醒一种特殊情况：<b>如果是撞到月度花费上限，它不会给你「等多久能重试」的提示，而且会一直失败到额度恢复</b>。这种<b>重试没有意义</b>。</li>
+    <li><b>529（过载）</b>　——　<b>服务端现在人太多了</b>，跟你的请求内容无关。原文写着「API 暂时过载」。这种情况<b>退避一下再试就行</b>。</li>
+  </ul>
+  <p>还有一条能省你事的：<b>官方 SDK 会自己重试</b> —— 连接错误、限流、5xx 这些临时故障，它<b>默认退避重试两次</b>，而且会听服务端给的「等多久」提示。<b>所以你手写的那层重试，很可能是在它之上又叠了一遍。</b></p>
+  <p><b>这属于哪一层</b>：429 来自<b>网关</b>（它管配额和花费上限），529 来自<b>引擎</b>（它的机器忙不过来）。<b>模型在这两件事上完全无辜。</b></p>
+
+  <h3>④ 缓存命中的那笔账，会被误读成「这个模型更快」</h3>
+  <p><a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>实测过：<b>只改提示词开头一处，成本差 3.7 倍</b>。同样的道理在延迟上也成立 —— <b>命中缓存的那次请求，首字来得快得多</b>，而这不是因为模型更快。</p>
+  <p>所以做对比时有个坑：<b>拿命中缓存的一次和没命中的一次比速度，结论是假的</b>。<b>要比就得两边都命中，或者两边都没命中。</b></p>
+
+  <h2>5. 亲手验一遍</h2>
+  <p>上面三条机制，脚本里都做了可直接验证的演示。它只用 Python 标准库，离线能跑：</p>
+  <pre><code>python exercises/llm/0008-who-does-what.py</code></pre>
+
+  <p><b>演示一 · 约束解码</b>：造一个玩具场景 —— 合法答案只有三种 JSON，词表里故意混进五个「不听话」的零件。用<b>同一张分表</b>抽 2000 次，只改一个变量：加不加那道语法闸。</p>
+  <pre><code>  同一个模型、同一张分表，抽 2000 次：
+    不加闸（模型爱挑什么挑什么）        合法  1378 / 2000   不合法率 31.1%
+    加了闸（引擎每步划掉不合法字）      合法  2000 / 2000   不合法率 0.0%
+
+  不加闸时，坏的长这样（从 2000 次里挑前 3 次失败的）：
+    ✗ {null{"nope":}nullnull
+    ✗ {"city":"北京""nope":null}
+    ✗ {"cityy""北京"}{"cityy",null
+  同一批实验里，成功的长这样：
+    ✓ {"city":"北京"}
+    ✓ {"city":"广州"}
+
+  再用真解析器（json.loads）跑一遍，只看两件事：会不会崩、能不能取出字段：
+    不加闸：解析失败 622 次    解析成功但取不到 city 字段 0 次
+    加了闸：解析失败 0 次    解析成功但取不到 city 字段 0 次</code></pre>
+  <p><b>看两处</b>：不加闸时<b>约三成直接是废的</b>；加了闸<b>两千次全部合法</b>。这正是厂商文档里「不再有解析报错」那句话的意思 —— <b>不是模型变听话了，是错的选项根本不存在了。</b></p>
+  <p style="color:var(--muted)">⚠ 那个 31.1% 是脚本<b>手编的分表</b>造出来的，只说明机制、<b>不是任何真实模型的成绩</b>。能当真的是两头：不加闸会漏，加闸不漏。</p>
+
+  <p><b>演示二 · 投机解码</b>：造两个玩具模型（大模型给真答案，小模型只在两个位置上猜错），然后数<b>大模型被叫了几次</b>，并<b>逐字比对两次的输出</b>。</p>
+  <pre><code>  大模型被叫的次数：
+    老实一个个问（基线）         13 次
+    小模型打草稿 + 一次验一批     3 次
+    省下 77%
+
+  两次输出逐字一样吗？  一样 ✓
+    基线： 今天天气不错，我建议带把伞，出门方便。
+    投机： 今天天气不错，我建议带把伞，出门方便。</code></pre>
+  <p><b>真正该看的不是「省下 77%」</b>（那是玩具规则造出来的，不是真实加速倍数），<b>而是那行「一样 ✓」</b> —— 引擎加速了，<b>一个字都没变</b>。</p>
+
+  <p><b>演示三 · 凑批会改答案</b>：显卡做浮点加法，而<b>浮点加法不满足结合律</b> —— 同样的数换个加法顺序，末位就不同。</p>
+  <pre><code>    (0.1+0.2)+0.3 = 0.60000000000000008882
+    0.1+(0.2+0.3) = 0.59999999999999997780
+    差 1.110e-16   （完全正常，浮点本来就这样）
+  ...
+  而显卡能分辨的最小刻度，是这个：
+    一个「刻度」(1 ulp) = 1.776e-15
+    候选甲 = 10.00000000000000000
+    候选乙 = 10.00000000000000178
+    打印出来长得一模一样，但它们是两个不同的数，甲 &lt; 乙。</code></pre>
+  <p><b>凑批会改变「谁跟谁先加」</b>：你独自一批是一种分法，旁边挤进来八个人是另一种分法。所以<b>只要两个候选字的分数咬得比一个刻度还紧，「谁的分高」就由末位说了算 —— 而末位会被凑批的方式改变</b>。</p>
+  <p>这不是脚本编的巧合，厂商自己就这么说：vLLM 文档里有一节专门讲这件事，明说<b>批大小的变化可能让 logprob 变化，进而让同一个请求的输出不同</b>。<b>又一条本该在「引擎」名下记账的现象。</b></p>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 工具调用返回的参数不合法、你的 agent 直接崩了，最该先试哪一步？</p>
+    <button class="quiz-option" data-correct="true">让接口帮你把格式钉住，比如开结构化输出</button>
+    <button class="quiz-option">在提示词里反复强调必须输出合法 JSON</button>
+    <button class="quiz-option">换一个参数量大得多的模型来试</button>
+    <button class="quiz-option">把温度调到 0，让它的输出更确定</button>
+    <p class="feedback"
+       data-ok="对。格式坏掉这件事的修法在接口那一层，不在提示词、不在模型大小。"
+       data-no="提示词和温度都只是让模型「更想写对」，没有把错的路堵死。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 模型交出那张分数表之后，挑字这一步是谁在执行？</p>
+    <button class="quiz-option" data-correct="true">推理引擎，温度和 top_p 都由它执行</button>
+    <button class="quiz-option">模型自己，它训练时就学会了怎么挑</button>
+    <button class="quiz-option">API 网关，它负责把结果转成 JSON</button>
+    <button class="quiz-option">你的 harness，它要读出字才能显示</button>
+    <p class="feedback"
+       data-ok="对。模型只到「交出分表」为止，挑字是引擎的活（第 1 课进阶 Q9）。"
+       data-no="模型只交出分数表。挑字、温度、top_p 都是引擎执行的。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 工具调用少写了一半、参数不完整。已知的一件事是引擎有个上限，先该怀疑什么？</p>
+    <button class="quiz-option" data-correct="true">回答被上限截断了，调大后重发</button>
+    <button class="quiz-option">这个模型今天状态不好，换一个</button>
+    <button class="quiz-option">工具的说明文档写得太含糊了</button>
+    <button class="quiz-option">缓存没命中，所以这遍结果算错</button>
+    <p class="feedback"
+       data-ok="对。撞上限时没写完的工具调用是坏的，官方处置就是调大上限重发。"
+       data-no="截断发生在引擎那层，跟模型当天状态、工具说明、缓存都没关系。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 服务商回 529「暂时过载」，最接近真相的说法是？</p>
+    <button class="quiz-option" data-correct="true">引擎那层忙不过来，退避一下重试</button>
+    <button class="quiz-option">你把配额用超了，所以被拒了</button>
+    <button class="quiz-option">这次生成的内容违反了安全策略</button>
+    <button class="quiz-option">提示词有问题，换个写法再试</button>
+    <p class="feedback"
+       data-ok="对。529 是服务端过载，退避重试。配额用超是 429，两种别混。"
+       data-no="429 才是配额/花费上限（重试没用），529 是服务端忙。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/structured-outputs">Anthropic — Structured outputs（官方文档）</a>：「<b>通过约束解码来保证回答符合 schema</b>」；「<b>不再有 <code>JSON.parse()</code> 报错</b>」；「把 JSON schema 编译成一份语法来约束输出」；工具参数也能这么钉（Strict tool use）；<b>首次用某 schema 会多花时间编译 · 编译结果按 24 小时缓存 · 改 schema 会重编、并让这一轮对话的前缀缓存作废</b>；schema 太复杂会返回 <b>400「编译不出来」</b>，另有 180 秒兜底超时。<br>
+    <a href="https://docs.vllm.ai/en/latest/features/structured_outputs/">vLLM — Structured Outputs（官方文档）</a>：约束解码的后端与它支持的几种约束形态（固定选项 / 正则 / JSON schema / 上下文无关文法）；以及那条容易被忽略的建议 —— <b>在提示词里也写清 schema，通常会让效果明显变好</b>。<br>
+    <a href="https://github.com/mlc-ai/xgrammar">XGrammar（开源约束解码引擎）</a>：原话「<b>借助约束解码保证输出 100% 的结构正确</b>」，且是 vLLM、SGLang、TensorRT-LLM 等引擎的结构化输出默认后端。<br>
+    <a href="https://arxiv.org/abs/2211.17192">Leviathan, Kalman, Matias — "Fast Inference from Transformers via Speculative Decoding"（ICML 2023 Oral）</a>：投机解码的原始论文。原话「<b>不改变任何输出</b>（without any changes to the outputs）」；T5-XXL 上 <b>2～3 倍</b>加速、输出完全一致；<b>不用重训练、不改结构</b>。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons">Anthropic — Stop reasons and fallback（官方文档）</a>：那张「为什么停了」的表（答完 / 撞上限 / 碰停止字 / 要调工具 / 拒答 / 填满上下文窗口）；以及<b>撞上限时未写完的工具调用需要调大上限重发</b>。<br>
+    <a href="https://platform.claude.com/docs/en/api/errors">Anthropic — Errors（官方文档）</a>：<b>429 限流</b>（含「撞月度花费上限时没有重试提示、会一直失败到额度恢复」）· <b>529 过载</b> · 500 的处置是<b>指数退避重试</b> · <b>官方 SDK 默认自动重试两次</b>。<br>
+    <a href="https://docs.vllm.ai/en/latest/features/speculative_decoding/">vLLM — Speculative Decoding（官方文档）</a>：这一招主要改善<b>中低 QPS 的每个字之间的时间</b>（正对应第 2 课 decode 带宽受限那条）；以及那句诚实的自我说明 —— <b>批大小变化可能让 logprob 变化，从而让同一个请求的输出不同</b>。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"那我自建一套服务，是不是就把网关那层省掉了""约束解码会不会让模型变笨""529 和 429 我代码里怎么分"——直接问。第二个尤其值得深挖，它戳到了这层最深的一个取舍。
+  </div>
+
+  <p class="next">
+    <b>同课之前</b>：<a href="0007-distillation.html">LLM 底层 · 第 7 课 · 蒸馏</a>（模型侧的事）　<a href="0004-batching.html">LLM 底层 · 第 4 课 · 一趟装满的卡车</a>（引擎干的活之一）<br>
+    <b>相关</b>：<a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a>（引擎干的活之二）· <a href="0001-from-token-to-next-token.html">LLM 底层 · 第 1 课 · 从「token」到「下一个 token」</a>（模型那层的边界）<br>
+    <b>你会用到</b>：<a href="../agent/0002-tool-use.html">Agent 原理篇 · 第 2 课 · 工具调用</a>（本课第 ① 条的落点）· <a href="../agent/0006-harness.html">Agent 原理篇 · 第 6 课 · Harness</a>（四层里最上面那层）· <a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>（缓存那笔账）<br>
+    <b>这条轨道到此为止</b>：<a href="../index.html">回课程目录</a>看另外三条轨道。<br>
+    术语表：<a href="../../reference/glossary.html#inference">推理引擎 inference</a> · <a href="../../reference/glossary.html#constrained-decoding">约束解码 / 结构化输出</a> · <a href="../../reference/glossary.html#speculative-decoding">投机解码</a> · <a href="../../reference/glossary.html#stop-reason">停止原因 stop reason</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 8 课 · 风格与组件来自 <code>assets/base.css</code> · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>
