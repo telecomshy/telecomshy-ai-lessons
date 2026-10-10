@@ -45,14 +45,14 @@
       <p>请求内算过的别重算，跨请求接着用。本课实测：<b>只改开头一处，成本差 3.7 倍</b>。</p>
       <p>动手：<code>exercises/llm/0003-cache-hit-simulator.py</code></p>
     </div>
-    <div class="pillar">
-      <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a></h3>
-      <p>批处理怎么救 decode：用一点点延迟，换几十倍吞吐。</p>
+    <div class="pillar completed">
+      <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a><span class="badge">completed</span></h3>
+      <p>排队 ＋ 拼车：一张卡怎么同时服务几百个人。用一点点延迟，换几十倍吞吐。</p>
       <p>动手：<code>exercises/llm/0004-batching.py</code></p>
     </div>
-    <div class="pillar">
-      <h3><a href="llm/0005-reasoning-models.html">0005 · 会思考的模型：多出来的那一步</a></h3>
-      <p>同一道题，3 秒答一个、30 秒答一个，<b>后者还更对</b>。多出来的那些 token 进了哪几本账。</p>
+    <div class="pillar completed">
+      <h3><a href="llm/0005-reasoning-models.html">0005 · 它真的在思考吗？</a><span class="badge">completed</span></h3>
+      <p>屏幕上那段「思考」，是真在想还是演给你看？<b>它确实在打草稿</b>——但草稿不是它的想法，还按字收钱。</p>
       <p>动手：<code>exercises/llm/0005-reasoning-cost.py</code></p>
     </div>
     <div class="pillar">
@@ -64,6 +64,11 @@
       <h3><a href="llm/0007-distillation.html">0007 · 蒸馏：小模型的本事从哪来</a></h3>
       <p>教小模型时<b>你给它什么</b>，它就只能学到什么。附实测：只搬答案是最差的一档。</p>
       <p>动手：<code>exercises/llm/0007-distillation.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="llm/0008-who-does-what.html">0008 · 这件事到底是谁干的</a></h3>
+      <p>四层归属表：<b>哪些本事是引擎给的，不是模型的</b>。附四条 agent 侧的坑。</p>
+      <p>动手：<code>exercises/llm/0008-who-does-what.py</code></p>
     </div>
   </div>
 
@@ -77,13 +82,21 @@
       <h3><a href="llm/0002-prefill-vs-decode-deep.html">0002 进阶 · 里面到底在转什么</a><span class="badge">completed</span></h3>
       <p>初学版讲「是什么」，这篇答「里面具体在转什么」。</p>
     </div>
-    <div class="pillar">
-      <h3><a href="llm/0003-kv-cache-and-prompt-caching-deep.html">0003 进阶 · 三个绕人的细节</a></h3>
+    <div class="pillar completed">
+      <h3><a href="llm/0003-kv-cache-and-prompt-caching-deep.html">0003 进阶 · 三个绕人的细节</a><span class="badge">completed</span></h3>
       <p>初学版讲「两回事」，这篇答「具体到多轮、到工具、到断点，又是怎样」。</p>
     </div>
+    <div class="pillar completed">
+      <h3><a href="llm/0004-batching-deep.html">0004 进阶 · 批从哪来、拐点、工业界的招</a><span class="badge">completed</span></h3>
+      <p>初学版讲「怎么排队、怎么拼车」，这篇答「批从哪儿来、什么时候到头、工业界怎么绕过去」。</p>
+    </div>
+    <div class="pillar completed">
+      <h3><a href="llm/0005-reasoning-models-deep.html">0005 进阶 · 谁写的、怎么切的、谁收着、怎么练出来的</a><span class="badge">completed</span></h3>
+      <p>初学版讲「那段思考是什么、值不值」，这篇答「那段字谁写的、边界谁切的、签名收着什么、它怎么练出来的」。</p>
+    </div>
     <div class="pillar">
-      <h3><a href="llm/0004-batching-deep.html">0004 进阶 · 拐点、工业界的招</a></h3>
-      <p>初学版讲「为什么能提吞吐」，这篇答「什么时候到头、工业界怎么绕过去」。</p>
+      <h3><a href="llm/0006-quantization-deep.html">0006 进阶 · 压法是什么、KV 是什么精度</a></h3>
+      <p>初学版讲「量化是什么、会掉什么」，这篇答「压法是什么、AWQ／GPTQ 各怎么压、int4 的模型 KV 存多少位」。</p>
     </div>
   </div>
 

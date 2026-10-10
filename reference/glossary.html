@@ -179,6 +179,22 @@
     <dt id="prefix-cache"><strong>前缀缓存 / 缓存命中</strong></dt>
     <dd>跨请求复用<b>前缀</b>的 KV。<b>前缀</b> ＝ 一次请求从第一个 token 起的那一段，按 <b>工具定义 → 系统提示 → 消息</b> 的顺序拼成——日常说"提示词 + 对话记录"基本就是它。必须<b>从第一个 token 起连续、一字不差</b>才叫<b>命中</b>；中间断一处，从那儿往后全部重算。命中读取约 0.1× 价格。详见 <a href="prompt-caching.html">速查</a>。</dd>
 
+    <dt id="cache-breakpoint"><strong>缓存断点（cache breakpoint）</strong></dt>
+    <dd>在请求的<b>某一块末尾</b>写的一个标记（Claude：<code>cache_control</code>；OpenAI：<code>prompt_cache_breakpoint</code>），意思是<b>「从第一个 token 到这一块为止的整段，存进缓存」</b>。<b>一次请求最多 4 个</b>；<b>标记本身不花钱</b>，钱在写入与读取上。<br>
+      <b>存的是整段，不是「这一小段」</b>——<b>两个断点之间不会被单独存成一份</b>。因为 <a href="#fingerprint">指纹</a>是从第一个 token 累积的，所以<b>改了前面的内容，包含它的那些份一起作废</b>（改系统提示：断在工具定义那份还活着，断在它后面的全废）。<br>
+      <b>各家不同</b>：Claude / OpenAI 让你打（或让它自动标在最后一个可缓存块），读取时<b>从断点往回找有限的块数</b>；<b>Gemini / DeepSeek 没有这个概念</b>——服务商自己决定切在哪。⚠ OpenAI 那两个参数只在 <b>Responses API</b> ＋ <b>GPT-5.6 及以后</b>有，更早的模型只有隐式缓存。详见 <a href="prompt-caching.html">速查</a>。</dd>
+
+    <dt id="fingerprint"><strong>指纹（fingerprint）／ 前缀哈希（prefix hash）</strong></dt>
+    <dd><b>「从第一个 token 到某一处为止的整段内容」算出来的一个编号</b>，用来看"这一段我是不是算过"。<b>它是累积的</b>——内容里改一个字，编号就变、对不上，那份就作废；这就是前缀缓存"断一处、后面全废"的机制原因。<br>
+      <b>指纹只是编号</b>：真正被复用、真正省下算力的是那一段<b>算好的 K/V</b>。所以"存一份"的花费按<b>新增的那一段</b>计，不是把整段重存一遍。</dd>
+
+    <dt id="cache-usage"><strong>缓存用量三栏（cache_read / cache_creation / input_tokens）</strong></dt>
+    <dd>响应 <code>usage</code> 里记账用的三个字段。<b>⚠ 它们是提示词被断点切成的三段，不是"命中／没命中／第三种结果"</b>：<br>
+      <b><code>cache_read_input_tokens</code></b>　断点<b>之前</b>、以前存过的那段 —— 从缓存读回，约 0.1×<br>
+      <b><code>cache_creation_input_tokens</code></b>　断点<b>之前</b>、这次才新算出来的那段 —— 算完存进去，约 1.25×<br>
+      <b><code>input_tokens</code></b>　<b>最后一个断点之后</b>的那截 —— <b>按定义就进不了缓存</b>，每次重算、原价<br>
+      官方特意强调过：<b><code>input_tokens</code> 不代表你送进去的全部输入</b>，只代表最后一个断点后面那一截。三者相加才是这次的总输入。详见 <a href="prompt-caching.html">速查</a>。</dd>
+
     <dt id="prefill"><strong>Prefill（预填充）</strong></dt>
     <dd>一次请求的第一段：对整段输入做<b>一次完整前向</b>（每层都走注意力 + FFN），输入 token 可以<b>并行</b>处理，所以是「算力受限」、决定<b>首字延迟</b>。跑完有<b>两个产出</b>：<b>第 1 个回复 token</b>，以及每层注意力的 <b>K/V</b>（后面 decode 要反复读的那个货架）。<b>注意</b>：<b>每个位置的注意力都要算、一个都不少</b>（含输入的那些位置），只是因为 k、v 各算各的、不依赖别人，所以能一次算完——既不是"逐个字排队算"，也不是"只算 k、v 不算注意力"。</dd>
 
@@ -198,7 +214,13 @@
     <dd>Time Per Output Token，开始输出之后<b>每个</b> token 花的时间，由 decode 决定。读者感受到的"打字速度"就是它。</dd>
 
     <dt id="batching"><strong>批处理（batching）</strong></dt>
-    <dd>一次让多个请求并排前进一个 token，共用同一趟"把模型权重搬进计算单元"的开销。用<b>一点点延迟</b>换<b>巨大吞吐</b>。</dd>
+    <dd>一次让多个请求并排前进一个 token，共用同一趟"把模型权重搬进计算单元"的开销。用<b>一点点延迟</b>换<b>巨大吞吐</b>。<b>批里的请求互不可见</b>——每份 KV 是各人自己的，谁的注意力也只在谁的那份里比（第 1、2 课那些机制原样成立）。</dd>
+
+    <dt id="batch-size"><strong>批大小（batch size）</strong></dt>
+    <dd>同一批里坐了几个请求。它决定这一轮要搬多少东西（权重 ＋ N 份 KV），也决定"多"和"快"怎么分。<b>⚠ 它不是你能设的参数，是每一轮服务商从排队的请求里挑出的一批</b>——挑的是<b>时间上重叠</b>的那些，不是队里所有人；挑多少由服务商自己的上限定（如 vLLM 的 <code>max_num_seqs</code>），见 <a href="#queueing">排队</a>。</dd>
+
+    <dt id="queueing"><strong>排队（queueing）</strong></dt>
+    <dd>请求到了服务端、<b>还没被算</b>的那段时间。忙的时候队会排起来，<b>这段等待算进 TTFT</b>（Anyscale 指标文档原话："it may queue incoming requests. This queuing delay adds to the TTFT"）。<b>所以"慢"要先分清两种</b>：<b>排在队里的等</b>（进 TTFT）和<b>批里人多导致的每轮变慢</b>（进 TPOT）。<b>半夜没人用时批会小、吞吐也低——那是常态，不是故障。</b></dd>
 
     <dt id="throughput"><strong>吞吐（throughput）</strong></dt>
     <dd>整个系统每秒总共产出多少 token。与<b>延迟</b>（单个请求自己多快）是一对互相拉扯的指标。</dd>
@@ -206,14 +228,14 @@
     <dt id="continuous-batching"><strong>连续批处理（continuous batching）</strong></dt>
     <dd>不等一整批跑完：每一步都重新组批，谁结束谁让位、空位立刻塞新请求。避免"短请求陪长请求干等"。vLLM 的核心优化之一。</dd>
 
-    <dt id="quantization"><strong>量化（quantization）／ 刻度（scale）</strong></dt>
-    <dd><b>换一种存法</b>：把每个权重从 float32（4 字节）改成低精度整数，配合一个「刻度（scale）」换算回去。刻度就是那把尺子的<b>格子宽度</b>——格子粗了省地方，但数只能落在格子线上，<b>中间那部分直接丢了</b>。<b>和压缩的区别</b>：压缩能还原，量化<b>原值不保留</b>。刻度本身要占地方，所以「4 bit」实际占用接近 5 bit。</dd>
+    <dt id="quantization"><strong>量化（quantization）／ scale（换算倍数）</strong></dt>
+    <dd><b>换一种存法</b>：把每个权重从 float32（4 字节）改成低精度整数——<b>只留少数几个可挑的值</b>（4 bit ＝ 16 个），每个数<b>四舍五入到离它最近的那个</b>。就像把 1600 万色的照片改成 16 色：<b>相近的值被并成一个，中间的差别直接丢了</b>。每一小组数还配一个<b>换算倍数（scale）</b>，记着这组的值间隔多宽，用的时候乘回去。<b>和压缩的区别</b>：压缩能还原，量化<b>原值不保留</b>。那份换算说明本身要占地方，所以「4 bit」实际占用接近 5 bit。</dd>
 
     <dt id="activation"><strong>激活（activation）／ 离群值（outlier）</strong></dt>
-    <dd>模型<b>算的时候中间产生</b>的那些数（不是学出来的权重，是喂进去之后流过各层的临时结果）。<b>离群值</b>指少数几个数天生比别的大很多——LLM 里它们<b>专挑激活出来</b>（权重好压，激活难压），会把一把尺子的量程吃光。所以量化真正难啃的是激活，不是权重；<b>AWQ 那个「重要性」也是看激活的分布，不是看权重本身。</b></dd>
+    <dd>模型<b>算的时候中间产生</b>的那些数（不是学出来的权重，是喂进去之后流过各层的临时结果）。<b>离群值</b>指少数几个数天生比别的大很多——LLM 里它们<b>专挑激活出来</b>（权重好压，激活难压），会把整套取值的范围吃光。所以量化真正难啃的是激活，不是权重；<b>AWQ 那个「重要性」也是看激活的分布，不是看权重本身。</b></dd>
 
     <dt id="bandwidth"><strong>显存带宽（memory bandwidth）／ 算力（compute）</strong></dt>
-    <dd>显卡的<b>两条独立资源</b>：算力＝每秒能做多少次运算，带宽＝每秒能从显存搬多少字节。<b>prefill 喂得饱算力</b>（decode 喂不饱、卡在带宽上），见 <a href="#arithmetic-intensity">算术强度</a>。<b>判断一个优化有没有用的问法</b>：它砍的是「搬」还是「算」？——<a href="../lessons/llm/0002-prefill-vs-decode.html">量化</a>砍「搬」，所以只救 decode。</dd>
+    <dd>显卡的<b>两条独立资源</b>：算力＝每秒能做多少次运算，带宽＝每秒能从显存搬多少字节。<b>prefill 喂得饱算力</b>（decode 喂不饱、卡在带宽上），见 <a href="#arithmetic-intensity">算术强度</a>。<b>判断一个优化有没有用的问法</b>：它砍的是「搬」还是「算」？——<a href="../lessons/llm/0006-quantization.html">量化</a>砍「搬」，所以只救 decode。</dd>
 
     <dt id="distillation"><strong>蒸馏（distillation）／ 软标签（soft targets）</strong></dt>
     <dd><b>让一个小模型照着一个大模型学</b>——训练时拿<b>老师那整张概率表</b>当目标，<b>包括几个"错"字上的分数</b>。那些分数不是噪声：老师不只说「是晴天」，还说「错了多半错成下雨」——<b>这套排序就是它的泛化方式</b>，而只给正确答案的表里一点都留不下。
@@ -222,7 +244,25 @@
     <b>⚠ 「蒸馏」今天至少两个意思</b>：搬<b>概率表</b>（本文这种），和搬<b>大模型写出来的回答</b>（R1 用的那种）。见<a href="../lessons/llm/0007-distillation.html">LLM 第 7 课</a>。</dd>
 
     <dt id="inference"><strong>推理引擎（inference）</strong></dt>
-    <dd><b>跑模型这件事本身</b>——把权重搬上 GPU、把输入过一遍、把 token 挑出来。vLLM、SGLang、各家 API 的服务端都叫这个名字。<b>⚠ 中文有坑</b>：「推理」这两个字在中文里同时指 inference 和 reasoning，见下面一条。<b>本课程的口径</b>：<b>跑模型＝推理引擎</b>（讲机制时用「跑」字），<b>想事情＝思考</b>。</dd>
+    <dd><b>跑模型这件事本身</b>——把权重搬上 GPU、把输入过一遍、把 token 挑出来。vLLM、SGLang、各家 API 的服务端都叫这个名字。<b>⚠ 中文有坑</b>：「推理」这两个字在中文里同时指 inference 和 reasoning，见下面一条。<b>本课程的口径</b>：<b>跑模型＝推理引擎</b>（讲机制时用「跑」字），<b>想事情＝思考</b>。<br>
+      <b>它管的活</b>：排队与拼车（<a href="#continuous-batching">连续批处理</a>）· 复用<a href="#prefix-cache">前缀缓存</a> · 从分表里<a href="#logits">挑字</a>（温度 / <a href="#top-p">top_p</a> 这些旋钮它来执行）· <a href="#constrained-decoding">按语法划掉非法字</a> · <a href="#speculative-decoding">打草稿加速</a> · 决定什么时候<a href="#stop-reason">停</a>。<b>⚠ 模型交出分数表就下班</b>，后面这些全不是它干的。见<a href="../lessons/llm/0008-who-does-what.html">LLM 第 8 课</a>。</dd>
+
+    <dt id="constrained-decoding"><strong>约束解码（constrained decoding）／ 结构化输出（structured outputs）</strong></dt>
+    <dd><b>引擎在挑字之前，先拿一张语法规则把「拼下去会废掉的字」从分数表里划掉</b>，只在剩下的里挑。用户侧的名字是「结构化输出」——按 JSON schema、正则、固定选项，甚至一句 SQL 的文法来限制输出的形状。<br>
+      <b>关键是「保证」不是「更小心」</b>：官方原话是「<b>通过约束解码来保证回答符合 schema</b>」，所以<b>不会再有解析报错</b>——错字根本没进候选，不是模型变听话了。<b>所以工具调用格式不合法、agent 直接崩，那件事的修法在接口这一层</b>，不在提示词、不在模型大小。<br>
+      <b>代价</b>：同一份 schema <b>第一次要多花时间编译</b>、编译结果按 <b>24 小时</b>缓存；<b>改 schema 会重编，还会作废这一轮对话的前缀缓存</b>；schema 太复杂会被拒（400，另有 180 秒兜底超时）。<b>⚠ 它会改答案</b>——和<a href="#speculative-decoding">投机解码</a>正好相反，那个是只加速不改输出。详见 <a href="../lessons/llm/0008-who-does-what.html">LLM 第 8 课</a>。</dd>
+
+    <dt id="speculative-decoding"><strong>投机解码（speculative decoding）</strong></dt>
+    <dd><b>让一个便宜的小模型先连打几个字的草稿，再让大模型一次把这一批全验一遍</b>；对的那些留下，错的从断点重接。<b>卖点是「输出完全不变」</b>——原论文就写着「<b>不改变任何输出</b>」地更快采样，T5-XXL 上 <b>2～3 倍</b>，而且不用重训练、不改结构。<br>
+      <b>和约束解码是一对反例</b>：这一招<b>只加速、不改行为</b>；约束解码<b>就是在改行为</b>（改成你要求的那形状）。别混成一件。<b>⚠ 它主要改善中低 QPS 时的「每个字之间的时间」</b>——正对着 <a href="#bandwidth">decode 带宽受限</a>那条。见 <a href="../lessons/llm/0008-who-does-what.html">LLM 第 8 课</a>。</dd>
+
+    <dt id="stop-reason"><strong>停止原因（stop reason）／ 为什么停了</strong></dt>
+    <dd>每次回答回来都带的那个字段，说明<b>这次为什么停</b>。常见几种：<b>答完了</b> · <b>撞到 <code>max_tokens</code> 上限</b> · <b>碰上了你设的 <code>stop_sequences</code> 停止字</b> · <b>要调工具</b>（正常，不是错）· <b>拒答</b> · <b>把上下文窗口填满了</b>。<br>
+      <b>⚠ 模型不会自己停</b>——停在哪是引擎那层按上面几件事算的。<b>对 agent 有一条要命的</b>：<b>撞上限时那份回答里没写完的工具调用是坏的</b>，直接执行会出错，官方处置是<b>调大上限、重发一次</b>。所以「工具参数不完整」有一种成因不在模型。见 <a href="../lessons/llm/0008-who-does-what.html">LLM 第 8 课</a>。</dd>
+
+    <dt id="gateway"><strong>API 网关 / 过载（overloaded）</strong></dt>
+    <dd><b>请求穿过的倒数第二层</b>（在你那段程序和推理引擎之间），管<b>鉴权 · 限流 · 计费 · 决定转给哪台机器</b>。它不是模型的一部分，也不是 agent 的一部分。<br>
+      <b>两种常见报错别混</b>：<b>429 限流</b>是<b>你把配额用超了</b>——⚠ 若是撞到<b>月度花费上限</b>，它<b>不给「等多久能重试」的提示、会一直失败到额度恢复</b>，这种重试没有意义；<b>529 过载</b>是<b>服务端现在人太多</b>，跟你的请求无关，<b>退避一下再试</b>。另外 <b>官方 SDK 默认就会退避重试两次</b>，手写那层重试很可能叠在它之上。</dd>
 
     <dt id="reasoning"><strong>思考（reasoning）／ 会思考的模型</strong></dt>
     <dd>模型<b>在给答案之前先把问题想一遍</b>——先复述题意、试几种办法、检查中间结果、发现不对就放弃那条路。那段「想」是<b>真的 token</b>：按<b>输出</b>计费、占上下文、而且必须<b>原样带回去</b>（否则有的厂商直接报错、有的让前缀缓存断掉）。<b>它不是「更聪明的另一个模型」</b>，而是<b>同一个模型被允许多花时间</b>。
@@ -233,7 +273,7 @@
     <dt id="thinking-block"><strong>思考块（thinking block）／ 内容块（content block）</strong></dt>
     <dd>模型一次回答<b>不是一整段文字，而是一串带类型的内容块按顺序排好</b>。思考是一类块（<code>type: "thinking"</code>），答案是另一类块（<code>type: "text"</code>）。<b>客户端就是靠块的类型认出思考的起止</b>——出现 thinking 块＝开始；这个块结束＝结束，之后才是答案（或工具调用）。请求里给的思考参数<b>只说「允许思考、预算多少」，不含任何位置信息</b>，所以边界只能在响应里读。
     <b>⚠ 它不一定出现</b>：响应里可能<b>一个 thinking 块都没有</b>——那这次就是没想。<b>判断「有没有想」只能靠有没有这个块</b>，请求参数里读不出来；至于什么时候会跳过，<b>取决于模型和配置</b>（有些厂商支持让模型自己判断难易，固定预算的那种配置则每次都想）。开了工具之后它还可能<b>反复出现</b>（夹在工具调用之间），所以「一次沉默、然后给答案」是个简化模型。
-    <b>⚠ 看到的 ≠ 付的</b>：厂商可以只回一份<b>摘要</b>，甚至<b>完全不给文字</b>（只留签名），但<b>计费按原始全长算</b>。见 <a href="#reasoning">思考 reasoning</a>。</dd>
+    <b>⚠ 看到的 ≠ 付的</b>：厂商可以只回一份<b>摘要</b>，甚至<b>完全不给文字</b>（只留签名），但<b>计费按原始全长算</b>。摘要由谁做的也分厂商：Anthropic 的摘要由<b>另一个模型</b>提炼（原话 "Summarization is processed by a different model"），它的任何档位都拿不到原始思考；开源模型（DeepSeek-R、Qwen3 这类）给的就是原文。见 <a href="#reasoning">思考 reasoning</a>。</dd>
 
     <dt id="signature"><strong>签名（signature）</strong></dt>
     <dd>思考块里<b>加密的完整思考</b>。服务端靠它验证「这个块确实是这个模型生成的」——<b>这就是思考块必须原样带回去、改一个字就报错的原因</b>：不是规矩，是<b>有一把锁在查</b>。流式下它在思考块结束前单独作为一条事件到达。

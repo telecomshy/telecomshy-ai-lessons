@@ -3,25 +3,37 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LLM 底层 · 第 4 课（进阶版）· 拐点、工业界的招</title>
+<title>LLM 底层 · 第 4 课（进阶版）· 批从哪来、拐点、工业界的招</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta" data-alias="拐点、工业界的招">LLM 底层 · 第 4 课 · 进阶版</div>
-  <h1>批处理：拐点、工业界的招</h1>
-  <p class="subtitle">初学版讲「为什么能提吞吐」，这篇答「<b>它什么时候到头</b>、<b>工业界怎么绕过去</b>」。<b>按需跳读</b>——每条都能从<a href="0004-batching.html">初学版</a>的括号直达。</p>
+  <div class="lesson-meta" data-alias="批从哪来、拐点、工业界的招">LLM 底层 · 第 4 课 · 进阶版</div>
+  <h1>批处理：批从哪来、拐点、工业界的招</h1>
+  <p class="subtitle">初学版讲「怎么排队、怎么拼车」，这篇答「<b>批从哪儿来</b>、<b>它什么时候到头</b>、<b>工业界怎么绕过去</b>」。<b>按需跳读</b>——每条都能从<a href="0004-batching.html">初学版</a>末尾那份清单直达。</p>
 
   <div class="note">
     <span class="label">怎么用这篇</span>
-    <p>只收<b>读完初学版仍会冒出来</b>的疑问。初学版已经讲清楚的（"一趟装满 N 个包裹""吞吐涨、延迟也涨"），这里不再重复。</p>
-    <p style="color:var(--muted)">总链先放这儿，方便对照：<code>权重 + N 份 KV 一起搬 → 批越大吞吐越高 → 但搬运里 KV 占比越来越大 → 某个点开始卡算力 → 工业界用三招绕开</code></p>
+    <p>只收<b>读完初学版仍会冒出来</b>的疑问；初学版讲过的（「排队 ＋ 拼车」「一趟装满 N 个包裹」「批越大越多人等越久」）这里不重复。<b>下面每一问都挂在同一条链上</b>：<br>
+    <code>请求先排队 → 每轮挑出一批 → 权重 ＋ N 份 KV 一起搬 → 批越大吞吐越高 → 但 KV 在要搬的东西里占比越来越大 → 到某个点开始算不过来 → 工业界用三招绕开</code></p>
   </div>
 
-  <h2 id="q1-knee">Q1 · 那个「拐点」长什么样？为什么批大了吞吐就不涨了？</h2>
-  <p>接着<a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a>的<b>算术强度</b>往下推。一批 <code>N</code> 个请求走一步：</p>
+  <h2 id="q1-queue">Q1 · 一批是怎么凑起来的？为什么半夜批小、白天批大？</h2>
+  <p><b>批大小不是你设的，是每一轮服务商挑出来的那几个请求决定的。</b>挑的是<b>时间上正好撞在一起</b>的那些——能挑几个有个上限，vLLM 里那个上限叫 <code>max_num_seqs</code>。Orca 论文管这个做法叫<b>迭代级调度</b>（iteration-level scheduling）：<b>每一轮重新挑一次人</b>，而不是等一整批跑完才换下一批。</p>
+  <p>Anyscale 测延迟的时候，请求不是一起砸进去的——它们是<b>隔开陆续送到的</b>（文档里叫「泊松到达」，给了每秒 1 个和每秒 4 个两档）。所以每一轮凑出来的那一批一直在变。真实流量就是这么进来的。</p>
+  <p>跟着来两个结论：</p>
+  <ul>
+    <li><b>人一多，系统每秒产出的字就越多</b>，而且会一直涨到这套机器的极限为止——原话是 "As load increases, system TPS rises until it reaches the infrastructure's maximum capacity"。所以<b>深夜没人用、批小、吞吐低，是常态，不是机器坏了</b>。</li>
+    <li><b>同一个人的出字速度会随着一起算的人变多而变慢</b>——"As concurrency increases, user TPS typically drops because the engine shares GPU and compute resources"。这就是初学版那笔「多和快的拉扯」落在一个人身上的样子。</li>
+  </ul>
+  <p>再往后情况会反过来：<b>批已经坐满了，新来的请求只能排队等</b>。Anyscale 观察到「系统越忙，新请求能立刻插进批里的机会越少」；他们那台机器上 vLLM 大约<b>每秒来 8 个请求、每秒产出 1900 个字</b>就到顶了。</p>
+  <p>所以「慢」得先分清是哪一种：<b>坐在队里等的那一段</b>（算进「你等第一个字等了多久」）和<b>批里人多导致的每轮变慢</b>（算进「每蹦一个字花多久」）。机制不同，办法也不同。</p>
+  <p style="color:var(--muted)">（最大批多大、排多久算超时、要不要给付费用户优先，都是服务商自己定的，上面的数字只是他们那台机器上的实测。归属分界线：这一问的答案全在服务端，所以留在 LLM 轨道；「拿到一个慢的 agent，怎么分清是排队还是模型慢」是你的活 → <a href="../practice/0002-evaluating-agents.html">技巧篇 0002</a>。）</p>
+
+  <h2 id="q2-knee">Q2 · 那个「拐点」长什么样？为什么批大了吞吐就不涨了？</h2>
+  <p>接着<a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a>那把尺子往下推。<b>算术强度＝干多少次运算 ÷ 搬多少字节</b>，比值越大越划算。一批 <code>N</code> 个请求走一步：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">要搬的（约）</th>
@@ -32,57 +44,55 @@
       <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">权重 <code>W</code> ＋ <code>N</code> 份 KV</td>
           <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><code>N</code> × 单 token 计算量</td>
           <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">随 <code>N</code> <b>一路涨</b></td></tr>
-      <tr><td style="padding:0.55rem">刚开始：分母里<b>权重占大头</b></td>
-          <td style="padding:0.55rem">分子很小</td>
-          <td style="padding:0.55rem"><b>卡带宽</b></td></tr>
-      <tr><td style="padding:0.55rem"><code>N</code> 很大：分母里<b>KV 才是大头</b></td>
-          <td style="padding:0.55rem">分子线性涨</td>
-          <td style="padding:0.55rem"><b>涨到显卡那个比值 → 卡算力</b></td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">批小：要搬的里<b>权重占大头</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">要算的很少</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">比值小 → <b>搬不过来</b>（计算单元闲着一大半）</td></tr>
+      <tr><td style="padding:0.55rem">批大：要搬的里<b>KV 才是大头</b></td>
+          <td style="padding:0.55rem">要算的按比例涨</td>
+          <td style="padding:0.55rem">比值涨到显卡自己的水平 → <b>算不过来</b></td></tr>
     </tbody>
   </table>
-  <p>一旦<b>算力用满</b>，吞吐就等于显卡的算力上限，<b>再往上堆批量也涨不动了</b>——可延迟还在一份一份地涨。所以存在一个"甜点批大小"，越过它就是纯亏。</p>
-  <div class="note">
-    <span class="label">这解释了配套脚本为什么跑不出拐点</span>
-    <p>配套脚本是个<b>只画了"搬运"那一半</b>的模型：没有算力上限，所以它永远只会一路渐近，撞到的是显存的墙。<b>真到拐点长什么样，脚本演不出来</b>——那个数字来自 Databricks 的实测（批 64 时吞吐 14×、延迟 4×，再往上吞吐就基本不涨）。</p>
-  </div>
+  <p>换句话说：<b>批小的时候卡在「搬」，批大到某个点就换成卡在「算」。</b>一旦算不过来，吞吐就等于显卡的算力上限——<b>再往上加人也涨不动了</b>，可每个人还在等。所以存在一个<b>最划算的批大小</b>，越过它就是纯亏。</p>
+  <p>这一节还要跟基础课那张表对一下账：<b>那张表跑不出这个拐点</b>。配套脚本只画了「搬」那一半、没算显卡的算力上限，所以它的吞吐是一路涨到撞显存为止。拐点真长什么样，只能看实测——<a href="https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices">Databricks</a> 那组数：批大小 64 时吞吐 14 倍、单请求延迟 4 倍，<b>再往上吞吐基本不涨了</b>。</p>
 
-  <h2 id="q2-head-of-line">Q2 · 队头阻塞是什么？连续批处理怎么解决？</h2>
-  <p>问题出在<b>"一批"这个单位是怎么定的</b>。</p>
-  <p>朴素批处理：一批请求凑齐，一起跑，<b>得等最慢的那个跑完，整批才能散</b>才能接下一批。于是——一个短请求跟一个长请求凑成一批，短的就得陪着干等。这叫<b>队头阻塞（head-of-line blocking）</b>。</p>
-  <p>连续批处理只改了一件事：<b>把"一批"的单位从"一整个请求"缩到"一个 token"</b>。</p>
+  <h2 id="q3-head-of-line">Q3 · 队头阻塞是什么？连续批处理怎么解决？</h2>
+  <p>问题出在<b>「一批」这个单位是怎么定的</b>。</p>
+  <p>最老实的做法是：一批凑齐、一起跑，<b>得等最慢的那个跑完，整批才能散</b>，才能接下一批。于是短请求跟长请求凑成一批，短的就得陪着干等。这叫<b>队头阻塞</b>（head-of-line blocking）——<b>队头被一个慢的堵住，后面全跟着等</b>。</p>
+  <p>连续批处理只改了一件事：<b>把「一批」这个单位，从「一整个请求」缩到「一个字」。</b></p>
   <ul>
-    <li>每走一步就<b>重新组一次批</b>；</li>
-    <li>谁跑完了<b>立刻退出</b>，空位当场塞进新请求；</li>
-    <li>GPU 不再等最慢的那个。</li>
+    <li>每走一轮就<b>重新挑一次人</b>；</li>
+    <li>谁跑完了<b>立刻下车</b>，空位当场坐进新请求；</li>
+    <li>机器不再等最慢的那个。</li>
   </ul>
-  <p>效果：<b>Orca 论文</b>报告同延迟下吞吐提升 <b>36.9 倍</b>；<b>vLLM</b> 自己测是 <b>23 倍</b>。</p>
+  <p>效果：<b>Orca 论文</b>报告同样延迟下吞吐提升 <b>36.9 倍</b>；<b>vLLM</b> 自己测是 <b>23 倍</b>。</p>
 
-  <h2 id="q3-pagedattention">Q3 · PagedAttention 在解决什么问题？</h2>
-  <p>这条跟"搬运"和"算力"都没关系，它管的是<b>显存怎么摆</b>。</p>
-  <p>问题出在"预留"：请求长短不一，但按连续显存分配的规矩，你得<b>按最长的那份预留</b>。结果短请求占着一大块只用一点点，<b>碎片一堆</b>，谁也塞不进去。</p>
-  <p>PagedAttention 借的是<b>操作系统管内存的老办法</b>：把 KV cache 切成固定大小的"页"，<b>哪一页要用才分配</b>。于是几乎不浪费显存 → 能塞进更多请求 → 批能开得更大。</p>
-  <div class="note">
-    <span class="label">接回 Q1</span>
-    <p>所以三条其实是一条链：<b>PagedAttention 抬高"能开多大的批"，连续批处理让"每一批都塞得满"，而 Q1 那个拐点决定"开到哪儿就该停"</b>。三件事缺一件，收益就打折。</p>
-  </div>
+  <h2 id="q4-pagedattention">Q4 · PagedAttention 在解决什么问题？</h2>
+  <p>这一招既不关于「搬」也不关于「算」，它管的是<b>显存怎么摆</b>。</p>
+  <p>问题出在「预留」：<b>显存像一排连着的书架，按规矩你得按最长的那份给每人一整格。</b>可请求有长有短，短的那个人占着一大格只用一点点，剩下的零头谁也塞不进去——<b>这就是碎片</b>。</p>
+  <p>PagedAttention 抄的是<b>操作系统管内存的老办法</b>：<b>把 KV 切成大小一样的小页，要用哪一页才给哪一页。</b>于是几乎不浪费显存 → 能塞进更多请求 → <b>批能开得更大</b>。</p>
 
-  <h2 id="q4-chunked">Q4 · 分块预填充和 prefill/decode 分离，是两件不同的事</h2>
+  <h2 id="q5-chunked">Q5 · 分块预填充和 prefill-decode 分离，是两件不同的事</h2>
   <p>这两件事<b>解决的不是同一个毛病</b>。</p>
-  <h3>分块预填充（chunked prefill）：同一批机器上错开</h3>
-  <p>第 2 课说过两段瓶颈相反。于是一段<b>超长</b>输入会让 GPU 忙着算很久，<b>正在解码的那些请求被晾在一边</b>。</p>
-  <p>改法：把长 prefill <b>切成小块</b>，和 decode <b>交替</b>跑。代价是首字延迟可能略升，回报是总吞吐更高。据 Weka 的综述，<b>Sarathi</b> 论文引入这一招，可带来最多 <b>6.9 倍</b>吞吐提升。</p>
-  <h3>prefill/decode 分离（disaggregated serving）：换一批机器</h3>
-  <p>更彻底：干脆把两段放到<b>两批不同的机器</b>上，各用最适合的硬件。</p>
-  <p>据 Weka 综述，<b>DistServe</b>（OSDI 2024）报告<b>多服务 7.4 倍请求</b>，或 <b>SLO 达标收紧 12.6 倍</b>；<b>Perplexity、Meta、LinkedIn、Mistral</b> 都已在生产里这么跑。</p>
-  <div class="note">
-    <span class="label">一句话分清</span>
-    <p><b>分块预填充是"错开"，prefill/decode 分离是"分家"。</b>前者还在同一批卡上，后者要跨机器调度。</p>
-  </div>
+  <p><b>分块预填充（chunked prefill）——同一批机器上错开。</b>第 2 课说过两段的脾气相反。于是有人贴一篇超长文章进来，机器会先花很久把它读完（第 1 轮那一次算完），<b>这段时间里正在写答案的那批人只能停着</b>。改法：把长文<b>切成几块</b>，<b>和写答案的轮次交替着跑</b>。代价是第一个字可能晚一点，回报是总吞吐更高。据 Weka 的综述，<b>Sarathi</b> 论文引入这一招，最多能带来 <b>6.9 倍</b>吞吐提升。</p>
+  <p><b>prefill/decode 分离（disaggregated serving）——换一批机器。</b>更彻底：干脆把两段<b>放到两批不同的机器</b>上，各用各更擅长的硬件。据 Weka 综述，<b>DistServe</b>（OSDI 2024）报告<b>多服务 7.4 倍请求</b>，或者<b>SLO 达标收紧 12.6 倍</b>；<b>Perplexity、Meta、LinkedIn、Mistral</b> 都已经在生产里这么跑了。</p>
+  <p><b>一句话分清：分块预填充是「错开」，prefill/decode 分离是「分家」。</b>前者还在同一批卡上，后者要跨机器调度。</p>
+  <p>把这几招串起来看：<b>PagedAttention 抬高「能开多大的批」，连续批处理让「每一批都坐得满」，而 Q2 那个拐点决定「开到哪儿就该停」。</b>三件事缺一件，收益就打折。</p>
 
   <h2>检查一下你懂了没</h2>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q1</span> 批大小继续加大，吞吐为什么不涨了？</p>
+    <p class="q"><span class="num">Q1</span> 深夜没人用的时候，这一批会怎么变？</p>
+    <button class="quiz-option" data-correct="true">会变小：在等的人少，挑出来的一批就小</button>
+    <button class="quiz-option">不会变：批大小是机器一开始就定死的</button>
+    <button class="quiz-option">会变大：没人抢，显卡算得过来了</button>
+    <button class="quiz-option">不会变：批大小只由模型大小决定</button>
+    <p class="feedback"
+       data-ok="对。每一轮都重新挑人，挑的是时间上正好撞在一起的那些。所以半夜批小、吞吐低是常态。"
+       data-no="批不是配置死的，是每一轮按到达情况重新挑出来的。所以半夜批小、吞吐低是常态。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 批大小继续加大，吞吐为什么不涨了？</p>
     <button class="quiz-option" data-correct="true">瓶颈从搬数据变成了算力</button>
     <button class="quiz-option">瓶颈从算力变成了搬数据</button>
     <button class="quiz-option">瓶颈从显存变成了带宽</button>
@@ -93,18 +103,18 @@
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q2</span> 一批里有个特别长的，其余都很短。朴素批处理会怎样？</p>
+    <p class="q"><span class="num">Q3</span> 一批里有个特别长的，其余都很短。一批要等齐了才散，会怎样？</p>
     <button class="quiz-option" data-correct="true">短请求只能陪着长请求干等</button>
     <button class="quiz-option">长请求会被提前截断丢弃</button>
     <button class="quiz-option">短请求会先跑完单独返回</button>
     <button class="quiz-option">全部重跑一遍取平均值</button>
     <p class="feedback"
        data-ok="对。这叫「队头阻塞」——一批要等最慢的那个跑完才能散，短的全被拖着。"
-       data-no="不会被截断，也不会先跑完。朴素批处理整批一起跑、整批一起结束，短请求只能干等。"></p>
+       data-no="不会被截断，也不会先跑完。一整批一起跑、一起结束，短请求只能干等。"></p>
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q3</span> PagedAttention 到底省了什么？</p>
+    <p class="q"><span class="num">Q4</span> PagedAttention 到底省了什么？</p>
     <button class="quiz-option" data-correct="true">显存碎片，让批能开得更大</button>
     <button class="quiz-option">搬运次数，让每步读得更少</button>
     <button class="quiz-option">算力开销，让矩阵乘更快</button>
@@ -116,23 +126,25 @@
 
   <div class="source">
     <b>这篇的一手资料</b>：<br>
-    <a href="https://www.weka.io/learn/ai-ml/prefill-and-decode/">Weka — Prefill and Decode: A Technical Guide</a>：分块预填充（Sarathi，6.9×）、prefill/decode 分离（DistServe，7.4× / 12.6×）以及各家在生产里的用法，都出自这篇综述。<br>
-    <a href="https://www.usenix.org/system/files/osdi22-yu.pdf">Orca 论文（OSDI'22）</a>：连续批处理（iteration-level scheduling）的原始论文，同延迟下 36.9× 吞吐。<br>
-    <a href="https://www.anyscale.com/blog/continuous-batching-llm-inference">Anyscale — How continuous batching enables 23x throughput</a>：vLLM 侧的 23× 实测，以及"权重搬一次服务多个请求"的讲法。<br>
-    <a href="https://www.runpod.io/articles/guides/vllm-pagedattention-continuous-batching">Runpod — vLLM, PagedAttention and Continuous Batching</a>：PagedAttention 的工程落地。<br>
-    <a href="https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices">Databricks — LLM Inference Performance Engineering</a>：Q1 那个拐点的实测（批 64 → 吞吐 14×、延迟 4×）。<br>
+    <a href="https://www.anyscale.com/blog/continuous-batching-llm-inference">Anyscale — How continuous batching enables 23x throughput</a>：Q1 的陆续到达与到顶（每秒 8 个请求、每秒 1900 个字）、Q3 的连续批处理与 vLLM 的 23× 实测，都出自这里。<br>
+    <a href="https://docs.anyscale.com/llm/serving/benchmarking/metrics">Anyscale — Understand LLM latency and throughput metrics</a>：Q1 那两句原话（系统吞吐随负载涨到上限、并发上去单个用户变慢）、以及"排队等待会算进首字延迟"。<br>
+    <a href="https://www.weka.io/learn/ai-ml/prefill-and-decode/">Weka — Prefill and Decode: A Technical Guide</a>：Q5 的分块预填充（Sarathi，6.9×）、prefill/decode 分离（DistServe，7.4× / 12.6×）以及各家在生产里的用法，都出自这篇综述。<br>
+    <a href="https://www.usenix.org/system/files/osdi22-yu.pdf">Orca 论文（OSDI'22）</a>：连续批处理（iteration-level scheduling）的原始论文，同样延迟下 36.9× 吞吐；Q1 的挑选单位也出自它。<br>
+    <a href="https://www.runpod.io/articles/guides/vllm-pagedattention-continuous-batching">Runpod — vLLM, PagedAttention and Continuous Batching</a>：Q4 的工程落地。<br>
+    <a href="https://www.databricks.com/blog/llm-inference-performance-engineering-best-practices">Databricks — LLM Inference Performance Engineering</a>：Q2 那个拐点的实测（批 64 → 吞吐 14×、延迟 4×）、"最划算的批大小"那句原话，以及 Llama2 权重 140GB、KV 占用那两张表。<br>
     算术强度的推导见 <a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a>。
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>比如"'页'具体多大？""拐点能靠调参挪过去吗？""我的 agent 要不要自己管批？""Databricks 那 14 倍是跟谁比的？"——直接问。最后一个尤其值得追。
+    <b>我是你的老师，随时打断我。</b>比如"每轮挑人的上限是谁定的？""'页'具体多大？""拐点能靠调参挪过去吗？""Databricks 那 14 倍是跟谁比的？"——直接问。最后一个尤其值得追。
   </div>
 
   <p class="next">
     <b>回初学版</b>：<a href="0004-batching.html">LLM 底层 · 第 4 课 · 一趟装满的卡车</a><br>
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">第 2 课 · 一次请求的两段</a>（本文的拐点从那课的算术强度推出来）· <a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a><br>
-    <b>顺着往下</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么</a> · <a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（agent 慢的时候怎么区分是模型慢还是在排队）<br>
-    术语表：<a href="../../reference/glossary.html#batching">批处理</a> · <a href="../../reference/glossary.html#throughput">吞吐</a> · <a href="../../reference/glossary.html#continuous-batching">连续批处理</a> · <a href="../../reference/glossary.html#arithmetic-intensity">算术强度</a>
+    <b>你会用到</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（agent 慢的时候怎么区分是模型慢还是在排队）<br>
+    <b>顺着往下</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么</a><br>
+    术语表：<a href="../../reference/glossary.html#batching">批处理</a> · <a href="../../reference/glossary.html#batch-size">批大小</a> · <a href="../../reference/glossary.html#queueing">排队</a> · <a href="../../reference/glossary.html#throughput">吞吐</a> · <a href="../../reference/glossary.html#continuous-batching">连续批处理</a> · <a href="../../reference/glossary.html#arithmetic-intensity">算术强度</a>
   </p>
 
   <footer>AI Agent 原理与工程 · LLM 底层 · 第 4 课（进阶版）· <a href="../index.html">课程目录</a></footer>

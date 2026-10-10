@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 底层 · 第 6 课（进阶版）· 压法是什么、KV 是什么精度</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta" data-alias="压法是什么、KV 是什么精度">LLM 底层 · 第 6 课 · 进阶版</div>
+  <h1>量化：压法是什么、KV 是什么精度</h1>
+  <p class="subtitle">初学版讲「量化是什么、会造成什么影响」。这篇答两个更细的问：<b>「压法」到底是什么、AWQ 和 GPTQ 各是怎么压的</b>；<b>一个 int4 的模型，KV 到底存多少位</b>。<b>按需跳读</b>——每问都能从<a href="0006-quantization.html">初学版</a>末尾那份清单直达。</p>
+
+  <div class="note">
+    <span class="label">怎么用这篇</span>
+    <p>只收<b>读完初学版仍会冒出来</b>的疑问；初学版讲过的（每个数四舍五入到最近的可挑值、<b>4 bit 不止 4 bit</b>、语义和格式都会掉）这里不重复。</p>
+  </div>
+
+  <h2 id="q1-method">Q1 · 「压法」是什么？AWQ、GPTQ 各是怎么压的？</h2>
+  <p><b>先分清两根轴。「压法」说的是「怎么压」，不是「压到几个比特」。</b>压多狠（8 bit／4 bit／2 bit）是一根轴；下面这四件事怎么做，是另一根轴——<b>做法不同，就换一个名字</b>：</p>
+  <ul>
+    <li>每个数换成<b>什么近似值</b>（直接四舍五入？还是算完再补？）；</li>
+    <li><b>哪几个数共用一套可挑的值</b>（整张表一套？还是一小群一套？）；</li>
+    <li><b>哪些数要重点保准</b>（一视同仁？还是挑出关键的保住？）；</li>
+    <li><b>抹掉的误差怎么补回一点</b>（不补？还是拿邻居补？）。</li>
+  </ul>
+  <p>两根轴<b>不互相锁定</b>：同一种压法能压出好几个 bit 数（GPTQ 那篇论文压过 3 bit、4 bit，极端档位到过 2 bit），反过来同一个 bit 数也有好几种压法。</p>
+
+  <p>几种常见压法，按上面那四件事对一遍：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">压法（名字）</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">它怎么压</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>四舍五入</b>（最老实的做法，论文里叫 RTN）</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">定一套可挑的值，每个数就近取一个，抹掉的零头不要了。<b>初学版脚本做的就是它。</b></td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>GPTQ</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">抹掉的误差<b>拿后面几个数补回来一点</b>（论文用的是「二阶信息」逐个补偿）。175B 的模型约 4 GPU 小时压到 3–4 bit，论文说掉分"可忽略"。</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>AWQ</b></td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)"><b>先看「激活」的分布挑出那 1% 关键权重，保住它们</b>，别处照常压。原话："保护 1% 关键的权重就能大幅降低误差"。</td></tr>
+      <tr><td style="padding:0.55rem"><b>llama.cpp 的 K-quant</b>（<code>Q4_K_M</code> 这类名字）</td>
+          <td style="padding:0.55rem">256 个数一个超块；<b>几档混着用</b>——压不得的那些权重存细一点。它的工具说明里写着：加 <code>--pure</code> 才会把所有权重压成同一档。</td></tr>
+    </tbody>
+  </table>
+
+  <p><b>所以「压出来的文件互相换不了」不是小气，是做法本来就不同。</b>做法不同，存的格式就不同（llama.cpp 用的是 GGUF 文件，AWQ／GPTQ 另有一套），你下的那个文件得跟<b>你的显卡</b>、跟你<b>跑模型的软件</b>都对得上。</p>
+  <p>硬件这头，服务器上跑模型的那个开源工具（<b>vLLM</b>）列过一张对照表。挑三列看：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">压法</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">很老那代卡（Volta）</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">Turing～Hopper（现在主流）</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.55rem">AMD 的卡</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">AWQ</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">❌ 不认</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">✅ 认</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">❌ 不认</td></tr>
+      <tr><td style="padding:0.55rem;border-bottom:1px solid var(--rule)">GPTQ</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">✅ 认</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">✅ 认</td>
+          <td style="padding:0.55rem;border-bottom:1px solid var(--rule)">❌ 不认</td></tr>
+      <tr><td style="padding:0.55rem">GGUF（llama.cpp 那种文件）</td>
+          <td style="padding:0.55rem">✅ 认</td>
+          <td style="padding:0.55rem">✅ 认</td>
+          <td style="padding:0.55rem">❌ 不认</td></tr>
+    </tbody>
+  </table>
+  <p><span style="color:var(--muted)">（⚠ <b>这张表是活的</b>：2026-10-10 抓的时候 GPTQ 已经支持到 Hopper，而早先的记录还写着"不支持 Ada 之后"。<b>要动手之前重新抓一次原表</b>，别信任何转述——原表在 vLLM 文档的 Quantization 一节，还有 Intel／x86／Arm 那几列。<a href="https://docs.vllm.ai/en/latest/features/quantization/">原表</a>）</span></p>
+
+  <h2 id="q2-kv">Q2 · 一个 int4 的模型，KV 到底存多少位？</h2>
+  <p><b>先给答案：16 bit（float16）——既不是 float32，也不是 4 bit。</b>这件事要拆成两层看，混起来就会想反。</p>
+  <p><b>第一层：存的档位。</b>K/V 是「算出来再存」的中间结果，跟权重的存法是<b>两笔账</b>，它有自己的默认值：</p>
+  <ul>
+    <li><b>llama.cpp</b>：服务程序的 <code>--cache-type-k</code>／<code>--cache-type-v</code>（"KV cache data type for K/V"），可选 <code>f32, f16, bf16, q8_0, q4_0, q4_1, iq4_nl, q5_0, q5_1</code>，<b>默认 f16</b>。</li>
+    <li><b>vLLM</b>：<code>cache_dtype</code> 默认 <code>"auto"</code>，文档原话是 "If 'auto', <b>will use model data type</b>"。而 <code>W4A16</code> 这个格式名本身就是答案——<b>权重 4 bit、激活 16 bit</b>（激活＝模型算的时候那些中间数），K/V 就是拿激活算出来的。</li>
+  </ul>
+  <p><b>第二层：值的干净程度。</b><code>k = 那一行的向量 × W_k</code>——而嵌入表和 <code>W_k</code> 都已经压过了。<b>所以存的是 16 bit，值里却已经带着误差</b>。初学版那句"数值会被波及"说的就是这层。</p>
+  <p><b>想让 KV 也小？那是另一个开关</b>，跟权重量化互不替代：vLLM 那个叫 <code>kv_cache_dtype</code>（可以设成 <code>fp8</code> 等），llama.cpp 那个就是上面的 <code>--cache-type-k</code>（可以设成 <code>q8_0</code> 等）。⚠ vLLM 打开它时会自己警告："it may cause accuracy drop without a proper scaling factor"——<b>又是一道「省多少、换掉多少精度」的选择题</b>。</p>
+
+  <h2>检查一下</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 「压法」和「压到几个 bit」是什么关系？</p>
+    <button class="quiz-option">一回事，压法说的就是 4 bit 还是 8 bit</button>
+    <button class="quiz-option" data-correct="true">两根轴：压多狠是一回事，怎么压是另一回事</button>
+    <button class="quiz-option">压法决定 bit 数，一种压法只有一个 bit 数</button>
+    <button class="quiz-option">bit 数决定压法，4 bit 只能用一种压法</button>
+    <p class="feedback"
+       data-ok="对。同一种压法能压出好几个 bit 数，同一个 bit 数也有好几种压法。"
+       data-no="「压法」＝怎么压（近似值怎么取、怎么分组、保谁、怎么补误差），跟压到几 bit 是两根轴。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 一个 int4 的量化模型，默认情况下 KV 存多少位？</p>
+    <button class="quiz-option">4 bit，跟着权重一起压</button>
+    <button class="quiz-option">float32，反正是算出来的中间结果</button>
+    <button class="quiz-option" data-correct="true">16 bit，跟激活一个档</button>
+    <button class="quiz-option">看模型名字，写几就是几</button>
+    <p class="feedback"
+       data-ok="对。llama.cpp 默认 f16，vLLM 默认用模型的数据类型（W4A16 里的 A16 就是它）。"
+       data-no="KV 的存法跟权重是两笔账：默认 16 bit，要压它得另开一个开关。"></p>
+  </div>
+
+  <div class="source">
+    <b>这篇的一手资料</b>：<br>
+    <a href="https://docs.vllm.ai/en/latest/features/quantization/">vLLM — Quantization（官方文档）</a>——Q1 那张硬件对照表出自它的 "Supported Hardware" 一节（⚠ 会变，引用前重抓）；支持的格式全表也在那页。<br>
+    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md">llama.cpp — <code>tools/server/README.md</code></a>——Q2 的 <code>--cache-type-k</code>／<code>--cache-type-v</code> 参数表与 <b>default: f16</b>。<br>
+    <a href="https://docs.vllm.ai/en/latest/api/vllm/config/">vLLM — Config API</a>——Q2 的 <code>cache_dtype</code> 默认 <code>"auto"</code>（"will use model data type"）与量化时的那句警告。<br>
+    <a href="https://arxiv.org/abs/2210.17323">Frantar et al. — GPTQ</a>——Q1 表里 GPTQ 那行（二阶信息逐个补偿；175B 约 4 GPU 小时压到 3–4 bit，极端到 2-bit）。<br>
+    <a href="https://arxiv.org/abs/2306.00978">Lin et al. — AWQ</a>——Q1 表里 AWQ 那行（按激活分布保护 1% 关键权重）。<br>
+    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp — <code>tools/quantize/README.md</code></a>——Q1 表里 K-quant 那行（<code>--pure</code> 关掉"混合档"）。全部在 <code>RESOURCES.md</code> 里。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"GPTQ 拿邻居补误差，为什么不直接把邻居也算进去？""同一台机器上，AWQ 和 GPTQ 谁跑得快？""KV 压成 q8_0，掉的又是哪一头？"——直接问。
+  </div>
+
+  <p class="next">
+    <b>回初学版</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化：把模型压小，把字吐快</a><br>
+    <b>前置</b>：<a href="0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache</a>（Q2 说的那套 K/V 是什么）· <a href="0002-prefill-vs-decode.html">第 2 课 · prefill 与 decode</a>（为什么砍搬运只救吐字）<br>
+    <b>相关</b>：<a href="0001-from-token-to-next-token-deep.html#q2-embedding">第 1 课进阶 · Q2</a>（嵌入表是什么、查表怎么查出向量）<br>
+    <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
+    术语表：<a href="../../reference/glossary.html#quantization">量化</a> · <a href="../../reference/glossary.html#activation">激活</a> · <a href="../../reference/glossary.html#kv-cache">KV Cache</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · LLM 底层 · 第 6 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

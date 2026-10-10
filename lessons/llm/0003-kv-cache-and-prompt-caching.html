@@ -137,7 +137,7 @@ for a, b in zip(cached, prompt):
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">请求结构</th>
       <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">命中率（第 2 次起）</th>
       <th style="text-align:right;border-bottom:1px solid var(--rule);padding:0.4rem">合计等效成本</th>
-    </thead>
+    </tr></thead>
     <tbody>
       <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">A · 前缀稳定</td>
           <td style="padding:0.4rem;border-bottom:1px solid var(--rule);text-align:right">96%</td>
@@ -206,8 +206,8 @@ for a, b in zip(cached, prompt):
   <p>上面这些够你看懂全貌了。读的过程中如果冒出疑问，点对应的链接就行——<b>不用从头看进阶版</b>。</p>
   <ul>
     <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q1-thinking">Q1 · 上一轮的思考内容会不会被丢掉？谁说了算？</a></li>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q2-lookback">Q2 · 前缀越长越好吗？有个真实的坑</a></li>
-    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q3-not-free">Q3 · 那"命中"到底能省多少？为什么不是免费？</a></li>
+    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q2-lookback">Q2 · 一个字都没改，为什么还是不命中？</a></li>
+    <li><a href="0003-kv-cache-and-prompt-caching-deep.html#q3-not-free">Q3 · 命中到底能省多少？怎么确认自己真命中了？</a></li>
   </ul>
 
   <div class="source">

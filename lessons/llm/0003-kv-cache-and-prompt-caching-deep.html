@@ -23,7 +23,7 @@
   
 
   <h2 id="q1-thinking">Q1 · 上一轮的思考内容会不会被丢掉？谁说了算？</h2>
-  <p>用<a href="0005-reasoning-models.html">会思考的模型</a>（会输出"思考过程"的那种）时，思考块（<b>thinking block</b>）算不算进你的前缀，<b>要看两边配合</b>——客户端和模型各管一半。</p>
+  <p>用会思考的模型（会输出"思考过程"的那种，见 <a href="0005-reasoning-models.html">第 5 课 · 它真的在思考吗？</a>）时，思考块（<b>thinking block</b>）算不算进你的前缀，<b>要看两边配合</b>——客户端和模型各管一半。</p>
   <p><b>客户端那一侧：必须原样带回去。</b>Anthropic 官方文档的规则写得很硬：<b>把 thinking block 完整、不改动地带回来</b>。而且要<b>原样回传那条助手消息</b>——文档原话是：重建了它、或者过滤掉里面的块，会直接 <b>400 报错</b>，请求根本发不出去。</p>
   <p>那"网页版聊天和 harness 软件会不会自动带回去"？<b>能正常用，就说明它已经做了</b>——<span style="color:var(--muted)">（这是从"不带就报错"推出来的结论，不是对某个产品的实测。）</span></p>
   <p><b>模型那一侧：留不留，取决于版本。</b>Anthropic 文档按模型版本列得很清楚：</p>
@@ -34,7 +34,7 @@
   <p>被保留下来的 thinking block <b>算输入 token</b>——从缓存里读出来时也一样计入你的 usage。<span style="color:var(--muted)">（为什么会思考、那笔账怎么算？<a href="0005-reasoning-models.html">→ 看 LLM 第 5 课</a>；<a href="../../reference/glossary.html#reasoning">术语表「思考 reasoning」</a>）</span></p>
   <p><b>比"带不带回去"更容易踩的坑，是改配置。</b>Anthropic 官方文档<a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking">《Extended thinking》</a>里的「Prompt caching in manual mode」一节明确写：<b>改 thinking 的配置会让缓存作废，而且是连着系统提示和工具定义一起作废</b>，因为<b>这份配置是被渲染进 prompt 的</b>。所以"我只是想把思考深度调低一点"，代价可能是<b>整段前缀全部重算</b>。</p>
   <p>这里的"配置"是两个旋钮。<b>旧模式</b>用 <code>budget_tokens</code> 给思考定一个 token 目标（拿多少 token 用来想——文档特别说明<b>这是目标、不是硬上限</b>）；<b>新模式</b>改用 <code>output_config: {effort: ...}</code> 分档（low / medium / high），同一份文档的原话是"<b>用它代替 token 预算来控制推理深度</b>"——也就是<b>深度由模型自己定</b>。<b>两个都会被渲染进 prompt，所以动任何一个都要重建缓存。</b><span style="color:var(--muted)">（这两个是 Anthropic 的参数名，别的厂商不叫这个；它们属于思考模型本身，见 <a href="0005-reasoning-models.html">LLM 第 5 课</a>）</span></p>
-  <p>那一节还给了三行实测数字，可以直接摆成一张表看。<b>两个字段先看懂</b>：<b>cache_creation</b> ＝ 这一轮<b>新算出来、存进缓存</b>的 token 数；<b>cache_read</b> ＝ 这一轮<b>从缓存读回来</b>的 token 数；<b>input</b> ＝ 两者都没盖住、正常计价的那部分。</p>
+  <p>那一节还给了三行实测数字，可以直接摆成一张表看。<b>三个字段先看懂</b>：<b>cache_creation</b> ＝ 这一轮<b>新算出来、存进缓存</b>的 token 数；<b>cache_read</b> ＝ 这一轮<b>从缓存读回来</b>的 token 数；<b>input</b> ＝ <b>断点之后的那一截</b>——它进不了缓存，每次都重算、按原价计价（<a href="#q3-not-free">这三个字段在 Q3 细讲</a>）。</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">请求</th>
@@ -58,52 +58,133 @@
     </tbody>
   </table>
   <p>三行连起来看就清楚了：<b>第 1 次把 1370 个 token 算出来存进去；第 2 次原样读回来，一个都没重算；第 3 次因为改了 budget，前缀作废，只好又算了一遍 1370 个 token 存进去。</b>而 <b>cache_read = 0</b> 那一行还顺带说明另一件事：<b>没命中的那次不只白算，还要多付一笔写入费</b>（写入比普通输入更贵，各家倍数见<a href="../../reference/prompt-caching.html">速查页</a>）。文档最后特意补了一句：<b>在新模式里，effort 扮演的正是 budget_tokens 在这里的角色</b>——所以换到新模式，这个坑照样在。</p>
+  <p style="color:var(--muted)">（表里那三行 <code>input</code> 分别是 17 / 303 / 747，都是<b>断点之后</b>的那截——本例的断点打在思考块＋系统提示之后，所以每次新加的那句提问都落在这一栏里。<b>它们不是"没命中"</b>，是压根不进缓存。）</p>
 
-  <h2 id="q2-lookback">Q2 · 前缀越长越好吗？有个真实的坑</h2>
-  <p>直觉是"历史越长、能命中的越多"——<b>但有个反例，而且很坑。</b></p>
-  <p>机制是这样的（以 Claude 为例）：<b>缓存写入只发生在你打的"断点"处</b>；读取时，系统从断点往回<b>逐个找已经写过的条目</b>，但<b>最多只往回找 20 个位置</b>。</p>
-  <p>所以：</p>
+  <h2 id="q2-lookback">Q2 · 一个字都没改，为什么还是不命中？</h2>
+  <p style="color:var(--muted)"><b>这一问写给要自己发请求的人</b>（不写代码的可以整段跳过）。要带走的只有一句：<b>缓存只认上次存过的那一份，而且只往回找有限的距离。</b></p>
+
+  <p><b>先看一个真的发给模型的请求。</b>请求不是一整坨字，而是<b>分成若干块</b>——下面这个例子里：</p>
+  <pre><code>{
+  "model": "claude-sonnet-5-5",
+  "max_tokens": 1024,
+
+  "tools": [
+    { "name": "search_docs", "description": "在知识库里搜索",
+      "input_schema": { "type": "object", "properties": { "q": { "type": "string" } } } },
+    { "name": "read_doc",   "description": "按编号读一篇",
+      "input_schema": { "type": "object", "properties": { "id": { "type": "string" } } },
+      "cache_control": { "type": "ephemeral" } }
+  ],
+
+  "system": [
+    { "type": "text", "text": "你是一个可以查资料的助手，回答要简短。",
+      "cache_control": { "type": "ephemeral" } }
+  ],
+
+  "messages": [
+    { "role": "user",
+      "content": [ { "type": "text", "text": "帮我查一下火星车。",
+                     "cache_control": { "type": "ephemeral" } } ] }
+  ]
+}</code></pre>
   <ul>
-    <li>只要每轮新增的内容<b>少于 20 块</b>——前一轮的写入还在窗口里，<b>能命中</b>；</li>
-    <li>某一轮一口气加了一大堆（比如一次塞了 30 块）——<b>上一轮的条目被挤出窗口，命中不了</b>。</li>
+    <li><b>块</b>＝<b>数组里的每一项</b>。<code>tools</code> 里每个工具一项、<code>system</code> 里每段一块、每条消息的内容又是一组块（<code>content</code> 直接写字符串也算一块）。<b>这些结构由 API 定死</b>，所以你数得出来；一块里装着好几个 token。</li>
+    <li><b>断点</b>＝<b>写着 <code>"cache_control"</code> 的那一项的末尾</b>。上面出现了三次，就是三个断点。它挂在<b>第二个工具</b>上，标一个就盖住<b>整组</b>工具说明。</li>
   </ul>
-  <p><b>怎么救？</b><b>多打几个断点</b>——比如在"稳定内容"和"对话历史"交界处再放一个，等于开了第二个查找窗口。或者用一个更稳的做法：<b>把断点放在"最后一段不变的内容"结尾</b>，而不是放在每轮都在变的那块上。</p>
-  <p style="color:var(--muted)">（各家实现不同：Anthropic 用"块数"算窗口，有的按 token 增量、有的有断点数量上限。原则一样——<b>写入要有人打点，读取只认打过的点，窗口有限</b>。）</p>
-  <p><b>还有个更省钱的做法：不缓存动态的那一截。</b>既然写入要按更贵的价格算，那就<b>只在静态内容结尾打一个断点</b>——系统提示、工具定义这些不变的部分照常缓存，而后面每次都变的那一截<b>干脆别写</b>，省下写入费。<b>代价是那一截每轮都要重算</b>，所以只适合「变化的那截本来就不长」的情况。</p>
-  <p><b>还有一条 Anthropic 的例外：一轮里的并行工具调用只算一格。</b>文档专门写了：<b>连续的一串"工具调用"算一格，连续的一串"工具结果"也算一格。</b>翻译成人话：<b>哪怕你一轮里并行调了 20 个工具，官方也只当 1 格算</b>——<b>不会把上一轮的条目挤出这个查找窗口。</b></p>
+  <p><b>断点的意思是"从第一个 token 到我这块为止的整段，存下来"。</b>服务端会给这一整段算一个<b>指纹</b>（一串代表它的编号）存好，下次好认出"这段我算过"。<b>改一个字，指纹就变，那份就作废</b>——所以<b>指纹是从第一个 token 一路累积的</b>，天然包含前面所有块：<b>你改一下系统提示，第二个和第三个的指纹一起变、一起作废，只有第一个还能用。</b></p>
 
-  <h2 id="q3-not-free">Q3 · 那"命中"到底能省多少？为什么不是免费？</h2>
-  <p>别以为命中就是免费，<b>实际有三道折扣</b>。</p>
-  <p>因为省的是<b>算 K/V 那部分工作</b>，而不是"不用送"。命中之后：</p>
+  <p><b>下一轮同一个对话，请求变成这样</b>——多了一轮回答，断点挪到最后一条消息：</p>
+  <pre><code>  "messages": [
+    { "role": "user",      "content": "帮我查一下火星车。" },
+    { "role": "assistant", "content": "我找到了 3 篇，都跟火星车有关。" },
+    { "role": "user",      "content": [ { "type": "text",
+                                          "text": "再详细说说毅力号。",
+                                          "cache_control": { "type": "ephemeral" } } ] }
+  ]</code></pre>
+  <p>这一轮服务端做两件事：</p>
   <ul>
-    <li>只是不用重新<b>算</b>——所以又快又便宜，但<b>不是零</b>；</li>
-    <li>缓存<b>不保证一定有</b>：可能被淘汰、可能路由到别的机器。</li>
+    <li><b>存</b>：断点那块算一个指纹，写下来。<b>只有断点这一处会存</b>。</li>
+    <li><b>读</b>：<b>从第一个 token 到最后一块</b>算一个指纹，<b>跟以前存下来的那些比</b>。对上了，说明这段已经缓存，那一块之前的内容整段复用；对不上就<b>往上退一块，再算一次</b>，最多退 <b>20 块</b>。</li>
   </ul>
-  <p>一句话：<b>命中是"打折"，不是"免费"；是"尽量"，不是"保证"。</b></p>
-  <p><b>那怎么确认自己真的命中了？看响应里的 usage 字段</b>——Anthropic 官方文档给的核对方法就是它：</p>
+  <p><b>本轮算出来的指纹，是跟"过去存过的"比，不是跟自己比。</b>它只认存过的记录，不会看你这段内容稳不稳定就临时帮你存——<b>一段一个字都没改的内容，你从来没在那一处打过标记，它就一次都不会被命中。</b></p>
+  <p><b>一次最多能标 4 个断点</b>。这跟"往回退最多 20 块"是两回事：<b>4 是你能打几个标记，20 是它能往回看几块。</b></p>
+  <p><b>有时候前面内容都一样，却没有命中。</b>断点总是打在<b>当前最后一块</b>上，对话每走一轮，最后一块就往后挪好几块；而存下来的记录留在原地不动，距离一轮比一轮远。比如下面这个 Anthropic 文档里的例子：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">轮次</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">断点落在第几块</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">结果</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">第 1 轮</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">第 10 块</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">缓存是空的，存一份</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)">第 2 轮</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">第 15 块（往前挪了 5 块）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">退到第 10 块 → <b>命中</b>，只有 11–15 新算</td></tr>
+      <tr><td style="padding:0.4rem">第 3 轮</td>
+          <td style="padding:0.4rem">第 35 块（又挪了 20 块）</td>
+          <td style="padding:0.4rem">只能退到第 16 块；<b>上一轮那份在第 15 块，差一块 → 一次都不命中</b></td></tr>
+    </tbody>
+  </table>
+  <p><b>断点应该标在"每次请求都一模一样的那段"末尾</b>，变的那截留在标记之后。<b>如果标记落在每次都变的块后面</b>（比如时间戳），那么每次断点处的指纹都会变，<b>这个断点永远不会命中</b>。</p>
+
+  <p><b>断点不是 Claude 特有的，但分两派：</b></p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">谁</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">标记谁来打</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">往回退多少</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>Claude、OpenAI</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">你或你用的工具打，或让它自动放到最后一块</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">有上限，各家不同</td></tr>
+      <tr><td style="padding:0.4rem"><b>Gemini、DeepSeek</b></td>
+          <td style="padding:0.4rem">没这个概念，服务商自己切</td>
+          <td style="padding:0.4rem">由它们自己定</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.82rem;color:var(--muted)">OpenAI 那两个参数只在 <b>Responses API</b> ＋ <b>GPT-5.6 及以后</b>有，更早的模型和 Chat Completions 只有<b>隐式缓存</b>（不打标记，服务商自己按前缀来）；Claude 两种都有。共同的那层只有三样：前缀一字不差才复用、往回找且范围有限、写进去要钱。<b>窗口多大，照抄别家的没有意义。</b></p>
+
+  <p><b>这些标记是 Claude 网页版、Claude Code、OpenCode 这类工具替你写进每个请求的</b>——自己手写代码就得自己写。<span style="color:var(--muted)">不打就没有缓存，所以一定有人在打，只是没有任何产品文档说明它们具体怎么写。</span></p>
+
+  <h2 id="q3-not-free">Q3 · 命中到底能省多少？怎么确认自己真命中了？</h2>
+
+  <p><b>命中是打折，不是免费。</b>它省掉的是"重新算 K/V"那份工作，<b>不是"不用把内容送过去"</b>——读缓存那一次<b>照样按 0.1× 付钱</b>，只是比原价便宜十倍。而且<b>缓存不保证还在</b>：可能被淘汰，也可能你的请求被路由到另一台机器上。</p>
+  <p>所以两条都要记住：<b>命中是"打折"不是"免费"，是"尽量"不是"保证"。</b></p>
+
+  <p><b>怎么知道自己真命中了？看响应里的 <code>usage</code>。</b>Anthropic 官方文档给的核对方法就是它，三个字段各管一件事：</p>
   <ul>
-    <li><b>cache_read_input_tokens</b>：命中了多少（这次省了多少）</li>
-    <li><b>cache_creation_input_tokens</b>：写进去多少（这次多花了多少）</li>
-    <li>这两个加上 <b>input_tokens</b>，就是这次的总输入</li>
+    <li><b><code>cache_read_input_tokens</code></b>：<b>命中</b>了多少（这次省了多少）</li>
+    <li><b><code>cache_creation_input_tokens</code></b>：<b>写进</b>去多少（这次为缓存多付了多少）</li>
+    <li><b><code>input_tokens</code></b>：<b>最后一个断点之后的那一截</b>，<b>按定义就进不了缓存</b>，每次重算、按原价计价</li>
   </ul>
-  <p>OpenAI 那边对应的字段是 <code>usage.input_tokens_details.cached_tokens</code> 和 <code>cache_write_tokens</code>；<b>命中率就是"累计命中的 ÷ 累计输入"</b>。</p>
-  <p><b>最要紧的一句：不命中不会报错。</b>Anthropic 文档原话是"如果 cache_creation_input_tokens 和 cache_read_input_tokens <b>都是 0</b>，这个 prompt 就<b>没有被缓存</b>"，多半是长度没到门槛。所以<b>别拿"没报错"当"命中了"</b>，一定要看数。</p>
-  <p><b>而最常踩的"为什么不命中"，就是前缀太短。</b>各家都设了<b>最小可缓存长度</b>（按模型不同，512 / 1024 / 2048 / 4096 token 都有）。<b>不到这个长度，请求照常处理，但一点缓存都不建</b>——<b>而且不报错、不提示</b>。所以"我怎么一次都没命中过"，先别急着查代码，<b>先去 usage 里看那两个字段</b>：它俩是不是 0？</p>
-  <p><b>还有一种"没命中"只有自己写 API 的人会碰到</b>：<b>请求是并发发出去的</b>——<b>缓存条目要等第一个响应开始之后才可用</b>，所以同时发几个请求（哪怕开头一样），后几个都撞不上。OpenAI 那边还多一层：<b>缓存存在某一台具体的机器上</b>，流量超过 <b>15 请求/分钟</b>可能触发溢出路由；<code>prompt_cache_key</code> 能让同一段前缀的请求归到一处，但 OpenAI 文档明说<b>它只影响路由，不保证命中</b>。<span style="color:var(--muted)">（用网页版聊天或现成 harness 基本碰不到；真要自己发并发请求，办法在<a href="../../reference/prompt-caching.html">速查页</a>，做法在<a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程 · 技巧五</a>）</span></p>
-  <p><b>还有一个反直觉的账</b>：如果稳定前缀刚好卡在门槛下面一点，<b>把它补长到门槛以上反而更便宜</b>——跨过门槛之后，后面每一次都在打折。<b>但补的内容要是稳定且有用的，别拿废话凑。</b></p>
+  <p><b>这三条不是"命中／没命中／第三种结果"，是提示词被断点切成的三段。</b>断点之前那一段，要么以前存过（<code>cache_read</code>），要么这次新算（<code>cache_creation</code>）；断点之后的那截不在这一份里，所以永远是 <code>input_tokens</code>。文档特意强调过：<b><code>input_tokens</code> 不代表你送进去的全部输入</b>，只代表最后一个断点后面那一截。</p>
+  <p>三个加起来就是这次的总输入。<a href="#q1-thinking">Q1 那张表</a>就是照这三个字段列的——第 1 次 1370 全记在"存"那栏、第 2 次 1370 全变成"读"，一眼看出省没省。</p>
+  <p><b>OpenAI 那边字段名不一样</b>：<code>usage.input_tokens_details.cached_tokens</code>（命中）和 <code>cache_write_tokens</code>（写入），断点之后那一截照旧在 <code>input_tokens</code> 里。<b>命中率就是"累计命中的 ÷ 累计输入"</b>，自己按请求累加。</p>
+  <p><b>不命中不会报错。</b>Anthropic 文档的原话是——如果 <code>cache_creation</code> 和 <code>cache_read</code> <b>都是 0</b>，这个 prompt 就<b>没有被缓存</b>。请求照常跑完、照常给你答案。<b>所以别拿"没报错"当"命中了"</b>，一定要看那两个字段是不是 0。</p>
+
+  <p>这两个字段为 0，最常见的原因是<b>前缀太短</b>。各家都设了<b>最小可缓存长度</b>（Anthropic 按模型分 512 / 1024 / 2048 / 4096，OpenAI 是 1024）。<b>不到这个长度，一点缓存都不建</b>——请求正常处理、不报错、不提示。所以"我怎么一次都没命中过"，先别查代码，<b>先看那两个字段是不是 0</b>。</p>
+
+  <p><b>如果前缀差一点才够到门槛，把它补长过去反而更便宜。</b>假设门槛是 1024 token，你的稳定前缀只有 1000——那这 1000 个每次都按原价付，一次也享受不到折扣。<b>要是补 24 个字凑到 1024</b>，第一次多付一小笔写入费，<b>但从第二次起，这 1024 个全都按 0.1× 算</b>。请求发得越多越划算。OpenAI 文档算过这笔账：<b>连着发 10 次的话，把 221 token 以上的补到 1024 就已经省了；只有 103 token 的要发够 1963 次才回本；102 token 以下的补了也不划算。</b></p>
+  <p><b>补的内容得是稳定而且有用的东西</b>——多补的每一轮都要重发，写废话就是自己给自己加钱。</p>
+
+  <p><b>还有一种"没命中"，是自己同时发几个请求才会碰到的。</b>设想你写了个程序，一次要拿三份结果，于是一个 API 请求还没回来，你就<b>同时</b>把三个都发出去，三个的开头一模一样：</p>
+  <p><b>问题是缓存要等第一个响应开始返回了才建好。</b>三个请求挤在一起发，缓存此刻还是空的，所以<b>三个全都没命中</b>——明明前缀一个字都没差。<b>正确做法是先发一个、等到响应开始回来，再发剩下两个</b>（OpenAI 还多一层：<code>prompt_cache_key</code> 能让这几个请求路由到同一台机器，但 OpenAI 明说<b>它只影响路由、不保证命中</b>）。<span style="color:var(--muted)">（网页版聊天和现成 harness 基本碰不到；真要自己发并发请求，参数见<a href="../../reference/prompt-caching.html">速查页</a>，做法见<a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程 · 技巧五</a>）</span></p>
 
 
-  <h2>再来三个更难的</h2>
+  <h2>再来四个更难的</h2>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q1</span> 一次响应的 usage 里，cache_read 和 cache_write 两个字段都是 0，说明什么？</p>
+    <p class="q"><span class="num">Q1</span> 一次响应的 usage 里，cache_read 和 cache_creation 两个字段都是 0，说明什么？</p>
     <button class="quiz-option" data-correct="true">这次完全没命中，而且不会报错</button>
     <button class="quiz-option">缓存命中了，只是统计还没更新</button>
     <button class="quiz-option">请求被服务商拒绝了</button>
     <button class="quiz-option">说明这段前缀太短，不适合做缓存</button>
     <p class="feedback"
        data-ok="对。两个字段都是 0 就是没缓存，而且请求照常处理、不报错 —— 所以不能拿「没报错」当「命中了」。"
-       data-no="两个字段都是 0 时请求照常处理、不报错。要判断有没有命中，只能看这两个字段。"></p>
+       data-no="两个字段都是 0 时请求照常处理、不报错。要判断有没有命中，只能看这两个字段。（注意别把旁边那个 input_tokens 也算进来：它记的是断点之后那截，本来就不进缓存。）"></p>
   </div>
 
   <div class="quiz">
@@ -124,28 +205,41 @@
     <button class="quiz-option">模型会把新内容自动压缩掉</button>
     <button class="quiz-option">服务商那边会拒绝这次请求</button>
     <p class="feedback"
-       data-ok="对。查找窗口有限（如 20 个位置），挤出去就找不到了。多打断点可以救。"
-       data-no="读取只往回找有限个位置，超出窗口的旧条目就找不到了。"></p>
+       data-ok="对。读取时往回退的范围有限，挤出去就找不到了。多打一个断点，等于在更靠前的地方再开一个窗口。"
+       data-no="读取只往回退有限的块数，超出这个范围，上一轮存的那份就够不着了。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 三个断点分别打在工具说明、系统提示、提问的末尾。你改了系统提示，哪几份还可用？</p>
+    <button class="quiz-option" data-correct="true">只有打在工具说明那份</button>
+    <button class="quiz-option">三份全都还能用</button>
+    <button class="quiz-option">只有打在提问那份还能用</button>
+    <button class="quiz-option">工具说明和系统提示两份都能用</button>
+    <p class="feedback"
+       data-ok="对。每份存的是「从第一个 token 到那个断点为止」的整段，所以包含谁、谁就跟着作废 —— 系统提示那份和提问那份都包含它。"
+       data-no="断点存的不是「这一小段」，是「从头到这一块的整段」。所以凡是包含被改动内容的份，都会跟着失效。"></p>
   </div>
 
   <div class="source">
     <b>这篇的一手资料</b>：<br>
-    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching（官方文档）</a>：那张多轮缓存表、断点机制、20 个位置的查找窗口、<b>Q1 里"哪些模型保留思考块"</b>、<b>Q3 的 usage 字段名与最小可缓存长度</b>，以及<b>写入 / 读取的计价倍数</b>，都出自这里。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching（官方文档）</a>：<b>Q2 几乎全部</b>——三条核心规则（"写入只发生在断点处／读取只往回找以前写过的／查找范围 20 个位置"）、那段 10→15→35 的走法、<b>Q2 那两段 JSON 的字段放法</b>（工具定义上标最后一个、系统消息里标、最后一条用户消息里标）、"Common mistake: Breakpoint on content that changes every request"、<b>请求顶层写一个 <code>cache_control</code> 就自动标在最后一个可缓存块</b>（自动模式也踩"标在每次都变的那块上"的坑）；另外还有那张多轮缓存表、<b>Q1 里"哪些模型保留思考块"</b>、<b>Q3 的 usage 字段名与最小可缓存长度</b>，以及<b>写入 / 读取的计价倍数</b>、<b>"连着的一串工具调用与工具结果各算一块"</b>和<b>"断点本身不收费"</b>（这两条见<a href="../../reference/prompt-caching.html">速查页</a>）。<br>
     <a href="https://platform.claude.com/docs/en/build-with-claude/thinking-tool-workflows">Anthropic — Thinking in tool and multi-turn workflows</a>：<b>Q1 的客户端义务</b>——"完整、不改动地带回 thinking blocks""原样回传助手消息，否则 400 报错"。<br>
     <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching#thinking-blocks">Anthropic — Caching with thinking blocks</a>：<b>"改 thinking 配置会让缓存前缀作废，连系统提示和工具定义一起作废"</b>（因为配置被渲染进 prompt）。<br>
     <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking">Anthropic — Extended thinking</a>：<b>Q1 那张三行表和 <code>budget_tokens</code> / <code>effort</code> 两个参数名</b>都出自这里的「Prompt caching in manual mode」一节。
-    <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a>：前缀匹配、只追加不改写、工具结果算在前缀里、<b>Q3 的 <code>cached_tokens</code> / <code>cache_write_tokens</code> 字段</b>。多轮时序表与"三种打断方式"见基础课与<a href="../../reference/prompt-caching.html">速查页</a>。
+    <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a>：前缀匹配、只追加不改写、工具结果算在前缀里、<b>Q3 的 <code>cached_tokens</code> / <code>cache_write_tokens</code> 字段</b>；<b>Q2 那张两派对照表里的 OpenAI 一行</b>（<code>prompt_cache_options</code> / <code>prompt_cache_breakpoint</code>，只在 <b>Responses API</b> ＋ <b>GPT-5.6 及以后</b>有，更早的模型只有隐式缓存）也出自这里。多轮时序表与"三种打断方式"见基础课与<a href="../../reference/prompt-caching.html">速查页</a>。<br>
+    <a href="https://ai.google.dev/gemini-api/docs/caching">Google — Gemini Context caching</a>：<b>Q2 对照表里 Gemini 一行</b>——默认隐式缓存、用户什么都不用做；显式缓存是"手动创建并管理缓存对象"，<b>不是提示词里的标记</b>。<br>
+    <a href="https://api-docs.deepseek.com/guides/kv_cache">DeepSeek — Context Caching</a>：<b>Q2 对照表里 DeepSeek 一行</b>——默认开启、代码不改，系统在"用户输入末尾／模型输出末尾／公共前缀／固定 token 间隔"切出缓存单元，命中要求完整对上其中一个。
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>比如"我怎么看自己有没有命中？""多打几个断点有代价吗？""为什么是 0.1 倍而不是 0.01 倍？""本地跑的模型也能缓存吗？"——直接问。
+    <b>我是你的老师，随时打断我。</b>比如"我怎么看自己有没有命中？""为什么存进去比读出来贵那么多？""缓存条目存在哪台机器上？""本地跑的模型也能这样缓存吗？"——直接问。
   </div>
 
   <p class="next">
     <b>回初学版</b>：<a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a><br>
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">第 2 课 · 一次请求的两段</a>——本课讲的重算，就发生在后一段。<br>
     <b>Agent 侧</b>：<a href="../practice/0001-context-engineering.html">Agent 技巧篇 · 0001 · 上下文工程</a> · <a href="../agent/0003-mini-agent.html">第 3 课 · 把零件装起来</a><br>
-    术语表：<a href="../../reference/glossary.html#kv-cache">KV Cache</a> · <a href="../../reference/glossary.html#prefix-cache">前缀缓存</a> · <a href="../../reference/glossary.html#request">一次任务 / 一次请求 / 一轮 decode</a>
+    术语表：<a href="../../reference/glossary.html#kv-cache">KV Cache</a> · <a href="../../reference/glossary.html#prefix-cache">前缀缓存</a> · <a href="../../reference/glossary.html#cache-breakpoint">缓存断点</a> · <a href="../../reference/glossary.html#fingerprint">指纹</a> · <a href="../../reference/glossary.html#cache-usage">缓存用量三栏</a> · <a href="../../reference/glossary.html#request">一次任务 / 一次请求 / 一轮 decode</a>
   </p>
 
   <footer>AI Agent 原理与工程 · LLM 底层 · 第 3 课（进阶版）· <a href="../index.html">课程目录</a></footer>

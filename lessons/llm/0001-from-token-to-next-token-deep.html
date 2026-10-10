@@ -140,7 +140,7 @@
           <td style="padding:0.55rem">更快更省，但<b>老信息够不着了</b></td></tr>
     </tbody>
   </table>
-  <p>要注意：滑动窗口是<b>真的把老货位扔掉</b>（不是"留着但不读"）。<b>生产上确实在用</b>——Mistral 7B 就是滑动窗口：<a href="https://mistral.ai/news/announcing-mistral-7b/">官方原话</a>是每一层只关注<b>前 4096 个 token</b>，靠层数堆叠把有效上下文撑到 32k。所以这不是教科书里的选项，是跑在生产上的模型的选择。<span style="color:var(--muted)">（那么"每步都得把缓存扫一遍"这件事在滑动窗口下也不成立了。）</span></p>
+  <p>要注意：滑动窗口是<b>真的把老货位扔掉</b>（不是"留着但不读"）。<b>生产上确实在用</b>——Mistral 7B 就是滑动窗口：<a href="https://mistral.ai/news/announcing-mistral-7b/">Mistral 官方原话</a>是每一层只关注<b>前 4096 个 token</b>，靠层数堆叠把有效上下文撑到 32k。所以这不是教科书里的选项，是跑在生产上的模型的选择。<span style="color:var(--muted)">（那么"每步都得把缓存扫一遍"这件事在滑动窗口下也不成立了。）</span></p>
 
   <h2 id="q7-ffn">Q7 · FFN 那一步到底在改什么？</h2>
   <p>它做的是一次<b>更细的改写</b>：<b>把训练里学到的知识，按当前的语境补进这根向量</b>——某个概念被补上，它的分就往上抬。</p>
@@ -166,7 +166,7 @@
   </div>
   <p>所以厂商标的<b>"百万上下文"，说的就是这个上限</b>。多轮会话里，<b>每一轮请求都把前面的全部内容重新带上</b>——用户的提问、模型的回答、<b>连"思考"的 token 都算</b>（它们是真 token，见 <a href="0005-reasoning-models.html">第 5 课</a>）：<b>越聊越长，直到顶到上限。</b></p>
   <p>那<b>上限是谁定的？模型定的。</b>架构、位置机制、训练时定下的长度，厂商标出来的那个数就是它——<b>换一块更大的显卡，窗口不会变大。</b>它跟 KV 缓存<b>没有直接关系</b>，只有一个连带：<b>每一行都要留一份 K/V</b>，所以窗口越大、要留的 K/V 越多，显存的账越重——<b>那是代价，不是上限</b>。<b>如果前缀命中了缓存，行数照样占</b>——缓存省的是"重算"，不是"行数"。</p>
-  <p><b>真超过上限会怎样？官方 API 直接把这次请求拒掉、报错</b>（Anthropic 文档的原话：输入超过窗口就返回 <code>prompt is too long</code> 的 400 错误），<b>不会偷偷丢掉前面的内容</b>。真嫌长，得<b>你的程序在送进去之前</b>先删掉或压缩掉一部分——往里塞什么、丢掉什么，就是 <a href="../../reference/glossary.html#context">上下文工程</a>。</p>
+  <p><b>真超过上限会怎样？Anthropic 的 API 直接把这次请求拒掉、报错</b>（Anthropic 文档的原话：输入超过窗口就返回 <code>prompt is too long</code> 的 400 错误），<b>不会偷偷丢掉前面的内容</b>。真嫌长，得<b>你的程序在送进去之前</b>先删掉或压缩掉一部分——往里塞什么、丢掉什么，就是 <a href="../../reference/glossary.html#context">上下文工程</a>。</p>
   <p>最后说 <b>agent</b>：它的一次请求里装的<b>比普通对话多好几样</b>，而且<b>有几样用户根本看不见</b>：</p>
   <ul>
     <li><b>用户看不见的</b>：<b>系统消息</b>、<b>工具定义与说明</b>——用户从没见过它们，但每一轮都完整地占着窗口；</li>
@@ -230,7 +230,7 @@
 
   <p>那<b>"挑"这个动作，到底是谁在执行？模型只算到分表为止。</b>真正动手挑的，是跑模型的那个<b>推理引擎</b>——vLLM、SGLang，或者各家 API 的服务端。所以<b>同一个模型换一家部署，同样的参数不保证挑出一模一样的字</b>。</p>
 
-  <p>那<b>为什么现在很少听人提这些了？</b>因为 <b>harness 把旋钮收走了</b>，替你定了一套默认值，你只管写提示词。<b>藏起来不等于不存在</b>——它正是"同一个 prompt 两次答案不一样""评估跑两遍对不上"的来源。什么时候该自己动手调，见 <a href="../../reference/sampling-params.html">速查 · 采样参数</a>。</p>
+  <p>那<b>为什么现在很少听人提这些了？</b>因为 <b>harness（就是 Claude Code 这类"包着模型的软件"）把旋钮收走了</b>，替你定了一套默认值，你只管写提示词。<b>藏起来不等于不存在</b>——它正是"同一个 prompt 两次答案不一样""评估跑两遍对不上"的来源。什么时候该自己动手调，见 <a href="../../reference/sampling-params.html">速查 · 采样参数</a>。</p>
 
   <p>最后<b>动手看旋钮怎么改分布</b>。脚本在工作区：<code>exercises/llm/0001-sampling-params.py</code>。它只做最后那一步"挑字"，把四个旋钮各拧一遍。</p>
   <pre><code>python exercises/llm/0001-sampling-params.py</code></pre>
@@ -329,7 +329,7 @@
     <a href="https://aclanthology.org/2022.emnlp-main.3/">Geva et al., EMNLP 2022</a>——FFN 逐层"推动概念"，最终预测是一层层磨出来的。<br>
     <a href="https://aclanthology.org/2023.acl-long.325/">Belrose et al., ACL 2023（Tuned Lens）</a>——Q8 那条"半层也能猜"的正式出处（logit lens）。<br>
     <a href="https://sebastianraschka.com/blog/2025/bpe-from-scratch.html">Raschka — BPE Tokenizer From Scratch</a>——各家词表规模的实测数字，以及<b>词表自己是怎么被训练出来的</b>（反复合并高频相邻对；Q1 那张图就靠它）。<br>
-    <a href="https://www.fast.ai/posts/2025-10-16-karpathy-tokenizers">fast.ai — Let's Build the GPT Tokenizer</a>——<b>Q3 的依据</b>："tokenizer 是把字符串翻译成 token ID 的独立程序；而嵌入表的每一行是可训练参数，靠反向传播优化"。GPT-2 初始化取标准差 0.02 的正态分布，见官方 <code>config.json</code> 的 <code>initializer_range</code>。<br>
+    <a href="https://www.fast.ai/posts/2025-10-16-karpathy-tokenizers">fast.ai — Let's Build the GPT Tokenizer</a>——<b>Q3 的依据</b>："tokenizer 是把字符串翻译成 token ID 的独立程序；而嵌入表的每一行是可训练参数，靠反向传播优化"。GPT-2 初始化取标准差 0.02 的正态分布，见 OpenAI 发布的 GPT-2 <code>config.json</code> 里的 <code>initializer_range</code>。<br>
     <a href="https://arxiv.org/abs/1904.09751">Holtzman et al., ICLR 2020（The Curious Case of Neural Text Degeneration）</a>——Q11 里 <code>top_p</code>（核采样）的原始出处："砍掉不可靠的尾巴，只从模型真正有把握的那批里抽"。<br>
     <a href="https://huggingface.co/blog/how-to-generate">HuggingFace — How to generate text</a>——把"挑字"的几种挑法讲全（贪心 / beam search / 采样 / Top-K / Top-p / temperature）。
   </div>

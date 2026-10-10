@@ -50,12 +50,40 @@
     <li>某一处不同 → 从该点往后的缓存<b>全部失效</b>。</li>
     <li>计费：cache <b>read</b>（命中读取）≈ <b>0.1×</b> 输入价；cache <b>write</b>（首次写入）Anthropic 约 1.25×，OpenAI 新版也可能收费。</li>
     <li>OpenAI：前缀 ≥ 1024 token 才可缓存，命中按 128-token 粒度；可用 <code>prompt_cache_key</code> 影响路由。</li>
-    <li>Anthropic：用 <code>cache_control</code> 显式标断点；缓存有 TTL（默认约 5 分钟，可延长）。</li>
+    <li>Anthropic：<b>显式</b>断点（块上写 <code>cache_control</code>，<b>一次最多 4 个</b>）与<b>自动</b>断点（请求顶层写一个 <code>cache_control</code>，系统标在<b>最后一个可缓存块</b>，随对话增长自动前移）都支持。<b>查找窗口 20 个位置</b>，含断点自己那一块；<b>连着的一串工具调用、连着的一串工具结果，各算一个位置</b>。<b>断点本身不收费</b>——只对写入（5 分钟 TTL 约 1.25×、1 小时 2×）与读取（约 0.1×）计费。缓存有 TTL，默认约 5 分钟。</li>
     <li><b>哪些改动会打断缓存</b>：<b>改早期消息、删消息、调换顺序</b>——都会让从改动处往后的缓存作废（xAI 文档列的三种）。<b>注意后两种：它们一个字的内容都不改，只动结构，照样作废。</b></li>
     <li><b>并发请求撞不上</b>：Anthropic —— <b>缓存条目要等第一个响应开始之后才可用</b>，所以同时发几个请求（哪怕开头一样），后几个都读不到。<b>OpenAI</b> —— 缓存存在<b>某一台具体的机器</b>上，请求得被路由到那台才撞得上；流量超过 <b>15 请求/分钟</b>可能触发溢出路由。<code>prompt_cache_key</code> 能让同一段前缀的请求归到一处，但 OpenAI 文档明说<b>它只影响路由，不保证命中、不锁机器</b>（GPT-5.6 及以后路由自动处理，不需要这个 key）。</li>
     <li><b>怎么核对有没有命中</b>：Anthropic —— <code>cache_creation_input_tokens</code> 与 <code>cache_read_input_tokens</code>，<b>两者都是 0 就是没缓存，而且不报错</b>。OpenAI —— <code>usage.input_tokens_details.cached_tokens</code> 与 <code>cache_write_tokens</code>；命中率 = 累计 cached ÷ 累计 input。</li>
+    <li><b>⚠ usage 三个字段是提示词的三段，不是三种结果</b>：<code>cache_read</code> ＝ 断点之前、以前存过的那段（0.1×）· <code>cache_creation</code> ＝ 断点之前、这次新算的那段（1.25×）· <b><code>input_tokens</code> ＝ <u>最后一个断点之后</u>的那截，按定义就进不了缓存</b>（原价，每次重算）。官方特意强调过：<b><code>input_tokens</code> 不代表你送进去的全部输入</b>，只代表最后一个断点后面那一截。三者相加才是总输入。</li>
     <li><b>最小可缓存长度</b>：Anthropic 按模型 512 / 1024 / 2048 / 4096 token；不到就不建缓存、不报错。</li>
   </ul>
+
+  <h2>四家对照：那一刀谁来切（进阶版 Q2 的浓缩）</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.86rem">
+    <thead>
+      <tr>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">谁</th>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">断点谁来定</th>
+        <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">读取时往哪找</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>Claude</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">你打（块上的 <code>cache_control</code>），或让它自动打在最后一个可缓存块</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">每个断点往回 <b>20 个位置</b></td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>OpenAI</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">你打（<code>prompt_cache_options.mode</code> ＋ 块上的 <code>prompt_cache_breakpoint</code>），或隐式打在最新一条合格消息末尾。<b>⚠ 这两个参数只在 Responses API ＋ GPT-5.6 及以后有；更早的模型只有隐式</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">显式：<b>最早 2 个 ＋ 最新 50 个</b>断点；隐式：再加<b>往前 20 个</b>合格消息末尾，以及开头那串 developer 消息的末端</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>Gemini</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>请求里没有标记</b>：默认隐式缓存（2.5 及以后全部模型默认开，用户什么都不用做）。另有「显式缓存」＝<b>手动创建并管理缓存对象</b>，只在 <code>generateContent</code> 支持</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">文档未给数字</td></tr>
+      <tr><td style="padding:0.4rem"><b>DeepSeek</b></td>
+          <td style="padding:0.4rem"><b>没有断点这个概念</b>——默认开启、代码一行不改；系统自己在<b>用户输入末尾／模型输出末尾／检测到的公共前缀／固定 token 间隔</b>切出缓存单元</td>
+          <td style="padding:0.4rem">必须<b>完整对上</b>某个已落盘的单元才算命中</td></tr>
+    </tbody>
+  </table>
+  <p><b>共同的只有三条</b>：前缀一字不差才复用 · 往回找，范围有限 · 写进去要钱。<b>「窗口多大」「谁来切」各家不同，照抄别家的数字没有意义。</b></p>
+  <p><b>还有一个容易误会的地方</b>：断点<b>存的是「从第一个 token 到这一块为止」的整段</b>，不是「这一小段」——<b>两个断点之间不会被单独存成一份</b>。所以改了前面的内容，<b>包含它的那些份一起作废</b>。而<b>写入费只按新增的那一段算</b>（不是每轮重存一遍整段）。</p>
 
   <h2>对 agent 的工程结论（重点）</h2>
   <ul>
@@ -68,7 +96,9 @@
     <b>来源</b>：<br>
     <a href="https://developers.openai.com/api/docs/guides/prompt-caching">OpenAI — Prompt caching</a> ·
     <a href="https://docs.x.ai/developers/advanced-api-usage/prompt-caching/multi-turn">xAI — 多轮场景的缓存</a>（三种打断方式的出处）·
-    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching</a> ·
+    <a href="https://platform.claude.com/docs/en/build-with-claude/prompt-caching">Anthropic — Prompt caching</a>（<b>断点机制的规则、20 个位置、四个断点的完整例子、参数放法</b>都出自这里）·
+    <a href="https://ai.google.dev/gemini-api/docs/caching">Google — Gemini Context caching</a> ·
+    <a href="https://api-docs.deepseek.com/guides/kv_cache">DeepSeek — Context Caching</a>（<b>缓存单元的四种落盘位置</b>）·
     <a href="https://magazine.sebastianraschka.com/p/coding-the-kv-cache-in-llms">Sebastian Raschka — Understanding and Coding the KV Cache</a> ·
     <a href="https://huggingface.co/blog/not-lain/kv-caching">HuggingFace — KV Caching Explained</a>
   </div>

@@ -35,7 +35,9 @@
 - **LLM 底层 · 第 0 课**（[模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html)）
 - **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「十一个追问」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)
 - **LLM 底层 · 第 2 课**（[一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html)）＋ [进阶版「里面到底在转什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)
-- **LLM 底层 · 第 3 课**（[KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)）
+- **LLM 底层 · 第 3 课**（[KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)）＋ [进阶版「三个绕人的细节」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)
+- **LLM 底层 · 第 4 课**（[一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html)）＋ [进阶版「批从哪来、拐点、工业界的招」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)
+- **LLM 底层 · 第 5 课**（[它真的在思考吗？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html)）＋ [进阶版「谁写的、怎么切的、谁收着、怎么练出来的」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)
 
 基础课和进阶版算同一课，改过一课就算这一课 `completed`。剩下的课会接着往下标。
 
@@ -88,10 +90,11 @@ python exercises/agent/0004-real-model-agent.py
 | 0001 | [从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html) —— **基石课**　<code>completed</code> |
 | 0002 | [一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢　<code>completed</code> |
 | 0003 | [KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)                                |
-| 0004 | [一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html) —— 批处理怎么救 decode                                               |
-| 0005 | [会思考的模型：多出来的那一步](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html) —— 同一道题，3 秒答一个、30 秒答一个，后者还更对 |
+| 0004 | [一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html) —— 排队 ＋ 拼车：一张卡怎么同时服务几十上百个人                                |
+| 0005 | [它真的在思考吗？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html) —— 屏幕上那段「思考」，是真在想还是演给你看 |
 | 0006 | [量化：把模型压小，把字吐快](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization.html) —— 压小＝吐字快，**但读长文一点不快**      |
-| 0007 | [蒸馏：小模型的本事从哪来](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation.html) —— **你给它什么，它就只能学到什么**（这条轨道到此为止）|
+| 0007 | [蒸馏：小模型的本事从哪来](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation.html) —— **你给它什么，它就只能学到什么** |
+| 0008 | [这件事到底是谁干的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0008-who-does-what.html) —— 四层归属表：<b>哪些本事是引擎给的</b>（这条轨道到此为止）|
 
 **进阶版** —— 给想动手验算的技术读者，装的是基础课没讲的那部分理由。
 
@@ -100,7 +103,9 @@ python exercises/agent/0004-real-model-agent.py
 | 0001 进阶 | [十一个追问](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)　<code>completed</code> |
 | 0002 进阶 | [里面到底在转什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)　<code>completed</code> |
 | 0003 进阶 | [三个绕人的细节](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)                  |
-| 0004 进阶 | [拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                                    |
+| 0004 进阶 | [批从哪来、拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                        |
+| 0005 进阶 | [谁写的、怎么切的、谁收着、怎么练出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)                          |
+| 0006 进阶 | [压法是什么、KV 是什么精度](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization-deep.html)                          |
 
 ### Agent 原理篇
 
@@ -168,7 +173,7 @@ RESOURCES.md          全部一手资料来源，注明「用来干什么」
 lessons/<轨道>/       课程本体，自包含 HTML
 exercises/<轨道>/     配套脚本，命名与课号对应
 reference/            术语表与速查（贴墙清单）
-assets/               共享样式表、测验组件、SVG 插图
+assets/               共享样式表、测验组件、SVG 插图、演示动画（mp4 + poster）
 ```
 
 想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 本身就是一份有趣的文档 —— 里面记了每条教学规矩背后的原因，包括不少「我一开始写错了，后来改对」的反面案例。

@@ -84,7 +84,7 @@
     <li><b>结果太死板</b> → 先升温度，还不够再 <code>top_p</code> = 0.95。</li>
     <li><b>开始胡说</b> → <code>top_p</code> = 0.9 砍尾巴。</li>
     <li><b>要复现</b> → 温度 0 + <code>seed</code>，<b>并接受可能差一两个字</b>。</li>
-    <li><b>要 JSON / 工具调用稳</b> → 温度低 + 让接口帮你约束格式（结构化输出），别只靠调温度。</li>
+    <li><b>要 JSON / 工具调用稳</b> → 温度低 + <a href="../lessons/llm/0008-who-does-what.html">让接口帮你约束格式（结构化输出）</a>，别只靠调温度。</li>
     <li><b>harness 在替你设</b> → 它藏起来了不等于不存在。想知道默认值是什么，去看你那个 harness 的配置项。</li>
   </ul>
 

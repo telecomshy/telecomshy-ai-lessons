@@ -98,7 +98,22 @@
     <p><b>一次性的大活</b>（比如"帮我把这个项目重构一遍"）——跑一次就够，成本不敏感，那就不用纠结步数。</p>
   </div>
 
-  <h2>5. 技巧四：警惕"分数涨了"</h2>
+  <h2>5. 技巧四：agent 慢，先分清是「在等」还是「在算」</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>做法</b>：把「慢」拆成两个数记下来——<b>从你按下回车到第一个字出现</b>（等），<b>之后每蹦一个字花多久</b>（算）。<br>
+    再补一刀：<b>同一个任务，白天跑一次、深夜再跑一次</b>。</p>
+  </div>
+  <p><b>理由</b>：这是两件不同的事，药也不同。<b>「等」长</b>——请求到了服务商不会马上开跑，它先在队里排着等人凑成一批，官方文档写明<b>这段排队时间会加到首字延迟上</b>；<b>「算」慢</b>——机器那边这一批人太多，每个字能分到的时间就少了。<b>白天慢、深夜快，多半是排队</b>：人一多，批就大、队就长。这一段的机制见 <a href="../llm/0004-batching.html">LLM 底层 · 第 4 课</a>。</p>
+  <p><b>反例</b>：只记一个「平均要 X 秒」。<b>平均值会把排队这件事藏起来</b>——官方文档专门提醒过，只看平均延迟会骗人：少数几次特别慢的响应会把平均数拉平，看着一切正常。真正暴露问题的是<b>百分位</b>（比如 p95＝最慢那 5% 的用户等到了多久）。</p>
+  <div class="note">
+    <span class="label">什么时候不适用</span>
+    <p><b>离线批处理</b>（批量总结一万份文档）——没人盯着，等多久都无所谓；这种场景该盯「一共出了多少字、多久跑完」，不是盯单次延迟。<br>
+    <b>只跑一次也看不出来</b>：排队是随机的，单次的数字说明不了什么，至少攒三五个数再看。<br>
+    <b>模型跑在你自己机器上</b>——通常没人跟你抢、也没有排队，慢就是慢。</p>
+  </div>
+  <p style="color:var(--muted)">（还有一个动作：<b>彼此独立的请求，能并行发就并行发</b>——agent 一次只发一个请求的话，你在服务端那边常常是独自一批，最不划算。但有个反例别踩：<b>共享同一段长前缀的请求不要并发</b>，那会让缓存全部落空，见 <a href="0001-context-engineering.html">技巧篇 0001 · 技巧五</a>。）</p>
+
+  <h2>6. 技巧五：警惕"分数涨了"</h2>
   <div class="goal" style="background:#fff;border-color:var(--ink)">
     <p><b>做法</b>：听说它"变好了 X 个点"，<b>先抽几条它跑的记录读一遍</b>，再信。</p>
   </div>
@@ -113,7 +128,20 @@
     <p>你要是<b>自己反复用同一批任务在测</b>，分数变化当然有参考价值——前提是<b>任务没变、环境没变</b>。</p>
   </div>
 
-  <h2>6. 三个必须记住的画面</h2>
+  <h2>7. 技巧六：改了模型配置，重新测一遍</h2>
+  <div class="goal" style="background:#fff;border-color:var(--ink)">
+    <p><b>做法</b>：给模型<b>开了思考、改了思考额度、换了模型版本、换了量化档</b>（8 bit 换 4 bit 之类）之后，拿你原来那几个任务<b>重新跑一遍</b>——工具调用还准不准、格式还对不对、延迟能不能忍。</p>
+  </div>
+  <p><b>理由（思考那一半）</b>：思考练的是「把答案想对」这一件事，<b>工具格式、延迟、成本都不在它的训练目标里</b>——所以这三样不会跟着变好，<b>更慢是必然的</b>（那段思考是真的一段字，按字收钱，四笔账见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>）。</p>
+  <p><b>理由（量化那一半）</b>：压得越狠，越容易在<b>精确执行</b>上出错——实测里涨得最凶的是「方法／执行」类错误（多步算术算错、边界条件处理错），而工具调用要求的正是<b>逐个字都不能错的严格 JSON</b>（数字与出处见 <a href="../llm/0006-quantization.html">LLM 底层 · 第 6 课</a>）。所以换了量化档，别拿极限档去赌格式：<b>8 bit（FP8）是更稳的一档</b>，要压就留余量，或者压完拿你自己的工具调用实测一遍。</p>
+  <p><b>反例</b>：「它会思考了，那就免检了」「压完跑得挺快」——上线之后才发现工具调用的格式开始出错，或者用户根本等不了三十秒。</p>
+  <div class="note">
+    <span class="label">什么时候不适用</span>
+    <p><b>纯问答、没人盯着的离线任务</b>——没有工具调用、没人计时，那就只看答案质量对不对。<br>
+    <b>拿量化模型做原型、跑评估、做本地试验</b>也一样：没人依赖它吐出格式正确的 JSON，那就随便压，先跑起来再说。</p>
+  </div>
+
+  <h2>8. 三个必须记住的画面</h2>
   <div class="note">
     <span class="label">① 跑一次不算数</span>
     <p>agent 是不确定的。<b>单次 90% 的成功率，连着做 8 次可能只剩 43% 靠谱。</b></p>
@@ -127,7 +155,7 @@
     <p>同样的结果，代价可能差几十倍。</p>
   </div>
 
-  <h2>7. 动手：给你手上的 agent 打个分</h2>
+  <h2>9. 动手：给你手上的 agent 打个分</h2>
   <p>脚本在工作区，纯离线、不用 API。你把试出来的数字填进去，它给你算一致性：</p>
   <pre><code>python exercises/practice/0002-agent-scorecard.py</code></pre>
   <pre><code>任务 1 名字 > 查天气并写邮件
@@ -145,7 +173,7 @@
   [OK] 平均每次成本 10，没有明显的绕圈。</code></pre>
   <p><b>重点看"连做 N 次全对"那一列</b>——那才是你真正要赌的那个数。</p>
 
-  <h2>8. 判断题（技巧篇考这个）</h2>
+  <h2>10. 判断题（技巧篇考这个）</h2>
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 你试了一次，agent 干得挺好。这意味着什么？</p>
@@ -191,23 +219,39 @@
        data-no="「每次都成」是连乘：0.9 连乘 8 次 ≈ 0.43，不是 0.9。"></p>
   </div>
 
-  <h2>9. 一张清单，带走</h2>
-  <p>把上面四步压缩成一张"试一个 agent 该问什么"的清单：</p>
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 同一个 agent，白天明显比深夜慢，第一件该做的事是？</p>
+    <button class="quiz-option" data-correct="true">拆开看：是等第一个字慢，还是出字慢</button>
+    <button class="quiz-option">先换个模型或换个服务商再比一次</button>
+    <button class="quiz-option">让它少调几次工具、少走几步路</button>
+    <button class="quiz-option">当成不稳定处理，多跑几遍看平均值</button>
+    <p class="feedback"
+       data-ok="对。慢要拆成两段看：排队等（加在首字延迟上）和批里人多导致的出字变慢（加在每字耗时上），两者的药不一样。"
+       data-no="先分清是「在队里等」还是「机器算得慢」——只记一个平均秒数会把排队藏起来。"></p>
+  </div>
+
+  <h2>11. 一张清单，带走</h2>
+  <p>把上面六步压缩成一张"试一个 agent 该问什么"的清单：</p>
   <p>→ <a href="../../reference/agent-eval-checklist.html"><b>速查 · 试一个 agent 该问什么</b></a></p>
 
   <div class="source">
     <b>这篇的一手资料</b>：<br>
     <a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic — Demystifying evals for AI agents</a>：结果 vs 轨迹、pass@k vs pass^k、"别拿固定路径判分"、"读记录才知道为什么变"、以及"20～50 个用例就够起步"。<br>
-    <a href="https://arxiv.org/abs/2406.12045">τ-bench（Yao et al., 2024）</a>：pass^k 的出处；"单次 >60%、连续 8 次 &lt;25%"那个数字在这里。
+    <a href="https://arxiv.org/abs/2406.12045">τ-bench（Yao et al., 2024）</a>：pass^k 的出处；"单次 >60%、连续 8 次 &lt;25%"那个数字在这里。<br>
+    <a href="https://docs.anyscale.com/llm/serving/benchmarking/metrics">Anyscale — Understand LLM latency and throughput metrics</a>：技巧四的依据——"排队等待会加到 TTFT 上"，以及"只看平均延迟会骗人、要看百分位"。<br>
+    <a href="https://arxiv.org/abs/2501.12948">DeepSeek-R1（Nature 2025）</a>：技巧六「思考那一半」的依据——变强的只有"把答案想对"这一维，工具调用那一维"remain suboptimal"、甚至"cannot leverage tools"。<br>
+    <a href="https://arxiv.org/abs/2501.03035">Li et al. — "Quantization Meets Reasoning"</a> · <a href="https://arxiv.org/abs/2409.11055">Lee et al. — 13 个数据集的量化评测</a>：技巧六「量化那一半」的依据——语义和执行都会掉（数学准确率平均 −11.3%，执行类错误涨得最凶），而且 <b>FP8 是各任务上最稳的一档</b>。<br>
+    <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp — <code>tools/quantize/README.md</code></a>：量化「may introduce some accuracy loss」——掉没掉只能拿你自己的任务测出来。
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>比如"我该拿哪几个任务去试？""多少次才够？""怎么算一次'成功'？""同一个 agent 换个模型会差多少？"——直接问。
+    <b>我是你的老师，随时打断我。</b>比如"我该拿哪几个任务去试？""多少次才够？""怎么算一次'成功'？""慢到底是等还是算，我自己能量出来吗？"——直接问。
   </div>
 
   <p class="next">
     <b>同篇</b>：<a href="0001-context-engineering.html">0001 · 上下文工程</a> · <a href="../index.html">课程目录</a><br>
     <b>想懂原理</b>：<a href="../agent/0003-mini-agent.html">Agent 原理篇 · 第 3 课 · 把零件装起来</a>（agent 的不确定性从哪来）· <a href="../agent/0006-harness.html">第 6 课 · Harness</a>（"同一个模型换个壳，表现差很多"）<br>
+    <b>机制在 LLM 轨道</b>：<a href="../llm/0004-batching.html">第 4 课 · 批处理</a>（排队和凑批都发生在服务端）· <a href="../llm/0002-prefill-vs-decode.html">第 2 课 · 两种延迟</a><br>
     <b>速查</b>：<a href="../../reference/agent-eval-checklist.html">试一个 agent 该问什么</a>
   </p>
 

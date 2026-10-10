@@ -28,6 +28,12 @@
     <p>本课所有结论（谁快谁贵、TTFT、TPOT）都从这一句推出来。</p>
   </div>
 
+  <p><b>这两种跑法长什么样，先看这段动画。</b>它把<b>一次请求的 5 轮</b>从头走了一遍：第 1 轮，你给的 4 个 token <b>一整批一起送</b>；第 2 轮起，每次<b>只送刚蹦出来的那一个</b>。一分多钟，<b>会一直循环</b>——下面每讲一节，你都能在这段动画里认出它。</p>
+  <figure class="figure" id="fig-prefill-decode">
+    <video src="../../assets/llm-prefill-decode.mp4" poster="../../assets/llm-prefill-decode-poster.png" autoplay loop muted playsinline width="854" height="480">你的浏览器不放视频。这段动画讲的是：把「你是谁？」送进模型，5 轮里第 1 轮 4 个 token 一起进、后面每轮只进一个新字，每轮算完的东西存进货架。</video>
+    <figcaption><b>prefill 与 decode：同一条流水线，两种送法</b>。怎么读：上面一行是<b>这一轮送进模型的 token</b>，第 1 轮 4 个一起进，之后每次只多最新那一个；右上角「第 N 轮 / 5」＝<b>整条流水线已经完整走了几遍</b>（「轮」的正式定义在 §2，别跟「层」混）；中间那条流水线跟第 1 课那段动画是<b>同一套七格</b>；「KV cache（显存）」那排货架＝<b>每轮算完存下来的东西</b>，每轮多攒一格；左下角是<b>已经写出来的字</b>；底部灰字＝这一步在做什么。</figcaption>
+  </figure>
+
   <h2>1. 先回顾：模型这条流水线</h2>
   <p>第 1 课我们完整走过一遍，这里只把最关键的一行复述一下：</p>
   <pre><code>文字 → token 编号 →（查表）→ 向量
@@ -173,7 +179,7 @@
 
   <p><b>模型供应商的输入和输出都按 token 计费，而输出的单价更高。</b>现在你知道为什么了吗？</p>
   <p><b>补充原因：</b>输出一个字和读一个字，供应商花掉的算力差很多——读进来的那一大批可以一起并行算（第 4 节那个 prefill），输出只能一个字一个字来（decode）。所以单价更高。</p>
-  <p style="font-size:0.9rem;color:var(--muted)">下表是两家官方价目，<b>2026-10-03</b> 查的。<b>价目会变，用前请回原页核对。</b>（MTok ＝ 100 万 token）</p>
+  <p style="font-size:0.9rem;color:var(--muted)">下表是两家（Anthropic、DeepSeek）的官方价目，<b>2026-10-03</b> 查的。<b>价目会变，用前请回原页核对。</b>（MTok ＝ 100 万 token）</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.86rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">供应商</th>

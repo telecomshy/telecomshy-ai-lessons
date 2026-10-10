@@ -256,7 +256,8 @@ footer { margin-top: 3rem; font-size: 0.8rem; color: var(--muted); }
 
 /* ---- 插图 ---- */
 figure.figure { margin: 1.5rem 0; }
-figure.figure img { width: 100%; height: auto; display: block; }
+figure.figure img,
+figure.figure video { width: 100%; height: auto; display: block; background: var(--paper); }
 figure.figure figcaption {
   font-family: ui-sans-serif, system-ui, "Segoe UI", "PingFang SC", sans-serif;
   font-size: 0.85rem;

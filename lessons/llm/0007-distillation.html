@@ -131,7 +131,7 @@
     <li><b>蒸馏模型在"想"这一维可能很强，在"格式和动手"这两维未必</b>。</li>
     <li>所以问「能不能用」的方式只有一个：<b>拿你自己的活去测，而且要专门测工具调用那一维</b>，别只看跑分。</li>
   </ul>
-  <p>这和<a href="0006-quantization.html">第 6 课</a>那条结论<b>是同一条</b>：那边说"格式敏感的活，量化要压着来"，这边说"推理强的模型，工具调用未必行"。<b>跑得动和用得对，是两件事。</b></p>
+  <p>这和<a href="0006-quantization.html">第 6 课</a>那条结论<b>是同一条</b>：那边说"格式敏感的活，量化掉得最多"，这边说"推理强的模型，工具调用未必行"。<b>跑得动和用得对，是两件事。</b></p>
 
   <h2>7. 动手跑一遍</h2>
   <p>脚本在工作区：<code>exercises/llm/0007-distillation.py</code>。<b>只用 Python 标准库</b>，离线能跑。它做一个能真量出来的小实验：</p>
@@ -267,7 +267,7 @@
   </div>
 
   <p class="next">
-    <b>前置</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化</a>（另一半；两课合起来才是"让模型变小"这件事）· <a href="0005-reasoning-models.html">第 5 课 · 会思考的模型</a>（"搬家"的两个理由之一，另一个是第 0 课的规模）<br>
+    <b>前置</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化</a>（另一半；两课合起来才是"让模型变小"这件事）· <a href="0005-reasoning-models.html">第 5 课 · 它真的在思考吗？</a>（"搬家"的两个理由之一，另一个是第 0 课的规模）<br>
     <b>这条轨道到此为止</b>：八课走完了一条线——<b>模型里发生了什么 → 一次请求怎么跑 → 它怎么"想"、那一步有多贵 → 时间/带宽/精度怎么被优化 → 能力从哪来</b>。<a href="../index.html">回到课程目录</a><br>
     <b>接下来往哪走</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a>（真动手做一个）· <a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>（本课第 6 节那条「工具调用要专门测」的前置）<br>
     术语表：<a href="../../reference/glossary.html#distillation">蒸馏 distillation</a> · <a href="../../reference/glossary.html#quantization">量化 quantization</a> · <a href="../../reference/glossary.html#temperature">温度 temperature</a> · <a href="../../reference/glossary.html#logits">Logits / Softmax</a>
