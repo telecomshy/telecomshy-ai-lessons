@@ -38,6 +38,7 @@
 - **LLM 底层 · 第 3 课**（[KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)）＋ [进阶版「三个绕人的细节」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)
 - **LLM 底层 · 第 4 课**（[一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html)）＋ [进阶版「批从哪来、拐点、工业界的招」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)
 - **LLM 底层 · 第 5 课**（[它真的在思考吗？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html)）＋ [进阶版「谁写的、怎么切的、谁收着、怎么练出来的」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)
+- **LLM 底层 · 第 6 课**（[量化：把模型压小，把字吐快](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization.html)）＋ [进阶版「压法是什么、误差怎么救回来、KV 是什么精度」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization-deep.html)
 
 基础课和进阶版算同一课，改过一课就算这一课 `completed`。剩下的课会接着往下标。
 
