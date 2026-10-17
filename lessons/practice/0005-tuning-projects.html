@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>技巧篇 · 0005 · 微调项目怎么不翻车：先切「怎么答」和「答什么」</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">技巧篇 · 0005</div>
+  <h1>微调项目怎么不翻车：先切「怎么答」和「答什么」</h1>
+  <p class="subtitle">「拿微调把内部知识喂给模型」——需求往往就这么一句话。可它里面混着两类活：<b>切错了，后面全白干。</b></p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>领导说「拿微调教教模型咱们的规章制度」，这句话里其实混着两件事：<b>一类是「怎么答」</b>——说话的口径、格式、红线（先带免责声明、这类问题转人工、不承诺赔偿），<b>微调正对路</b>；<b>一类是「答什么」</b>——报销上限多少、流程找谁批，<b>微调搬不动几个</b>，该放知识库。</p>
+    <p>切开之后剩下的就是流程了：备数据、定评测、防翻车、验收。这课给一张<b>能直接拿去开工的决策单</b>和一份<b>内测排查清单</b>。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>需求到手先切对一刀；内测说「效果不好」时，五步查出问题在谁头上；知道什么时候该劝一句「这活别用微调」。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>微调项目翻车，十有八九翻在开工前</b>：目标切错、数据乱凑、评测没基线。这课全是开工前的事。</p>
+    <p>后面每一节都挂回它。</p>
+  </div>
+
+  <h2>1. 需求到手第一刀：「怎么答」还是「答什么」</h2>
+  <p>判据一句话：<b>这条要求，换个问法还算数吗？</b>「回答先带免责声明」——怎么问都算数，这是<b>行为</b>；「报销上限 500」——只对那条条文算数，这是<b>事实条目</b>。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">需求长什么样</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">哪类</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">用什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">为什么</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">回答先带免责声明 · 这类问题一律转人工 · 称呼用「您」</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">怎么答</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">微调（＋提示词双保险）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">行为教得动，而且值得固化进模型</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">报销上限多少 · 产假多少天 · 流程第三步找谁批</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">答什么</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">知识库（RAG）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">微调搬不动几个，制度一改还得重训</td></tr>
+      <tr><td style="padding:0.45rem"><b>两句都占</b>（「答制度问题时先查条文、再引原文」）</td>
+          <td style="padding:0.45rem">混合</td>
+          <td style="padding:0.45rem">微调定口径 ＋ RAG 供条文</td>
+          <td style="padding:0.45rem">两边各干各的，谁也别替谁</td></tr>
+    </tbody>
+  </table>
+  <p><b>反面现场：</b>拿 500 条制度问答做微调，测「新员工问报销」基本答对，换一个问法就飘，制度改了还得重训一轮——不是训练没弄好，是这活本来就不该微调干。<span style="color:var(--muted)">（微调为什么搬不动事实，机制见 <a href="../llm/0009-post-training-recipes.html">LLM 底层第 9 课</a>；实测数字在它的第 3 节。）</span></p>
+  <p><b>什么时候这条判据不适用：</b>需求不是「让模型学会」而是「让模型查到」（比如「把这三千条制度答准」）——不用切，直接走 RAG。</p>
+
+  <h2>2. 内测说「效果不好」，五步排查</h2>
+  <p>每步三件：查什么 · 为什么 · 典型翻车现场。从上往下查，查到哪步断了就修哪步。</p>
+  <ul>
+    <li><b>① 目标派错了吗。</b>想灌知识却用了 SFT，练到天亮也没用——活派错了，不是手艺问题。<b>翻车现场</b>：「微调三个月，制度题还是答不对」——因为答案在文档里，不在权重里。</li>
+    <li><b>② 数据：多少条、谁写的、覆盖几种问法。</b>行为类要覆盖各种说法（同一个规矩至少五六种问法），事实类要覆盖各种条目。<b>翻车现场</b>：两百条单问法数据＝背题，换个问法就崩。</li>
+    <li><b>③ 评测：有没有基线，测的是不是你要的东西。</b>先拿没微调的模型测一遍留底，再比。「感觉像了」不算数，拿训练集自测更不算。<b>翻车现场</b>：训练集 95 分、生产一塌糊涂——考了原题。</li>
+    <li><b>④ 退化查了吗。</b>学新的会退旧的：内部知识涨了，通用能力可能在掉。<b>翻车现场</b>：制度题变准了，日常问答变笨了，用户投诉反增。</li>
+    <li><b>⑤ 该不该换工具。</b>问题可能出在别处：换个更强的基座、或只改提示词，就能达标。<b>翻车现场</b>：预算烧在微调上，其实把制度文档塞进提示词就解决了。</li>
+  </ul>
+  <p><b>不适用：</b>五步管的是「微调项目的内测」。如果你测的是线上整体效果，那是 <a href="0002-evaluating-agents.html">技巧篇 0002</a> 的地盘。</p>
+
+  <h2>3. 什么时候不要微调（开工前先看这四条）</h2>
+  <ul>
+    <li><b>内容会变。</b>金额、名单、流程每年都改——写进权重的知识改一条重训一次，放知识库改文档就生效。<b>反例</b>：制度三月一修订，微调两月一轮，永远在追。</li>
+    <li><b>答错要追责、要给出处。</b>权重里的知识答错，查不出它从哪来的；RAG 能引原文、查不到能说「不知道」。<b>反例</b>：合规场景里模型编了一条不存在的条款。</li>
+    <li><b>数据少而窄。</b>几十条、单一问法，练出来的是背诵不是能力。<b>反例</b>：拿 30 条客服记录微调，之后每句话都像那 30 条。</li>
+    <li><b>其实只是语气问题。</b>先试提示词——免费、可逆、当天见效。<b>反例</b>：为「说话客气点」开一个微调项目。</li>
+  </ul>
+  <p><b>什么时候反过来该微调：</b>行为口径要稳定、要脱口而出、提示词压不住（比如多轮里老跑偏）的时候。<b>微调的甜点区就这一块，守住它。</b></p>
+
+  <h2>4. 决策单（开工前贴墙版）</h2>
+  <p>五个问题，答完再动手：</p>
+  <ol>
+    <li><b>这条需求是「怎么答」还是「答什么」？</b>（换种问法还成立吗）</li>
+    <li><b>内容会变吗？多久变一次？</b>（会变 → 知识库）</li>
+    <li><b>答错了谁负责？要不要给出处？</b>（要追责 → 知识库）</li>
+    <li><b>数据有多少条、覆盖几种问法、谁写的？</b>（少而窄 → 先补数据或换路）</li>
+    <li><b>怎么算成功？</b>（写死三条：换问法还对 · 旧能力没掉 · 改制度不用重训）</li>
+  </ol>
+  <p>第 5 条写不下来，说明需求还没想清楚——<b>先回去补第 5 条，别开工。</b></p>
+
+  <h2>检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 领导要求「模型回答永远先说免责声明」，这活怎么干？</p>
+    <button class="quiz-option">把免责条文灌进模型知识</button>
+    <button class="quiz-option">放知识库，每次回答前查一遍</button>
+    <button class="quiz-option" data-correct="true">微调＋提示词双保险——这是「怎么答」的行为红线</button>
+    <button class="quiz-option">不用管，大模型天生会说</button>
+    <p class="feedback"
+       data-ok="对。换个问法也算数的要求是行为，教得动、也值得固化进模型。"
+       data-no="先切一刀：「永远先说」怎么问都成立，是行为红线——微调正对路，再加提示词双保险。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 领导要求「模型知道每个产品的返修期限」，这活怎么干？</p>
+    <button class="quiz-option">微调，把返修期限背进模型</button>
+    <button class="quiz-option" data-correct="true">放知识库（RAG）——这是「答什么」的事实条目，还会变</button>
+    <button class="quiz-option">提示词里写死所有期限</button>
+    <button class="quiz-option">不用做，模型肯定知道</button>
+    <p class="feedback"
+       data-ok="对。事实条目微调搬不动几个，而且期限一改就得重训——知识库改文档就生效。"
+       data-no="看它属哪类：返修期限是「答什么」的事实条目——微调搬不动、还爱变，该走知识库。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 内测发现「内部知识答对了，但日常问答变笨了」，先查哪一步？</p>
+    <button class="quiz-option">第一步：目标派错了</button>
+    <button class="quiz-option">第二步：数据条数不够</button>
+    <button class="quiz-option" data-correct="true">第四步：退化——学新的把旧的砸了</button>
+    <button class="quiz-option">第五步：该换更强的基座</button>
+    <p class="feedback"
+       data-ok="对。知识涨、行为掉是「学新的退旧的」的典型症状，先量退化多少、再决定调数据配比还是收手。"
+       data-no="症状是一升一降：这是退化（灾难性遗忘），排查单第四步——实测里知识 18 涨到 43，行为却从 85 掉到 45。"></p>
+  </div>
+
+  <div class="source">
+    <b>这篇的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/2305.15717">Gudibande et al. — The False Promise of Imitating Proprietary LLMs（2023）</a>——第 1 节「微调搬不动事实」的实测：模仿数据没覆盖的任务上差距几乎不缩，<b>学得会风格、学不会事实</b>。<br>
+    <a href="https://thinkingmachines.ai/blog/on-policy-distillation">Thinking Machines — On-Policy Distillation（博客，2025）</a>——第 2、3 节「一升一降」那组：拿公司文档练完，内部知识 <b>18→43</b>、指令跟随 <b>85→45</b>（⚠ 这组是博客实验，未见独立论文）。<br>
+    机制与选型的完整版：<a href="../llm/0009-post-training-recipes.html">LLM 底层第 9 课 · 后训练的几种练法</a>（本课是它的做法篇）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"公司制度有三千条，全灌进去行吗？""微调和 RAG 能不能一起上，怎么分工？""用 LoRA 省钱会影响效果吗？""评测集自己造多少条才够？""怎么跟领导解释『这活不该微调』？"
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="../llm/0009-post-training-recipes.html">LLM 底层第 9 课 · 后训练的几种练法</a>（这课是它的做法篇）<br>
+    <b>顺着往下</b>：<a href="0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（线上效果怎么测）<br>
+    <b>其它轨道</b>：<a href="../llm/0009-post-training-recipes-deep.html">LLM 底层第 9 课进阶</a>（奖励模型、算法那些细节）<br>
+    <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
+    术语表：<a href="../../reference/glossary.html#sft">监督微调 SFT</a> · <a href="../../reference/glossary.html#rlhf">RLHF / DPO / GRPO</a> · <a href="../../reference/glossary.html#text-embedding">文本嵌入 / 向量检索</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · 技巧篇 · 0005 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

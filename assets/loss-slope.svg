@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 340" width="720" height="340" role="img" aria-label="一条损失曲线 L=w^2。损失等于站在坡上多高（海拔），斜率等于脚下坡多陡（坡度）。w=3 那个点个子高（损失 9）坡也陡（斜率 6）；w=1 那个点个子矮（损失 1）坡也缓（斜率 2）。海拔和坡度是两回事，数值也各算各的。">
+  <rect x="0" y="0" width="720" height="340" fill="#fdfcf8"/>
+
+  <text x="24" y="26" font-family="sans-serif" font-size="13" fill="#1b1a17">损失 = 海拔，斜率 = 坡度：两个数不是一回事</text>
+
+  <!-- 垂直轴：损失 L -->
+  <line x1="60" y1="60" x2="60" y2="290" stroke="#1b1a17" stroke-width="1.5"/>
+  <text x="20" y="56" font-family="sans-serif" font-size="12" fill="#1b1a17">损失 L</text>
+
+  <!-- 水平轴：权重 w -->
+  <line x1="60" y1="290" x2="690" y2="290" stroke="#1b1a17" stroke-width="1.5"/>
+  <text x="674" y="312" font-family="sans-serif" font-size="12" fill="#1b1a17">权重 w</text>
+
+  <!-- 抛物线 L = w^2（17 点折线近似） -->
+  <path d="M 60.0 90.0 L 98.8 136.9 L 137.5 177.5 L 176.3 211.9 L 215.0 240.0 L 253.8 261.9 L 292.5 277.5 L 331.3 286.9 L 370.0 290.0 L 408.8 286.9 L 447.5 277.5 L 486.3 261.9 L 525.0 240.0 L 563.8 211.9 L 602.5 177.5 L 641.3 136.9 L 680.0 90.0"
+        fill="none" stroke="#8a2b06" stroke-width="1.6"/>
+
+  <!-- ============ 特征点 A：w=3，损失 9，斜率 6 ============ -->
+  <!-- 切线：坡多陡 -->
+  <line x1="602.5" y1="177.5" x2="662.5" y2="119.4" stroke="#5c7a1f" stroke-width="1.4" stroke-dasharray="4 3"/>
+  <circle cx="602.5" cy="177.5" r="4.5" fill="#8a2b06"/>
+  <circle cx="602.5" cy="177.5" r="8" fill="none" stroke="#8a2b06" stroke-width="1"/>
+
+  <!-- A 的说明（引线向左） -->
+  <line x1="598" y1="178" x2="520" y2="146" stroke="#8a2b06" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="508" y="136" font-family="sans-serif" font-size="12" fill="#8a2b06" text-anchor="end">损失 9（扣得多）</text>
+  <text x="508" y="152" font-family="sans-serif" font-size="12" fill="#5c7a1f" text-anchor="end">斜率 6 · 坡陡</text>
+
+  <!-- ============ 特征点 B：w=1，损失 1，斜率 2 ============ -->
+  <!-- 切线：坡多缓 -->
+  <line x1="447.5" y1="277.5" x2="507.5" y2="258.1" stroke="#5c7a1f" stroke-width="1.4" stroke-dasharray="4 3"/>
+  <circle cx="447.5" cy="277.5" r="4.5" fill="#8a2b06"/>
+  <circle cx="447.5" cy="277.5" r="8" fill="none" stroke="#8a2b06" stroke-width="1"/>
+
+  <!-- B 的说明（引线向左上） -->
+  <line x1="443" y1="276" x2="392" y2="252" stroke="#8a2b06" stroke-width="1" stroke-dasharray="2 2"/>
+  <text x="384" y="246" font-family="sans-serif" font-size="12" fill="#8a2b06" text-anchor="end">损失 1（扣得少）</text>
+  <text x="384" y="262" font-family="sans-serif" font-size="12" fill="#5c7a1f" text-anchor="end">斜率 2 · 坡缓</text>
+
+  <text x="24" y="332" font-family="sans-serif" font-size="11.5" fill="#6c675e">绿色虚线是「脚下坡多陡」（斜率）；红点是「站在坡上多高」（损失）。个子高、坡多半也陡——但那是两件事。</text>
+</svg>

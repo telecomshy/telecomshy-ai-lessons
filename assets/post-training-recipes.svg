@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 470" width="720" height="470" role="img" aria-label="上半是训练循环：出题、学生作答、跟扣分单比出扣分、往少扣分拧一点点，四步转圈；下半是六种扣分单卡片：人标答案、老师范文、老师概率表、奖励一个数、偏好一对、对错一比特，各自写着给什么、教得动什么">
+  <rect x="0" y="0" width="720" height="470" fill="#fdfcf8"/>
+
+  <text x="24" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">后训练的几种练法：循环是同一条，换的只有「扣分单」</text>
+  <line x1="24" y1="38" x2="696" y2="38" stroke="#e4ded1" stroke-width="1"/>
+
+  <!-- 上半：训练循环 -->
+  <text x="24" y="62" font-family="sans-serif" font-size="11.5" fill="#8a2b06">训练循环（第 0 课那条，从来不变）</text>
+
+  <rect x="24" y="72" width="140" height="44" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="94" y="92" font-family="sans-serif" font-size="12" fill="#1b1a17" text-anchor="middle">出题</text>
+  <text x="94" y="108" font-family="sans-serif" font-size="10.5" fill="#1b1a17" text-anchor="middle">文本自带答案</text>
+
+  <line x1="164" y1="94" x2="192" y2="94" stroke="#8a2b06" stroke-width="1.5"/>
+  <polygon points="192,90 200,94 192,98" fill="#8a2b06"/>
+
+  <rect x="200" y="72" width="150" height="44" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="275" y="92" font-family="sans-serif" font-size="12" fill="#1b1a17" text-anchor="middle">学生作答</text>
+  <text x="275" y="108" font-family="sans-serif" font-size="10.5" fill="#1b1a17" text-anchor="middle">交出自己那张概率表</text>
+
+  <line x1="350" y1="94" x2="378" y2="94" stroke="#8a2b06" stroke-width="1.5"/>
+  <polygon points="378,90 386,94 378,98" fill="#8a2b06"/>
+
+  <rect x="386" y="66" width="176" height="56" fill="#f6efe3" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="474" y="88" font-family="sans-serif" font-size="11" fill="#8a2b06" text-anchor="middle">算扣分：跟「扣分单」比</text>
+  <text x="474" y="106" font-family="sans-serif" font-size="10.5" fill="#1b1a17" text-anchor="middle">差多少，扣多少</text>
+
+  <line x1="562" y1="94" x2="590" y2="94" stroke="#8a2b06" stroke-width="1.5"/>
+  <polygon points="590,90 598,94 590,98" fill="#8a2b06"/>
+
+  <rect x="598" y="72" width="98" height="44" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="647" y="92" font-family="sans-serif" font-size="12" fill="#1b1a17" text-anchor="middle">拧一点点</text>
+  <text x="647" y="108" font-family="sans-serif" font-size="10.5" fill="#1b1a17" text-anchor="middle">往少扣分</text>
+
+  <!-- 回环箭头 -->
+  <line x1="647" y1="116" x2="647" y2="134" stroke="#8a2b06" stroke-width="1.2"/>
+  <line x1="94" y1="134" x2="647" y2="134" stroke="#8a2b06" stroke-width="1.2"/>
+  <polygon points="90,134 98,130 98,138" fill="#8a2b06"/>
+  <line x1="94" y1="134" x2="94" y2="116" stroke="#8a2b06" stroke-width="1.2"/>
+  <text x="370" y="148" font-family="sans-serif" font-size="10" fill="#8a2b06" text-anchor="middle">重复几百亿次</text>
+
+  <!-- 下半：六种扣分单 -->
+  <text x="24" y="182" font-family="sans-serif" font-size="11.5" fill="#8a2b06">扣分单（学习目标）有六种——给什么，就只能教什么</text>
+
+  <!-- 第一行三张 -->
+  <rect x="24" y="194" width="216" height="112" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="36" y="214" font-family="sans-serif" font-size="11.5" fill="#1b1a17">① 人标答案（SFT）</text>
+  <line x1="36" y1="220" x2="228" y2="220" stroke="#e4ded1" stroke-width="1"/>
+  <text x="36" y="238" font-family="sans-serif" font-size="10.5" fill="#1b1a17">给：只有答案那格是 100%</text>
+  <text x="36" y="256" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教得动：答案、腔调、格式</text>
+  <text x="36" y="274" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教不动：事实、尾部谁大谁小</text>
+  <text x="36" y="294" font-family="sans-serif" font-size="10" fill="#8a2b06">范文是人写的，就叫 SFT</text>
+
+  <rect x="252" y="194" width="216" height="112" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="264" y="214" font-family="sans-serif" font-size="11.5" fill="#1b1a17">② 老师范文（照范文背）</text>
+  <line x1="264" y1="220" x2="456" y2="220" stroke="#e4ded1" stroke-width="1"/>
+  <text x="264" y="238" font-family="sans-serif" font-size="10.5" fill="#1b1a17">给：老师写好的整段答案</text>
+  <text x="264" y="256" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教得动：和 ① 一模一样</text>
+  <text x="264" y="274" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教不动：和 ① 一模一样</text>
+  <text x="264" y="294" font-family="sans-serif" font-size="10" fill="#8a2b06">范文是老师写的，就叫蒸馏</text>
+
+  <rect x="480" y="194" width="216" height="112" fill="#ffffff" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="492" y="214" font-family="sans-serif" font-size="11.5" fill="#8a2b06">③ 老师概率表（蒸馏）</text>
+  <line x1="492" y1="220" x2="684" y2="220" stroke="#e4ded1" stroke-width="1"/>
+  <text x="492" y="238" font-family="sans-serif" font-size="10.5" fill="#1b1a17">给：整张表，含错字的分数</text>
+  <text x="492" y="256" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教得动：连「猜错会错成</text>
+  <text x="492" y="272" font-family="sans-serif" font-size="10.5" fill="#1b1a17">什么样」都在里面</text>
+  <text x="492" y="294" font-family="sans-serif" font-size="10" fill="#8a2b06">教得最细的一种（第 7 课）</text>
+
+  <!-- 第二行三张 -->
+  <rect x="24" y="318" width="216" height="112" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="36" y="338" font-family="sans-serif" font-size="11.5" fill="#1b1a17">④ 奖励一个数（RLHF）</text>
+  <line x1="36" y1="344" x2="228" y2="344" stroke="#e4ded1" stroke-width="1"/>
+  <text x="36" y="362" font-family="sans-serif" font-size="10.5" fill="#1b1a17">给：「这次回答 7 分」一个数</text>
+  <text x="36" y="380" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教得动：往好的方向挪</text>
+  <text x="36" y="398" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教不动：错在哪一步</text>
+  <text x="36" y="418" font-family="sans-serif" font-size="10" fill="#8a2b06">分数由奖励模型（或人）给</text>
+
+  <rect x="252" y="318" width="216" height="112" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="264" y="338" font-family="sans-serif" font-size="11.5" fill="#1b1a17">⑤ 偏好一对（DPO）</text>
+  <line x1="264" y1="344" x2="456" y2="344" stroke="#e4ded1" stroke-width="1"/>
+  <text x="264" y="362" font-family="sans-serif" font-size="10.5" fill="#1b1a17">给：「A 比 B 好」一对比较</text>
+  <text x="264" y="380" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教得动：两个答案的相对好坏</text>
+  <text x="264" y="398" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教不动：没比过的那些</text>
+  <text x="264" y="418" font-family="sans-serif" font-size="10" fill="#8a2b06">奖励模型不用单练了</text>
+
+  <rect x="480" y="318" width="216" height="112" fill="#ffffff" stroke="#e4ded1" stroke-width="1"/>
+  <text x="492" y="338" font-family="sans-serif" font-size="11.5" fill="#1b1a17">⑥ 对错一比特（RLVR）</text>
+  <line x1="492" y1="344" x2="684" y2="344" stroke="#e4ded1" stroke-width="1"/>
+  <text x="492" y="362" font-family="sans-serif" font-size="10.5" fill="#1b1a17">给：对／错，一分没有别的</text>
+  <text x="492" y="380" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教得动：答案该是哪个</text>
+  <text x="492" y="398" font-family="sans-serif" font-size="10.5" fill="#1b1a17">教不动：过程怎么走</text>
+  <text x="492" y="418" font-family="sans-serif" font-size="10" fill="#8a2b06">数学、代码这类能判对错的活</text>
+
+  <text x="24" y="452" font-family="sans-serif" font-size="10" fill="#1b1a17">教材是谁写的（老师／学生自己），是另一根轴——它决定练到的是谁的路（第 7 课进阶 Q3）。</text>
+</svg>

@@ -39,6 +39,9 @@
 - **LLM 底层 · 第 4 课**（[一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html)）＋ [进阶版「批从哪来、拐点、工业界的招」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)
 - **LLM 底层 · 第 5 课**（[它真的在思考吗？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html)）＋ [进阶版「谁写的、怎么切的、谁收着、怎么练出来的」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)
 - **LLM 底层 · 第 6 课**（[量化：把模型压小，把字吐快](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization.html)）＋ [进阶版「压法是什么、误差怎么救回来、KV 是什么精度」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization-deep.html)
+- **LLM 底层 · 第 7 课**（[蒸馏：小模型的本事从哪来](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation.html)）＋ [进阶版「抄什么、扣什么、怎么练」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation-deep.html)
+- **LLM 底层 · 第 8 课**（[这件事到底是谁干的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0008-who-does-what.html)）＋ [进阶版「在哪配、怎么验、代价是什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0008-who-does-what-deep.html)
+- **LLM 底层 · 第 9 课**（[后训练的几种练法](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0009-post-training-recipes.html)）＋ [进阶版「七问：差在哪、谁在打分、算法在拧什么、窄领域会不会练坏、练完改得动什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0009-post-training-recipes-deep.html)
 
 基础课和进阶版算同一课，改过一课就算这一课 `completed`。剩下的课会接着往下标。
 
@@ -107,6 +110,8 @@ python exercises/agent/0004-real-model-agent.py
 | 0004 进阶 | [批从哪来、拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                        |
 | 0005 进阶 | [谁写的、怎么切的、谁收着、怎么练出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)                          |
 | 0006 进阶 | [压法是什么、误差怎么救回来、KV 是什么精度](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization-deep.html)                          |
+| 0007 进阶 | [抄什么、扣什么、怎么练](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation-deep.html)                          |
+| 0008 进阶 | [在哪配、怎么验、代价是什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0008-who-does-what-deep.html)                          |
 
 ### Agent 原理篇
 
@@ -121,7 +126,7 @@ python exercises/agent/0004-real-model-agent.py
 | 0005 | [工具长出两个新形状：MCP 与 Skill](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-mcp-and-skills.html)                      |
 | 0006 | [Harness：你天天在用，却没分清的那个词](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0006-harness.html) —— Agent = Model + Harness |
 
-### Agent 技巧篇
+### 技巧篇
 
 怎么做、怎么不翻车。每条技巧都带「理由 + 一个反例 + 什么时候不适用」。
 
@@ -159,7 +164,7 @@ python exercises/agent/0004-real-model-agent.py
 | [采样参数速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/sampling-params.html)            | temperature / top_p / top_k / seed，配模型时照着抄 |
 | [KV Cache 与「缓存命中」速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/prompt-caching.html) | LLM 底层第 3 课的压缩版                            |
 | [一次请求，从头到尾](https://telecomshy.github.io/telecomshy-ai-lessons/reference/one-request-end-to-end.html)  | 可点逐步版 —— 看货架（KV cache）怎么一点点变满              |
-| [agent 评估该问什么](https://telecomshy.github.io/telecomshy-ai-lessons/reference/agent-eval-checklist.html) | Agent 技巧篇第 2 课的检查单                         |
+| [agent 评估该问什么](https://telecomshy.github.io/telecomshy-ai-lessons/reference/agent-eval-checklist.html) | 技巧篇第 2 课的检查单                         |
 | [预算与排座次](https://telecomshy.github.io/telecomshy-ai-lessons/reference/context-budget.html)             | 上下文工程的对照表                                  |
 | [权威架构图 · 对照](https://telecomshy.github.io/telecomshy-ai-lessons/reference/canonical-diagrams.html)     | 认得出英文资料里那几张图对应哪一块，当对照不当教材                  |
 

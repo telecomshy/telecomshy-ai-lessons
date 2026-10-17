@@ -56,7 +56,7 @@
     <dd>一种让模型交替产生"推理轨迹"和"动作"的范式（Reason + Act）。现代 agent 循环的理论来源。<a href="https://arxiv.org/abs/2210.03629">原论文</a>。</dd>
 
     <dt id="planning"><strong>Planning（规划）</strong></dt>
-    <dd>把一个大目标拆成可执行的子步骤的能力。agent 三大支柱之一。</dd>
+    <dd>把一个大目标拆成可执行的子步骤，并且<b>失败后会改主意</b>的能力（Lilian Weng 分的两半：<b>拆子目标</b>（task decomposition）· <b>自我反思</b>（self-reflection）——不一条路走到黑）。agent 三大支柱之一。</dd>
 
     <dt id="memory"><strong>Memory（记忆）</strong></dt>
     <dd>短时记忆＝当前上下文窗口里的内容；长时记忆＝跨会话持久化存储、需要时检索回来。agent 三大支柱之一。</dd>
@@ -144,7 +144,7 @@
     <dd>Transformer 的基本积木：<b>一层 = 注意力 + FFN</b>（各自配一次残差）。真实模型叠几十层（原始论文只有 6 层），层层打磨对"下一个 token"的预测。<b>每层的步骤一样，但每层自己的权重不同</b>——同一个模子压出来的饼干，形状相同、花纹各不相同。<br><b>⚠ 别跟「一轮」混</b>：<b>层是模型内部的结构</b>（一根向量进去要穿过全部层才出来），<b>轮是一次请求里的进度</b>（每蹦一个字走一遍）。<b>一轮 = 走完全部层，所以一轮 ≠ 一层。</b>→ <a href="#round">「一轮 / 层」这条</a></dd>
 
     <dt id="round"><strong>一轮（one pass）· 层 · 一次请求</strong></dt>
-    <dd><b>把全课最容易混的三个数一次钉死</b>（正文见 <a href="../lessons/llm/0002-prefill-vs-decode.html">第 2 课 · 第 2 节</a>）：<br>
+    <dd><b>全课最容易混的三个数，在这里分清</b>（正文见 <a href="../lessons/llm/0002-prefill-vs-decode.html">第 2 课 · 第 2 节</a>）：<br>
       <b>一次请求</b> ＝ 一次 API 往返（你发过去 ＋ 它把答案回过来）｜<b>1 次 prefill（n 行一次算完）＋ 若干次 decode（每轮只算 1 行、往缓存里加 1 行）</b><br>
       <b>一轮</b> ＝ 模型内部每蹦出一个字，就把整条流水线<b>完整走一遍</b>｜一次请求里有很多轮｜<b>新算的那根向量</b>要穿过所有层；注意力那一步还要<b>读前面所有位置</b>的 k、v（新字自己只占一行）<br>
       <b>层</b> ＝ 模型的内部结构，<b>跟对话流程无关</b>｜一层 = 四个小步（注意力 → 残差 → FFN → 残差）｜真实模型几十层<br>
@@ -167,7 +167,12 @@
 
     <dt id="training"><strong>训练（training）／ 损失（loss）／ 反向传播（backpropagation）</strong></dt>
     <dd><b>训练</b>＝ 出题（文本<b>自带答案</b>，不用人标）→ 作答 → 算<b>损失</b> → 从出口<b>往回追责</b>，把所有权重朝"少扣分"的方向拧极小一步 → 重复几百亿次。<b>损失（扣分）</b>＝ 答案那个字拿到的百分比越低、扣得越多（<code>−log(百分比)</code>），所以是个可以算出来的数。<b>反向传播</b>＝ 算账的顺序：做题<b>从前往后</b>，追责<b>从后往前</b>，一次算出几十亿个权重各该往哪拧。<br>
-      <b>扣分不会降到 0</b>：语料里同一处本来就有几种答案时，按比例猜已经是最优——那部分扣不掉，是<b>数据本身的不确定性</b>，不是模型笨。同理，<b>模型给的从来不是答案，是一张百分比表</b>。</dd>
+      <b>扣分不会降到 0</b>：语料里同一处本来就有几种答案时，按比例猜已经是最优——那部分扣不掉，是<b>数据本身的不确定性</b>，不是模型笨。同理，<b>模型给的从来不是答案，是一张百分比表</b>。<br>
+      <b>「拧」是课里对"改参数"的叫法</b>——「往少扣分的方向拧一点点」＝改权重；说一个算法的「拧法」＝它怎么分配扣分、一次改多大（见<a href="../lessons/llm/0009-post-training-recipes.html">LLM 第 9 课</a>）。</dd>
+
+    <dt id="gradient"><strong>求导 / 导数（斜率，derivative／slope）／ 梯度（gradient）／ 学习率（learning rate）</strong></dt>
+    <dd>训练「拧多少」背后的那点数学。<b>损失函数</b>＝把权重和损失连起来的公式（如 <code>L=w²</code>）；对它<b>求导</b>得到<b>斜率公式</b>（如 <code>dL/dw=2w</code>），代进当前权重得<b>此刻的斜率</b>——读作「权重每动 1、损失动多少」，它身上带两样：<b>正负号</b>＝该往大还是往小拧（方向），<b>绝对值</b>＝坡多陡（拧一步损失掉多少）。把所有权重各自的斜率排成一列，就是<b>梯度</b>（<a href="#training">反向传播</a>算的就是它）。<b>学习率</b>＝人为定的小数，一步放大多少倍（「每次拧一点点」里的「一点点」）。<br>
+      <b>更新只有一行</b>：<code>新权重 = 旧权重 − 学习率 × 斜率</code>。<b>损失值（扣分）不进这个算式</b>——「扣几分」只当进度尺子和反向传播的起点，不直接决定拧多少。所以「扣 8 分会不会比扣 2 分拧得狠」答案是<b>不会</b>：拧多少看斜率、不看扣分数。详见 <a href="../lessons/llm/appendix-training-math.html">LLM 附录 · 训练背后的那点数学</a>。</dd>
 
     <dt id="weights"><strong>权重（weights）／ 参数（parameters）</strong></dt>
     <dd><a href="#training">训练</a>学出来的、<b>固定不变</b>的那些数——就是第 1 课说的"同一把尺子"。它<b>不参与被算</b>，它<b>参与算</b>。例：<code>W_q</code> / <code>W_k</code> / <code>W_v</code>、输出投影、FFN 的两层。<br>
@@ -238,10 +243,28 @@
     <dd>显卡的<b>两条独立资源</b>：算力＝每秒能做多少次运算，带宽＝每秒能从显存搬多少字节。<b>prefill 喂得饱算力</b>（decode 喂不饱、卡在带宽上），见 <a href="#arithmetic-intensity">算术强度</a>。<b>判断一个优化有没有用的问法</b>：它砍的是「搬」还是「算」？——<a href="../lessons/llm/0006-quantization.html">量化</a>砍「搬」，所以只救 decode。</dd>
 
     <dt id="distillation"><strong>蒸馏（distillation）／ 软标签（soft targets）</strong></dt>
-    <dd><b>让一个小模型照着一个大模型学</b>——训练时拿<b>老师那整张概率表</b>当目标，<b>包括几个"错"字上的分数</b>。那些分数不是噪声：老师不只说「是晴天」，还说「错了多半错成下雨」——<b>这套排序就是它的泛化方式</b>，而只给正确答案的表里一点都留不下。
+    <dd><b>让一个小模型照着一个大模型学</b>——训练时拿<b>老师那整张概率表</b>当目标，<b>包括几个"错"字上的分数</b>。那些分数不是噪声：老师不只说「是晴天」，还说「错了多半错成下雨」——<b>这套排序就是它的泛化方式</b>（泛化＝把规律用到没见过的题目上），而只给正确答案的表里一点都留不下。
     <b>要先把老师「加热」</b>（调高 <a href="#temperature">温度</a>），因为分布太尖时「第二名是谁」会被吞掉。
     <b>⚠ 别和量化混</b>：<a href="#quantization">量化</a>改「怎么存」，能力不变；蒸馏改「从哪来」，能力会变。<b>顺序是先蒸馏变小、再量化压小。</b>
-    <b>⚠ 「蒸馏」今天至少两个意思</b>：搬<b>概率表</b>（本文这种），和搬<b>大模型写出来的回答</b>（R1 用的那种）。见<a href="../lessons/llm/0007-distillation.html">LLM 第 7 课</a>。</dd>
+    <b>⚠ 「蒸馏」今天至少三个意思</b>：搬<b>概率表</b>（本文这种）、搬<b>大模型写出来的回答</b>（R1 用的那种）、<b>学生自己写、老师逐字批</b>（2025 年起的主流做法，见<a href="#on-policy">在策略</a>）。<b>范文是大模型写的才叫蒸馏；人写的叫<a href="#sft">监督微调</a></b>——练法同一个，叫法看范文的作者。见<a href="../lessons/llm/0007-distillation.html">LLM 第 7 课</a>与<a href="../lessons/llm/0007-distillation-deep.html">它的进阶版</a>。</dd>
+
+    <dt id="sft"><strong>监督微调（supervised fine-tuning，SFT）</strong></dt>
+    <dd><b>照写好的答案练</b>：拿一批「题目＋答案」，把模型的概率往答案上拧。<b>一条数据＝问题＋人写的回答</b>（一问一答，不是整篇文档）；<b>只对回答那段算损失</b>，提问是题面——这是它和<a href="#post-training">预训练</a>「整段每个位置都算」的分界。练法和<a href="#distillation">蒸馏</a>的「照范文背」是同一个动作，<b>叫法看范文是谁写的</b>——范文是大模型写的叫蒸馏（本事从大模型搬来），是人写的才叫监督微调；<b>老师不需要在训练现场</b>，范文是它离线写好的就行。它教得动<b>文风、格式、行为套路</b>，<b>「学得会腔调，未必学得会事实」</b>——事实与推理能力搬得慢。见<a href="../lessons/llm/0007-distillation-deep.html#q3-on-policy">第 7 课进阶 Q3</a>（实测）与<a href="../lessons/llm/0007-distillation-deep.html#q4-sft">Q4</a>（分界）。</dd>
+
+    <dt id="lora"><strong>LoRA（低秩适配，low-rank adaptation）</strong></dt>
+    <dd><b>不动原版权重，只在每层旁边加一对很窄的矩阵当补丁，只训练这对补丁。</b>「低秩」说的是这对矩阵很窄，乘出来的补丁参数就少；原版权重整个冻住。<b>省多少</b>：LoRA 论文里拿 GPT-3 175B 比，可训练参数少 10,000 倍、显存少 3 倍，质量不相上下。<b>它和练法是两条轴</b>：练法决定扣分单是什么（SFT／DPO／RLHF……），全参数还是 LoRA 决定照这张单子拧多大一块——所以「LoRA 做的 DPO」不是第三种练法。⚠ 补丁小也是练出来的。见<a href="../lessons/llm/0009-post-training-recipes-deep.html#q1-pre-vs-post">第 9 课进阶 Q1</a>。</dd>
+
+    <dt id="post-training"><strong>预训练（pre-training）／ 后训练（post-training）</strong></dt>
+    <dd><b>预训练</b>＝拿海量文本接着写，练「会说话」：语言、世界知识、推理的底子；<b>一条数据就是一段现成文本，整段每个位置都算损失</b>。<b>后训练</b>＝底子练成之后的各道工序（<a href="#sft">监督微调</a>、强化学习、<a href="#distillation">蒸馏</a>都在其中），练「听人话、按要求干活」；它的数据是「问题＋要学的回答」，<b>只对回答那段算损失</b>。<b>后训练定行为，不补智商。</b>见<a href="../lessons/llm/0009-post-training-recipes.html">LLM 第 9 课</a>。</dd>
+
+    <dt id="rlhf"><strong>RLHF ／ DPO ／ GRPO·RLVR（强化学习后训练的一家）</strong></dt>
+    <dd>扣分单不是「正确答案」，是<b>评价</b>。<b>RLHF</b>＝人给回答排序 → 练一个奖励模型 → 给学生的回答打一个分，往高分拧；<b>DPO</b>＝跳过奖励模型，直接拿「A 比 B 好」的成对比较练；<b>GRPO</b>＝PPO（最常用的那个 RL 算法）的省显存变体；<b>RLVR（对错一比特）</b>＝对错能自动判的活（数学、代码），奖励就是对／错。<b>共同的毛病：评价只有一句话，错在哪一步它没说。</b>PPO 里还有个常被忽略的部件<b>价值网络（critic）</b>——练出来预测「照这局面走下去能拿多少分」，当每一步的对照线；<b>GRPO 省掉它</b>，改用「同一题采一组回答、组内平均」当对照线。<b>训练时还会加一项 KL 惩罚</b>：拿 <a href="#kl-divergence">KL 散度</a>量「离训练前的模型有多远」，太远就扣分——就是给正在训练的那个模型拴的绳，免得它为高分跑偏。<b>打分器只认表面特征时，模型会往那些特征上堆、钻它的空子</b>——行话叫 <b>reward hacking（奖励劫持）</b>，KL 绳就是防它的手段之一（打分器本身标错的，绳子治不了）。<b>一个分怎么用</b>：模型先把回答整段写出来（同一题采好几条），打分器每条给一个分；这个分与对照线一比得到方向，然后<b>乘到那条回答每个字的 log 概率上</b>——<b>整段共用一个方向，不会单独指认哪个字错了</b>（实现细节见<a href="../lessons/llm/0009-post-training-recipes-deep.html#q3-algorithms">第 9 课进阶 Q3</a>）。见<a href="../lessons/llm/0009-post-training-recipes.html">LLM 第 9 课</a>与<a href="../lessons/llm/0009-post-training-recipes-deep.html">它的进阶版</a>。</dd>
+
+    <dt id="kl-divergence"><strong>交叉熵（cross entropy）／ KL 散度（KL divergence）</strong></dt>
+    <dd>量<b>两行概率表差多少</b>的尺子——把一行当标准答案，看另一行差得有多狠，差得越多扣得越重。<a href="#distillation">蒸馏</a>的扣分单就是它：Hinton 那套＝<b>软目标那笔（高温）＋ 正确答案那笔（温度 1、权重低）</b>的加权，软目标那笔要乘 T² 顶回被温度压小的力气。<b>这把尺子有两个方向</b>：正着量＝站在老师那头看学生，老师有的学生都得摊上学一点（摊大饼）；反着量＝站在学生这头看老师，只在学生走到的地方问「老师会这么走吗」，专学老师最有把握的（认准一条路）。见<a href="#on-policy">在策略</a>。</dd>
+
+    <dt id="on-policy"><strong>在策略（on-policy）／ 离策略（off-policy）</strong></dt>
+    <dd>训练时<b>教材是谁写的</b>。<b>离策略</b>＝照着别人写好的范文练（老师写什么、学生学什么）；<b>在策略</b>＝学生自己写，在自己写出的卷面上练（老师逐字批，或者只给最后的对错）。<b>在策略才练得到「写错之后怎么圆回来」</b>——离策略的教材里没有那种处境，错一步就一路滚大。<a href="#distillation">蒸馏</a>的三种练法对照见<a href="../lessons/llm/0007-distillation-deep.html">LLM 第 7 课进阶</a>。</dd>
 
     <dt id="inference"><strong>推理引擎（inference）</strong></dt>
     <dd><b>跑模型这件事本身</b>——把权重搬上 GPU、把输入过一遍、把 token 挑出来。vLLM、SGLang、各家 API 的服务端都叫这个名字。<b>⚠ 中文有坑</b>：「推理」这两个字在中文里同时指 inference 和 reasoning，见下面一条。<b>本课程的口径</b>：<b>跑模型＝推理引擎</b>（讲机制时用「跑」字），<b>想事情＝思考</b>。<br>

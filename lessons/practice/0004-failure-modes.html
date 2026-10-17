@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>技巧篇 · 0004 · 失败模式与自救：翻车了怎么办</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">技巧篇 · 0004</div>
+  <h1>失败模式与自救：翻车了怎么办</h1>
+  <p class="subtitle">从「重跑一遍碰运气」到「一张症状对照表」</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>agent 跑一半报错了、答非所问了、卡住不动了——你的第一件事是什么？</p>
+    <p>大多数人的第一反应是<b>重跑一遍</b>。碰运气能过，但同一个坑会摔第二次。</p>
+    <p><b>自救不是玄学，是一张"症状 → 先看哪 → 怎么救"的对照表。</b>第一动作永远是看轨迹（trace）：翻的是循环哪一步，救法基本就定了。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：对着症状定位到循环的哪一步，选对当场救法，并说清下一跑怎么防。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">这一篇的规矩（技巧篇都这样）</span>
+    <p>每条技巧都配三样：<b>做法</b>、<b>理由 + 一个反例</b>、<b>什么时候不适用</b>。最后一条最重要——技巧会过时，也会有例外。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>自救分两半：<b>这一跑</b>当场救，<b>下一跑</b>改防。第一动作永远是看 trace，先定是哪一步翻的车。</p>
+  </div>
+
+  <h2>1. 先认路：翻车发生在循环哪一步</h2>
+  <p><a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a> 第 4 节认过四张脸：推理想歪、行动翻车（挑错工具 / 参数错 / 工具报错）、观察看错看漏、不收尾。这一课给它们配救法。</p>
+  <p><b>trace（轨迹）</b>就是一次任务里所有"推理—行动—观察"的完整记录。症状是表象，trace 告诉你<b>哪一步</b>翻的车——它比猜测有用一百倍。</p>
+
+  <div class="loop">
+    <div class="loop-node">翻车症状<small>报错 / 答非所问 / 卡住</small></div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-node">看 trace<small>最后一次推理、行动、观察各是什么</small></div>
+    <div class="loop-arrow">→</div>
+    <div class="loop-node">定位哪一步<small>推理？行动？观察？收尾？</small></div>
+    <div class="loop-back">↺ 对症下药：这一跑怎么救，下一跑怎么防</div>
+  </div>
+
+  <h2>2. 技巧一：先看 trace，再动手</h2>
+  <p><b>做法</b>：从后往前读 trace：最后一次"观察"是什么、"行动"是什么、"推理"说了什么。翻车点通常就在这三样之间。</p>
+  <p><b>理由 + 反例</b>：猜着改会连环改错——把"工具报错"当成"模型笨"去改提示词，白忙一场。反例：有些系统没记 trace，那只能从报错信息下手。</p>
+  <p><b>什么时候不适用</b>：程序根本没跑起来（语法错、没装库）——那是环境问题，看报错就够，轮不到 trace。</p>
+
+  <h2>3. 技巧二：工具翻车，先读错误信息</h2>
+  <p><b>做法</b>：把错误信息分三类再动手。<b>工具本身坏了</b>（超时、5xx）→ 退避重试：等一会儿再试，别原地狂点——Anthropic 的官方 SDK 就是这么干的（默认自动退避重试两次）。<b>你调错了</b>（参数格式、权限）→ 改参数，下一跑把工具清单写清楚（那是"工具设计"那一课的地盘，还没开）。<b>工具说"没有"</b>（查无此航班）→ 换来源或回头问用户，别硬编一个。</p>
+  <p><b>理由 + 反例</b>：三类的救法完全不同；把"调错参数"当"接口不稳"去狂重试，只会把配额烧光。反例：一次超时不代表坏了，重试一两次还超时才算。</p>
+  <p><b>什么时候不适用</b>：<b>撞花费上限那种 429 没有重试提示，会一直失败到额度恢复</b>（Anthropic Errors 文档原话）——重试救不了它，只能等或充值。⚠ 以上是 Anthropic 的口径，别家错误码要看别家文档。</p>
+
+  <h2>4. 技巧三：格式坏，靠接口钉，不靠嘴求</h2>
+  <p><b>做法</b>：JSON 断了、字段缺了，就开<b>结构化输出</b>（Anthropic 叫 structured outputs；vLLM 这类引擎叫 <code>response_format</code> / <code>structured_outputs</code>），让接口把格式钉住；提示词里的格式要求只当辅助。</p>
+  <p><b>理由 + 反例</b>：在提示词里写十遍"必须输出合法 JSON"，也挡不住它偶尔吐断；接口保证是把非法的路直接堵死。反例：字段写错（"到达日期"填成出发日期）是语义错，结构化输出管不了。</p>
+  <p><b>什么时候不适用</b>：拒答（refusal）时拒答内容优先于 schema 约束（Anthropic 口径）——那不是格式问题，别当格式修；开放式写作本来就不该钉格式。</p>
+
+  <h2>5. 技巧四：停得莫名其妙，先查"为什么停"</h2>
+  <p><b>做法</b>：每个回答都带一个<b>停止原因</b>（stop reason）。撞 <code>max_tokens</code>＝被上限截断，<b>调大上限重发</b>（Anthropic 文档原话 "Raise max_tokens or continue the response"）；截断的回答里若有没写完的工具调用，更得重发。<code>model_context_window_exceeded</code>＝窗口填满，当截断处理。</p>
+  <p><b>理由 + 反例</b>：把"截断"当"答完"，会拿着半截答案下结论。反例：回答确实写完却想让它继续写——那不是截断，是任务边界没说清。</p>
+  <p><b>什么时候不适用</b>：<code>end_turn</code> 才是真答完；拒答、要调工具各有各的处理，别一律调大上限。</p>
+
+  <h2>6. 技巧五：不收尾、看着像编的</h2>
+  <p><b>做法</b>：不收尾——最大步数护栏兜底，更根本的是给它"什么时候算完成"的约定。看着像编的——让它<b>给出处</b>，关键动作<b>人工批准</b>（人在环中）；同一类任务多跑几遍看一致（那是 <a href="0002-evaluating-agents.html">技巧篇 0002</a> 的地盘）。</p>
+  <p><b>理由 + 反例</b>：模型不会自己保证停下来，也不会自己保证说的是真的——这两样只能工程兜。反例：模型两次答案不一样未必是错，先固定参数、同一缓存状态再比（温度、批大小都会让同请求不同输出，见 <a href="../llm/0008-who-does-what.html">LLM 底层 · 第 8 课</a>），不然你比的是随机性。</p>
+  <p><b>什么时候不适用</b>：一次性小活，人审比翻车还贵——低风险的就让它跑完自己看。</p>
+
+  <h2>7. 一张症状对照表，带走</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem;width:22%">症状</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem;width:16%">多半翻在哪</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">当场救 → 下一跑防</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">工具报错 / 超时</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">行动</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">读错误信息，退避重试 → 超时阈值、重试交给 SDK</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">参数填错（日期 / 单位）</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">行动</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">改参数重发 → 工具清单写清格式和示例</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">JSON 断 / 字段缺</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">行动 / 输出</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">开结构化输出 → 同左，schema 写清必填</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">答案停在半句</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">输出</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">查停止原因，调大上限重发 → 预算留白（技巧篇 0001）</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">不收尾 / 死循环</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">推理</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">最大步数拦下 → 约定"什么时候算完成"</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">看着像编的</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">推理 / 观察</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">要出处、人工把关 → 评测多跑几遍（技巧篇 0002）</td></tr>
+      <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule)">忘事 / 塞爆</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">观察 / 记忆</td>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">裁剪、压缩（技巧篇 0001）→ 记忆取舍（原理篇第 7 课）</td></tr>
+      <tr><td style="padding:0.5rem">同任务两次结果不一样</td>
+          <td style="padding:0.5rem">全局</td>
+          <td style="padding:0.5rem">先固定参数、同缓存状态再比 → 多跑几遍看一致（技巧篇 0002）</td></tr>
+    </tbody>
+  </table>
+
+  <h2>8. 动手：让假 agent 故意翻四种车</h2>
+  <p>脚本在工作区：<code>exercises/practice/0004-failure-modes.py</code>，<b>不需要 API key</b>。四种翻车都是玩具实现，但对应真实症状：工具报错、JSON 断、撞上限截断、不收尾——每种走一遍"症状 → 当场救 → 下一跑防"。</p>
+  <pre><code>python exercises/practice/0004-failure-modes.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code> 切换成 UTF-8。</p>
+
+  <pre><code>===== 症状 ① 工具报错 =====
+  第 1 次调用报错：get_flights 超时（网关 504）
+  [当场救] 读懂错误是「超时」→ 退避 2s 再试（玩具里不真等，真系统等的是秒级）
+  第 2 次调用报错：get_flights 超时（网关 504）
+  [当场救] 读懂错误是「超时」→ 退避 4s 再试（玩具里不真等，真系统等的是秒级）
+  第 3 次调用成功：23 个航班
+  [下一跑防] 超时阈值写进工具配置；重试交给 SDK（Anthropic 的 SDK 默认自动退避重试两次）
+  [trace] ['推理：查一下明天的航班', '观察：工具报错「get_flights 超时（网关 504）」', '观察：工具报错「get_flights 超时（网关 504）」', '行动：查航班 → 23 个航班']
+
+===== 症状 ② 输出格式坏（JSON 断了）=====
+  模型吐出：{"city": "北京
+  [当场救] 解析报错：Unterminated string starting at: line 1 column 10 (char 9)
+  [当场救] 不改提示词碰运气——开结构化输出，接口替你把格式钉住
+  开结构化输出后：{"city": "北京"} → 解析成功：{'city': '北京'}
+  [下一跑防] schema 写清字段必填；拒答时按 stop reason 另行处理，别当格式错
+
+===== 症状 ③ 撞上限截断 =====
+  返回里 stop_reason＝max_tokens，正文停在「第一步：先查航班，第二步：比」
+  [当场救] 查 stop reason 就知道为什么停——max_tokens 是撞上限，不是答完
+  调大上限重发后：stop_reason＝end_turn，正文完整
+  [下一跑防] 预算留白（技巧篇 0001）；回答里若有没写完的工具调用，必须调大重发
+
+===== 症状 ④ 不收尾（死循环）=====
+  第 1 步：模型说「再查一家」……（就是不说完成）
+  第 2 步：模型说「再查一家」……（就是不说完成）
+  第 3 步：模型说「再查一家」……（就是不说完成）
+  第 4 步：模型说「再查一家」……（就是不说完成）
+  [当场救] 达到最大步数 4 仍未完成 → 护栏拦下
+  [下一跑防] 最大步数是兜底；更根本的是给它「什么时候算完成」的约定
+
+带走一句：第一动作永远是看 trace——先定位是循环哪一步翻的车，救法基本就定了。</code></pre>
+
+  <h2>9. 判断题（技巧篇考这个）</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 工具连报三次超时，你先做什么？</p>
+    <button class="quiz-option" data-correct="true">读懂错误信息，退避等一会儿再试，不原地狂点</button>
+    <button class="quiz-option">立刻换一个更贵的模型来试一试</button>
+    <button class="quiz-option">把提示词写得更详细一些再发</button>
+    <button class="quiz-option">把任务拆成两个更小的任务来跑</button>
+    <p class="feedback"
+       data-ok="对。超时是「工具那一层」的事，退避重试是对症的药。"
+       data-no="换模型、改提示词、拆任务都救不了超时——先读错误信息分清类别。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 模型输出的 JSON 老是断，最靠谱的一招是什么？</p>
+    <button class="quiz-option" data-correct="true">开结构化输出，让接口把格式钉住</button>
+    <button class="quiz-option">在提示词里再三强调必须输出合法 JSON</button>
+    <button class="quiz-option">把温度调到 0，让输出稳定下来</button>
+    <button class="quiz-option">每次解析失败就重跑一遍碰运气</button>
+    <p class="feedback"
+       data-ok="对。嘴求十遍不如接口把非法的路堵死。"
+       data-no="提示词求格式、降温、重跑都是碰运气——结构化输出才是保证。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 回答停在半句话，下一步做什么？</p>
+    <button class="quiz-option" data-correct="true">查停止原因，是撞上限就调大上限重发</button>
+    <button class="quiz-option">把这半句当成最终答案先用着</button>
+    <button class="quiz-option">换个模型把同样的问题再问一遍</button>
+    <button class="quiz-option">把任务改简单一点重新来过</button>
+    <p class="feedback"
+       data-ok="对。停止原因写着「为什么停」——max_tokens 是截断，不是答完。"
+       data-no="半句答案不能用；先看停止原因，才知道该调大重发还是别的。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> agent 说"任务完成了"，但你怀疑它没做完，怎么办？</p>
+    <button class="quiz-option" data-correct="true">看 trace 核对它到底做了什么，关键动作人来把关</button>
+    <button class="quiz-option">把最大步数调大，让它接着跑</button>
+    <button class="quiz-option">多给它几个工具，让它做得更全</button>
+    <button class="quiz-option">在提示词里把「完成」两个字加粗强调</button>
+    <p class="feedback"
+       data-ok="对。它说完成只是它的判断；事实要回 trace 里核。"
+       data-no="调步数、加工具、改措辞都不解决「它可能在骗你」——回 trace 核对。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://platform.claude.com/docs/en/api/errors">Anthropic — Errors（官方文档）</a>：429 / 529 / 500 各是什么；官方 SDK 默认自动退避重试两次；撞花费上限的 429 没有重试提示、会一直失败到额度恢复。<br>
+    <a href="https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons">Anthropic — Stop reasons and fallback（官方文档）</a>："为什么停了"那张表；撞上限（<code>max_tokens</code>）调大重发；上下文填满（<code>model_context_window_exceeded</code>）当截断处理。<br>
+    <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — "Building effective agents"</a>：最根本的一防——能用固定流程解决的事别上 agent，不确定性是要付的代价。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"为什么不直接重跑一遍？""错误信息里最有用的是哪句？""什么时候该人工介入？""别家的错误码也长这样吗？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课</a> 第 4 节「每一步会怎么翻车」（先认脸）<br>
+    <b>同篇</b>：<a href="0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（多跑几遍那半）· <a href="0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>（塞爆那半）· 0003 · 工具设计（还没开）<br>
+    <b>其它轨道</b>：<a href="../llm/0008-who-does-what.html">LLM 底层 · 第 8 课 · 这件事到底是谁干的</a>（格式、停止原因各归哪层）· <a href="../agent/0007-memory.html">Agent 原理篇 · 第 7 课 · 记忆</a>（忘事那半）<br>
+    术语表：<a href="../../reference/glossary.html#trace">轨迹 trace</a> · <a href="../../reference/glossary.html#stop-reason">停止原因</a> · <a href="../../reference/glossary.html#guardrail">护栏</a> · <a href="../../reference/glossary.html#hitl">人在环中</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · 技巧篇 · 0004 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

@@ -60,7 +60,7 @@ function ConvertFrom-CnNum([string]$s){
   return $null
 }
 
-$TRACKS = @{ llm='LLM 底层'; agent='Agent 原理篇'; practice='Agent 技巧篇'; rag='RAG' }
+$TRACKS = @{ llm='LLM 底层'; agent='Agent 原理篇'; practice='技巧篇'; rag='RAG' }
 $SITE = 'https://telecomshy.github.io/telecomshy-ai-lessons/'
 $ANCHOR = '目前标为 `completed` 的是：'
 # 只认 /lessons/ 前面不是连字符的（域名 telecomshy-ai-lessons/ 里那个不算）
@@ -109,10 +109,11 @@ function Load {
   if ($sm.Success) { $script:statDone = [int]$sm.Groups[1].Value }
 }
 
-$lessonFiles = @(Get-ChildItem (Join-Path $root 'lessons') -Recurse -File -Filter *.html | Where-Object { $_.Name -ne 'index.html' })
+# 附录（appendix-*）不属于正式课程内容，不进「门课 / 脚本」主线计数（主页那几个数只数正式课）
+$lessonFiles = @(Get-ChildItem (Join-Path $root 'lessons') -Recurse -File -Filter *.html | Where-Object { $_.Name -ne 'index.html' -and $_.Name -notmatch '^appendix-' })
 $nBasic   = @($lessonFiles | Where-Object { $_.Name -notmatch '-deep\.html$' }).Count
 $nDeep    = @($lessonFiles | Where-Object { $_.Name -match  '-deep\.html$' }).Count
-$nPy      = @(Get-ChildItem (Join-Path $root 'exercises') -Recurse -File -Filter *.py).Count
+$nPy      = @(Get-ChildItem (Join-Path $root 'exercises') -Recurse -File -Filter *.py | Where-Object { $_.Name -notmatch '^appendix-' }).Count
 $llmBasic = @($lessonFiles | Where-Object { $_.Name -notmatch '-deep' -and $_.Directory.Name -eq 'llm' }).Count
 $llmDeep  = @($lessonFiles | Where-Object { $_.Name -match  '-deep' -and $_.Directory.Name -eq 'llm' }).Count
 

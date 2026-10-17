@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agent 技巧篇 · 0002 · 怎么判断一个 agent 好不好用</title>
+<title>技巧篇 · 0002 · 怎么判断一个 agent 好不好用</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta">Agent 技巧篇 · 0002</div>
+  <div class="lesson-meta">技巧篇 · 0002</div>
   <h1>怎么判断一个 agent 好不好用</h1>
   <p class="subtitle">使用者视角——<b>不看它最漂亮的那次，看它最差的那次</b>。</p>
 
@@ -130,11 +130,12 @@
 
   <h2>7. 技巧六：改了模型配置，重新测一遍</h2>
   <div class="goal" style="background:#fff;border-color:var(--ink)">
-    <p><b>做法</b>：给模型<b>开了思考、改了思考额度、换了模型版本、换了量化档</b>（8 bit 换 4 bit 之类）之后，拿你原来那几个任务<b>重新跑一遍</b>——工具调用还准不准、格式还对不对、延迟能不能忍。</p>
+    <p><b>做法</b>：给模型<b>开了思考、改了思考额度、换了模型版本、换了量化档</b>（8 bit 换 4 bit 之类）、<b>换了模型</b>（比如从大模型换成蒸馏出来的小模型）之后，拿你原来那几个任务<b>重新跑一遍</b>——工具调用还准不准、格式还对不对、延迟能不能忍。</p>
   </div>
   <p><b>理由（思考那一半）</b>：思考练的是「把答案想对」这一件事，<b>工具格式、延迟、成本都不在它的训练目标里</b>——所以这三样不会跟着变好，<b>更慢是必然的</b>（那段思考是真的一段字，按字收钱，四笔账见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>）。</p>
   <p><b>理由（量化那一半）</b>：压得越狠，越容易在<b>精确执行</b>上出错——实测里涨得最凶的是「方法／执行」类错误（多步算术算错、边界条件处理错），而工具调用要求的正是<b>逐个字都不能错的严格 JSON</b>（数字与出处见 <a href="../llm/0006-quantization.html">LLM 底层 · 第 6 课</a>）。所以换了量化档，别拿极限档去赌格式：<b>8 bit（FP8）是更稳的一档</b>，要压就留余量，或者压完拿你自己的工具调用实测一遍。</p>
-  <p><b>反例</b>：「它会思考了，那就免检了」「压完跑得挺快」——上线之后才发现工具调用的格式开始出错，或者用户根本等不了三十秒。</p>
+  <p><b>理由（蒸馏那一半）</b>：蒸馏搬的是<b>「想」的本事</b>——小模型照着老师学的是怎么猜答案，<b>格式和动手这两维不在教材里</b>。R1 论文自己的「局限」一节写着：它的结构化输出比现有模型差，而且<b>没法调用工具</b>（搜索引擎、计算器都用不上）。所以<b>推理跑分很高的小模型，工具调用未必行</b>（机制见 <a href="../llm/0007-distillation.html">LLM 底层 · 第 7 课</a>）。</p>
+  <p><b>反例</b>：「它会思考了，那就免检了」「压完跑得挺快」「它跑分很高，换上就行」——上线之后才发现工具调用的格式开始出错，或者用户根本等不了三十秒。</p>
   <div class="note">
     <span class="label">什么时候不适用</span>
     <p><b>纯问答、没人盯着的离线任务</b>——没有工具调用、没人计时，那就只看答案质量对不对。<br>
@@ -239,7 +240,7 @@
     <a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic — Demystifying evals for AI agents</a>：结果 vs 轨迹、pass@k vs pass^k、"别拿固定路径判分"、"读记录才知道为什么变"、以及"20～50 个用例就够起步"。<br>
     <a href="https://arxiv.org/abs/2406.12045">τ-bench（Yao et al., 2024）</a>：pass^k 的出处；"单次 >60%、连续 8 次 &lt;25%"那个数字在这里。<br>
     <a href="https://docs.anyscale.com/llm/serving/benchmarking/metrics">Anyscale — Understand LLM latency and throughput metrics</a>：技巧四的依据——"排队等待会加到 TTFT 上"，以及"只看平均延迟会骗人、要看百分位"。<br>
-    <a href="https://arxiv.org/abs/2501.12948">DeepSeek-R1（Nature 2025）</a>：技巧六「思考那一半」的依据——变强的只有"把答案想对"这一维，工具调用那一维"remain suboptimal"、甚至"cannot leverage tools"。<br>
+    <a href="https://arxiv.org/abs/2501.12948">DeepSeek-R1（Nature 2025）</a>：技巧六「思考那一半、蒸馏那一半」的依据——变强的只有"把答案想对"这一维，工具调用那一维"remain suboptimal"、甚至"cannot leverage tools"。<br>
     <a href="https://arxiv.org/abs/2501.03035">Li et al. — "Quantization Meets Reasoning"</a> · <a href="https://arxiv.org/abs/2409.11055">Lee et al. — 13 个数据集的量化评测</a>：技巧六「量化那一半」的依据——语义和执行都会掉（数学准确率平均 −11.3%，执行类错误涨得最凶），而且 <b>FP8 是各任务上最稳的一档</b>。<br>
     <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp — <code>tools/quantize/README.md</code></a>：量化「may introduce some accuracy loss」——掉没掉只能拿你自己的任务测出来。
   </div>
@@ -255,7 +256,7 @@
     <b>速查</b>：<a href="../../reference/agent-eval-checklist.html">试一个 agent 该问什么</a>
   </p>
 
-  <footer>AI Agent 原理与工程 · Agent 技巧篇 · 0002 · <a href="../index.html">课程目录</a></footer>
+  <footer>AI Agent 原理与工程 · 技巧篇 · 0002 · <a href="../index.html">课程目录</a></footer>
 </div>
 </body>
 </html>

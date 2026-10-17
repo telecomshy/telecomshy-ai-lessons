@@ -17,28 +17,36 @@
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
     <p>你有没有想过："用 AI"和"用 agent"，到底差在哪？</p>
-    <p>同一个模型，套上不同的壳——一个只会一问一答；另一个却能自己查资料、读文件、一步步把活干完，中间不用你盯着。</p>
+    <p>同一个模型，套上不同的壳<span style="color:var(--muted)">（这层壳有个正式名字，第 6 课再讲）</span>——一个只会一问一答；另一个却能自己查资料、读文件、一步步把活干完，中间不用你盯着。</p>
     <p style="margin-top:0.7rem">差别<b>不在模型，在外面那层结构</b>：一个"决定了做、做了再看、看了再决定"的循环。</p>
-    <p><b>学完这课，你能</b>：亲手跑通一个最小循环，并指着它的输出说清每一步在干什么、为什么最后会停。</p>
+    <p><b>学完这课，你能</b>：说清"用 AI"和"用 agent"差在哪；亲手跑通一个最小循环，并指着它的输出说清每一步在干什么、为什么最后会停。</p>
   </div>
 
   <div class="note">
     <span class="label">记住一条主线，后面就不会晕</span>
-    <p>agent 的全部秘密就是<b>一个循环</b>：<b>推理 → 行动 → 观察 → 再推理</b>，直到任务完成、或者撞上护栏。</p>
+    <p>跟单次调用比，agent 多出来的就是<b>一个循环</b>：<b>推理 → 行动 → 观察 → 再推理</b>，直到任务完成、或者撞上护栏。</p>
     <p>本课先把循环跑通；后面每一课，都是往这个循环里加零件。</p>
   </div>
 
   <h2>1. 一次调用 ≠ 一个 agent</h2>
-  <p>大多数人第一次接触 LLM 时的模型是这样：<b>输入一段 prompt，输出一段文本，结束</b>。这很好用，但它没有"手"，也没有"下一步"——它不知道世界上发生了什么，也没法改变什么。</p>
+  <p>大多数人第一次接触 LLM 时的模型是这样：<b>输入一段 prompt（提示词），输出一段文本，结束</b>。这很好用，但它没有"手"，也没有"下一步"——它不知道世界上发生了什么，也没法改变什么。</p>
   <p>一个 <a href="../../reference/glossary.html#agent">agent</a> 不一样。你给它一个<b>目标</b>，它会自己决定：现在该做什么？做完看到结果后，再决定下一步做什么。这个"决定了做、做了再看、看了再决定"的反复过程，就叫 <a href="../../reference/glossary.html#loop">agent 循环</a>。</p>
 
-  <div class="note">
-    <span class="label">一句话抓住区别</span>
-    <p>单次调用里，"下一步做什么"是<b>你</b>在 prompt 里写死的；在 agent 里，"下一步做什么"是<b>模型在循环里反复决定</b>的。</p>
-  </div>
+  <h2>2. 两个真实场景，看清差别</h2>
+  <p>拿一个具体的活来对比：<b>查一张明天上海到北京的机票，合适就订</b>。</p>
 
-  <h2>2. 核心循环</h2>
-  <p>整门课都会围绕这张图展开。先把它刻进脑子：</p>
+  <h3>在网页对话框里"用 AI"</h3>
+  <p>你打开 ChatGPT、豆包这类网页，把需求打进去。它会回你一段<b>很有用的文字</b>：建议看哪几家航司、什么时段便宜、怎么比价。但它到此为止——<b>它没有"手"</b>：不能真的去查今天的航班，更不能替你下单。之后查航班、比价、付款，每一步都是<b>你自己</b>做；做完想让它总结，还得把结果粘回去。<b>每一轮"下一步做什么"，都是你在安排。</b></p>
+
+  <h3>对 agent 说同一句话</h3>
+  <p>你说"查明天上海到北京最便宜的机票，合适就订"，然后去倒杯水。它自己往下走：调航班查询（<b>行动</b>）→ 看到 23 个航班（<b>观察</b>）→ 决定只看直飞、按价格排（<b>再推理</b>）→ 调比价、调下单（<b>再行动</b>）……最后回来："订好了，620 元那班。要不要加 20 元选个靠窗？"<b>每一轮"下一步做什么"，是它在决定。</b></p>
+
+  <p>差别就三点：<b>谁安排下一步</b>（你 vs 它）、<b>它有没有"手"</b>（只能给建议 vs 真能动手）、<b>你要不要盯着</b>（全程在场 vs 交代完就走）。两个场景里跑的甚至可能是同一个模型——差的是外面那层壳，和壳里转的那个循环。</p>
+
+  <p><b>agent 翻车的动静更大</b>：AI 对话答错了，损失是一句废话；agent 答错了，可能是<b>真订错一张票</b>。所以 agent 一定要有护栏——比如下单前先问你一声。这是后面反复出现的零件。</p>
+
+  <h2>3. 核心循环</h2>
+  <p>循环长这样：</p>
 
   <div class="loop">
     <div class="loop-node">推理 / 规划<small>Reason：下一步做什么？</small></div>
@@ -51,8 +59,18 @@
 
   <p>循环只有一个出口：模型认为任务完成了，输出最终答案。如果它一直不认为完成，就会<b>卡死在循环里</b>——所以工程上一定要有 <a href="../../reference/glossary.html#guardrail">护栏</a>，最常见的就是「最大步数」。</p>
 
-  <h2>3. 这个循环靠三根柱子撑着</h2>
-  <p>顺着这个循环往下钻，会分出 agent 的三大支柱。这是本课程的主线骨架，后面每一课基本都在补其中一根：</p>
+  <h2>4. 每一步会怎么翻车</h2>
+  <p>上面的场景走得很顺，但循环的每一步都有自己的翻车方式。先认认脸，遇到才不慌：</p>
+  <ul>
+    <li><b>推理翻车</b>：方向就想歪了——比如决定"先订票、再查要不要签证"，第一步就跑偏。</li>
+    <li><b>行动翻车</b>：挑错工具、参数填错（把"明天"填成下个月），或者工具本身报错（航班接口超时）。</li>
+    <li><b>观察翻车</b>：结果就在眼前，却看错看漏——把"620 元起（中转）"当成了直飞的价格。</li>
+    <li><b>不收尾</b>：一直"再查一家""再比一次"，就是不说完成——所以才要最大步数这种护栏把它拦下来。</li>
+  </ul>
+  <p>翻车之后怎么自救，写在 <a href="../practice/0004-failure-modes.html">技巧篇 0004 · 失败模式与自救</a>；这里先学会认出它们。<b>循环每转一圈，都有好几处可能出错</b>——这就是 agent"灵活"的代价。</p>
+
+  <h2>5. 这个循环靠三根柱子撑着</h2>
+  <p>领域里常用一张地图来拆 agent：规划、记忆、工具，常被叫做<b>三大支柱</b>（出处见文末 Lilian Weng 那篇）。对照本轨道七课：工具这条线占大头，规划散在各课的动手环节里，记忆专门用<a href="0007-memory.html">第 7 课</a>讲——上下文里放什么，做法写在<a href="../practice/0001-context-engineering.html">技巧篇 0001</a>。</p>
 
   <div class="pillars">
     <div class="pillar">
@@ -69,61 +87,124 @@
     </div>
   </div>
 
-  <p>还有一个重要的边界概念：<b>能用固定 <a href="../../reference/glossary.html#workflow">workflow</a> 解决的事，就别上 agent</b>。agent 的代价是不确定性——它灵活，也因此难预测、难调试。这是 Anthropic 在那篇必读文章里的核心建议，我们下一课会细讲。</p>
+  <p>三根柱子各有各的活和翻车方式，往下钻一层：</p>
 
-  <h2>4. 动手：跑一个最小循环</h2>
+  <h3>① 规划：拆任务，和改主意</h3>
+  <p>大活要拆成能执行的小步：「写一份周报」＝查数据 → 算环比 → 写结论。更难的是另一件事——<b>失败后改主意</b>：查不到上周的数据，就换个来源，或者先算前一周。这两件事的行话叫<b>拆子目标</b>和<b>自我反思（self-reflection）</b>：好的 agent 不是一条路走到黑，而是每走一步都回头看看要不要换条路。翻车的样子：拆得太碎、绕圈子，或者改主意改得太勤，原地打转。</p>
+  <p>还要分清两件事。<b>规划不等于"思考"</b>：思考是"想"的总称——验算、打草稿都算；规划只是其中管"接下来做什么"的那部分。一次普通回答里也有规划（先列提纲再写），但 agent 的规划多一层：它安排的是<b>接下来动手做什么</b>，还会被行动结果打回来重写——所以才有"改主意"这回事。<b>规划的本事是模型练出来的</b>（"会思考是练出来的"见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>）；<b>要不要规划、按什么格式、什么时候重来，是外壳定的</b>——壳只能把本事叫出来，给不了它本事。</p>
+
+  <h3>② 记忆：这次的，和跨会话的</h3>
+  <p>记忆分两层。<b>短时记忆</b>＝这一次的上下文里放了什么：你们聊过的话、工具查回来的结果，都在里面——模型每一轮只能看见这一层，塞爆了就会忘事。<b>长时记忆</b>＝跨会话存下来的东西：你的偏好、上次的结论，存在外面，<b>用到时再取回来</b>。翻车的样子：该记的没记（每次都要重新解释你的需求），或者记了过期的错东西（把上周的票价当今天的）。</p>
+
+  <h3>③ 工具：给模型一双手</h3>
+  <p>模型只会吐字；工具让它真的碰到世界。它伸手，往往是去拿<b>生来没有的三样东西</b>：现在的信息（今天的航班，模型只学到旧闻）、动手算的能力（它只会吐字，真算一遍得靠工具）、你公司的数据（它训练时没见过）。工具怎么"递给"它——一张写清名字、说明、参数的清单——下一课细讲。翻车的样子：挑错工具、参数填错。</p>
+
+  <p>三根柱子不是循环之外的三件东西，<b>它们就长在循环上</b>：规划发生在"推理"那一步，工具是"行动"那一步的手段，记忆管"观察到的结果放哪、下次还认不认得"。</p>
+
+  <p>还有一个重要的边界概念：<b>能用固定 <a href="../../reference/glossary.html#workflow">workflow</a>（预先编排好的固定步骤）解决的事，就别上 agent</b>。agent 的代价是不确定性——它灵活，也因此难预测、难调试。这是 Anthropic 在那篇必读文章里的核心建议。</p>
+
+  <h2>6. 动手：跑一个最小循环</h2>
   <p>下面的脚本实现了这节课的循环。<b>它不需要 API key</b>——里面用了一个 <code>fake_model</code> 假装是模型，这样你能把注意力全放在循环机制上。等你看懂了循环，把 <code>fake_model</code> 换成一次真实 LLM 调用，你就拥有了一个（极其简陋的）真 agent。</p>
 
   <p>脚本已存到工作区：<code>exercises/agent/0001-minimal-agent.py</code>。运行：</p>
   <pre><code>python exercises/agent/0001-minimal-agent.py</code></pre>
   <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code> 切换成 UTF-8。</p>
 
-  <p>任务设定为：<em>把 "hello" 反转，再拼上它的长度</em>。脚本里只有一个循环、两个工具、一个模型桩：</p>
+  <p>任务设定为：<em>把 "hello" 反转，再拼上它的长度</em>。脚本里只有一个循环、两个工具、一个假模型：</p>
 
   <pre><code># ---- 工具：agent 能对外做的事 ----
-def reverse_string(s): return s[::-1]
-def string_length(s):  return len(s)
+def reverse_string(s: str) -&gt; str:
+    return s[::-1]
 
-TOOLS = {"reverse_string": reverse_string, "string_length": string_length}
+
+def string_length(s: str) -&gt; int:
+    return len(s)
+
+
+TOOLS = {
+    "reverse_string": reverse_string,
+    "string_length": string_length,
+}
+
 
 # ---- 假模型：真实世界里，这里是一次 LLM 调用 ----
+# 输入：到目前为止的轨迹(trace)。输出：一个动作(action)。
 def fake_model(trace):
     used = {s["tool"] for s in trace if s["type"] == "action"}
+
     if "reverse_string" not in used:
         return {"tool": "reverse_string", "args": {"s": "hello"}}
-    rev = next(s["result"] for s in trace if s["tool"] == "reverse_string")
+
+    rev = next(s["result"] for s in trace
+               if s["type"] == "observation" and s["tool"] == "reverse_string")
+
     if "string_length" not in used:
         return {"tool": "string_length", "args": {"s": rev}}
-    n = next(s["result"] for s in trace if s["tool"] == "string_length")
+
+    n = next(s["result"] for s in trace
+             if s["type"] == "observation" and s["tool"] == "string_length")
+
     return {"final": rev + str(n)}
+
 
 # ---- 循环：agent 的心脏 ----
 def run_agent(task, max_steps=8):
+    print(f"任务：{task}")
     trace = []
+
     for step in range(1, max_steps + 1):
-        action = fake_model(trace)          # ① 推理
+        print(f"\n--- 第 {step} 步：推理 ---")
+        action = fake_model(trace)
+        print("模型决定：", action)
+
         if "final" in action:
-            return action["final"]          # 出口：模型认为完成了
-        result = TOOLS[action["tool"]](**action["args"])   # ② 行动
-        trace.append({"type": "observation", "tool": action["tool"], "result": result})  # ③ 观察
-    raise RuntimeError("达到最大步数仍未完成 —— 死循环")   # 护栏
-</code></pre>
+            print("\n[完成] 最终答案：", action["final"])
+            print(f"（共用了 {step} 步）")
+            return action["final"]
 
-  <div class="note">
-    <span class="label">看输出的时候，重点看三件事</span>
-    <p>① 模型<b>从来不会</b>一次就给出完整答案，它是一步一步来的；<br>
-       ② 每一步它都只拿到了"到目前为止的轨迹"（<code>trace</code>），没有别的信息；<br>
-       ③ 停下来的唯一原因是模型自己说"完成了"——不是代码知道答案。</p>
-  </div>
+        tool = action["tool"]
+        result = TOOLS[tool](**action["args"])
 
-  <h2>5. 挑战（选一个做，5 分钟）</h2>
+        trace.append({"type": "action", "tool": tool, "args": action["args"]})
+        trace.append({"type": "observation", "tool": tool, "result": result})
+        print(f"--- 观察：{tool}({action['args']}) -&gt; {result}")
+
+    raise RuntimeError(
+        "达到最大步数仍未完成 —— 这就是经典的 agent 失败模式：死循环。"
+    )
+
+
+if __name__ == "__main__":
+    run_agent("把 'hello' 反转，再拼上它的长度")</code></pre>
+
+  <p>跑出来是这样：</p>
+  <pre><code>任务：把 'hello' 反转，再拼上它的长度
+
+--- 第 1 步：推理 ---
+模型决定： {'tool': 'reverse_string', 'args': {'s': 'hello'}}
+--- 观察：reverse_string({'s': 'hello'}) -&gt; olleh
+
+--- 第 2 步：推理 ---
+模型决定： {'tool': 'string_length', 'args': {'s': 'olleh'}}
+--- 观察：string_length({'s': 'olleh'}) -&gt; 5
+
+--- 第 3 步：推理 ---
+模型决定： {'final': 'olleh5'}
+
+[完成] 最终答案： olleh5
+（共用了 3 步）</code></pre>
+
+  <p>看这段输出，重点看三件事：① 模型<b>从来不会</b>一次就给出完整答案，它是一步一步来的；② 每一步它都只拿到了"到目前为止的轨迹"（<code>trace</code>），没有别的信息；③ 停下来的唯一原因是模型自己说"完成了"——不是代码知道答案。</p>
+  <p>再看清一件事：让这个 agent"活"起来的不是模型，是脚本里那个循环。<code>run_agent</code> 就是外面那层壳的袖珍版——那层壳的正式名字和它的边界，第 6 课一次讲清。</p>
+
+  <h2>7. 挑战（选一个做，5 分钟）</h2>
   <ol>
     <li><b>改任务</b>：把 <code>"hello"</code> 换成别的字符串，让它照样能算对。</li>
     <li><b>加工具</b>：加一个 <code>to_upper(s)</code>，让 agent 先反转、再转大写、最后拼长度。</li>
     <li><b>制造失败</b>：把 <code>max_steps</code> 改成 <code>2</code>，跑一遍，观察"死循环"是怎么被护栏拦下的。这一步最重要——它让你亲眼看到 agent 的失败长什么样。</li>
   </ol>
 
-  <h2>6. 检查一下你懂了没</h2>
+  <h2>8. 检查一下你懂了没</h2>
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> Agent 与单次 LLM 调用最本质的区别是什么？</p>
@@ -158,23 +239,47 @@ def run_agent(task, max_steps=8):
        data-no="护栏的作用是兜底：模型可能一直不认为任务完成，必须有东西强制它停。"></p>
   </div>
 
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 下面哪种情况是"用 agent"，不是"用 AI 对话"？</p>
+    <button class="quiz-option" data-correct="true">说完就走开，它自己查航班、比价、订票，回来向你汇报</button>
+    <button class="quiz-option">在网页上问哪家航司便宜，它回一段文字建议给你参考</button>
+    <button class="quiz-option">把你的行程描述翻译成英文，方便发给国外的同事</button>
+    <button class="quiz-option">让它把周报改得更通顺，改完你自己复制回文档里</button>
+    <p class="feedback"
+       data-ok="对。判断标准是「谁安排下一步、有没有手」——它自己循环着把事办完，才是 agent。"
+       data-no="看两点：下一步谁安排，以及它能不能真的动手。只回一段文字建议的，还是用 AI 对话。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> agent 的「短时记忆」和「长时记忆」差在哪？</p>
+    <button class="quiz-option" data-correct="true">短时是这次上下文里的内容，长时跨会话存、用到再取回</button>
+    <button class="quiz-option">短时只能存一句话的量，长时能存一整本书那么多</button>
+    <button class="quiz-option">短时是模型自己记住的，长时是你手动一条条输入的</button>
+    <button class="quiz-option">短时是免费的，长时要额外付一笔存储的费用</button>
+    <p class="feedback"
+       data-ok="对。短时＝这一次上下文里放了什么；长时＝跨会话存下来、用到再取回。"
+       data-no="两层的分界是「这次的」还是「跨会话的」，跟容量、谁输入、收费无关。"></p>
+  </div>
+
   <div class="source">
-    <b>这节课的一手资料（必读）</b>：<br>
+    <b>这节课的一手资料</b>：<br>
     <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — "Building effective agents"</a>。
-    只用读开头到 "When to use agents" 那一段。读的时候带着一个问题：作者为什么反复劝你别急着上 agent？
+    只用读开头到 "When to use agents" 那一段。读的时候带着一个问题：作者为什么反复劝你别急着上 agent？<br>
+    <a href="https://lilianweng.github.io/posts/2023-06-23-agent/">Lilian Weng — "LLM Powered Autonomous Agents"</a>：三大支柱那张地图的出处。只用读 "Agent System Overview" 一节——拆子目标、自我反思、短时/长时记忆、伸手去拿"生来没有的东西"，都出自这里。
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>任何一步不清楚——比如"工具到底是谁执行的？""trace 为什么重要？"——直接问我。搞不懂就往下学，是最贵的学费。
+    <b>我是你的老师，随时打断我。</b>任何一步不清楚——比如"工具到底是谁执行的？""trace 为什么重要？""agent 和 harness 是一回事吗？"——直接问我。搞不懂就往下学，是最贵的学费。
   </div>
 
   <p class="next">
-    <b>下一课</b>：工具调用（Tool Use）—— 模型是怎么"决定调用哪个工具、参数填什么"的？我们会把一个真实模型接进来。<br>
-    <b>LLM 底层轨道</b>：先看基石课 <a href="../llm/0001-from-token-to-next-token.html">从「token」到「下一个 token」</a>（整条流水线怎么走），再看 <a href="../llm/0003-kv-cache-and-prompt-caching.html">大模型为什么"记得快"？KV Cache 与「缓存命中」</a>。<br>
-    顺手翻一下 <a href="../../reference/glossary.html">术语表</a>，本课的词都在里面。
+    <b>前置</b>：没有，本轨道从这一课开始；想先弄懂模型本身怎么工作，看 <a href="../llm/0000-how-models-learn.html">LLM 底层 · 第 0 课 · 模型是怎么学出来的</a>。<br>
+    <b>顺着往下</b>：<a href="0002-tool-use.html">Agent 原理篇 · 第 2 课 · 工具调用</a>（模型怎么"决定调用哪个工具、参数填什么"；真模型要到第 4 课才接进来）<br>
+    <b>其它轨道</b>：<a href="../llm/0001-from-token-to-next-token.html">LLM 底层 · 第 1 课 · 从「token」到「下一个 token」</a>（整条流水线怎么走）· <a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a>（模型为什么"记得快"）· <a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>（上下文里放什么）<br>
+    术语表：<a href="../../reference/glossary.html#agent">Agent</a> · <a href="../../reference/glossary.html#loop">Agent 循环</a> · <a href="../../reference/glossary.html#planning">规划</a> · <a href="../../reference/glossary.html#memory">记忆</a> · <a href="../../reference/glossary.html#workflow">Workflow</a> · <a href="../../reference/glossary.html#guardrail">护栏</a>
   </p>
 
-  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 1 课 · 风格与组件来自 <code>assets/base.css</code> · <a href="../index.html">课程目录</a></footer>
+  <footer>AI Agent 原理与工程 · Agent 原理篇 · 第 1 课（初学版）· <a href="../index.html">课程目录</a></footer>
 </div>
 </body>
 </html>

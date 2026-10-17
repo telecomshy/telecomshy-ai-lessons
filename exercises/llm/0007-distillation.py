@@ -152,7 +152,7 @@ student_c = train(teacher)                   # C：老师的整张分布 = 真�
 
 print("\n[3] 三个学生，骨架一样、步数一样，只有「你给它什么」不同")
 print(f"      {pad('教法', 34)}{lpad('离老师多远', 11)}{lpad('尾部排序', 10)}"
-      f"{lpad('尾部差距', 11)}{lpad('第一名多自信', 13)}")
+      f"{lpad('尾部差距', 13)}{lpad('第一名多自信', 13)}")
 rows = []
 for label, s in [("A 正确答案（one-hot）", student_a),
                  ("B 只搬老师的答案（argmax）", student_b),
@@ -163,8 +163,8 @@ for label, s in [("A 正确答案（one-hot）", student_a),
     conf = s[max(range(len(CAND)), key=lambda i: s[i])]
     rows.append((label, s, d, verdict, spread, conf))
     print(f"      {pad(label, 34)}{lpad(f'{d:.3f}', 11)}{lpad(verdict, 10)}"
-          f"{lpad(f'{spread * 100:.1f} pp', 11)}{lpad(f'{conf * 100:.0f}%', 13)}")
-print(f"      （老师自己的尾部差距是 {tail_spread(teacher) * 100:.1f} pp）")
+          f"{lpad(f'{spread * 100:.1f} 百分点', 13)}{lpad(f'{conf * 100:.0f}%', 13)}")
+print(f"      （老师自己的尾部差距是 {tail_spread(teacher) * 100:.1f} 百分点）")
 
 print()
 for label, s, *_ in rows:
@@ -173,12 +173,12 @@ for label, s, *_ in rows:
 # ============ [4] 三条结论 ============
 print("\n[4] 三条要看懂的")
 a, b, c = rows[0], rows[1], rows[2]
-print(f"      A 离老师 {a[2]:.3f}，尾部排序{a[3]}（差距只有 {a[4] * 100:.1f} pp）。")
+print(f"      A 离老师 {a[2]:.3f}，尾部排序{a[3]}（差距只有 {a[4] * 100:.1f} 百分点）。")
 print("        它学到的是【学生自己那份小语料的频率】——语料里没有的东西，它学不到。")
 print(f"      B 离老师 {b[2]:.3f}，尾部{b[3]}，第一名拿了 {b[5] * 100:.0f}%。")
 print("        这是最糟的一档：整套排序全丢了，还额外得到一个【过度自信】的学生。")
 print("        「只搬老师的答案」听起来像蒸馏，其实不是。")
-print(f"      C 离老师 {c[2]:.3f}，尾部排序{c[3]}，差距 {c[4] * 100:.1f} pp——和老师一样。")
+print(f"      C 离老师 {c[2]:.3f}，尾部排序{c[3]}，差距 {c[4] * 100:.1f} 百分点——和老师一样。")
 print("        它没有见过老师那份语料，只是照着那 5 个数反复拧，就复现了老师的排序。")
 print("        ——被搬过来的不是答案，是【泛化方式】。")
 
