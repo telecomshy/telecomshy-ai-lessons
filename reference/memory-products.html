@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查 · 长期记忆产品对照</title>
+<link rel="stylesheet" href="../assets/base.css">
+<script src="../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>长期记忆产品对照</h1>
+  <p class="subtitle">照着看就行。想懂怎么想这件事，回 <a href="../lessons/agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆解 TeleAgent</a>（记忆子系统一节）与 <a href="../lessons/agent/0001-what-is-an-agent.html">第 1 课</a>（记忆概念）。</p>
+
+  <h2>① 读表前先看三条</h2>
+  <ul>
+    <li><b>分数全是各家自己报的</b>（抓取日期 2026-10-17），没有第三方复测；厂商对比页尤其只挑自己赢的那块尺子。</li>
+    <li><b>口径不齐，不许直接横比</b>：判卷模型不同、考档不同（S 档约 115k token，M 档约 150 万）、有的把"故意刁难"的题排除、有的压根没跑这块尺子。</li>
+    <li><b>厂商矩阵是变旧最快的东西</b>。真要选型，用之前照 1.1 的规矩当场再抓一次，别信这张表的日期。</li>
+  </ul>
+
+  <h2>② 一张表：六种方案对照</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">方案</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">一句话</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">记忆怎么更新</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">谁托管</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">自报分数（2026-10-17 抓）</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">什么时候选它</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>自己写（文件 + 结构化笔记）</b></td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">把笔记写进文件或小数据库，程序存、程序取</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">你说了算（覆盖或留痕都行）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">你自己</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">不适用</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">量小、单人、要完全可控——多数场景的正确答案</td>
+      </tr>
+      <tr>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>harness 自带记忆</b></td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">ChatGPT / Claude Code 这类软件开箱就有的记忆功能</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">厂商内置，不透明</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">厂商</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">不适用</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">个人日常用、不自建；换工具就带不走</td>
+      </tr>
+      <tr>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>记忆工具/技能</b></td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">记忆就是给模型的工具：它自己读写一个"记忆文件夹"（如 Anthropic memory tool 的六个文件命令）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">模型自己改写（创建/替换/删除……），用时读回</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">由你的应用执行，存储自定（文件/数据库）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">未见公开基准分数</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">想让模型自己管记忆、按需读回（just-in-time）</td>
+      </tr>
+      <tr>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Mem0</b></td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">条目式记忆层：抽出小事实，检索时多路打分</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">默认只追加（ADD-only）；改旧/删旧要显式 update/delete（论文里的 ADD/UPDATE/DELETE/NOOP 是早期口径）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">开源可自托管 ＋ 托管云</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">LoCoMo 92.5 · LongMemEval 94.4（Mem0 官网对比页自报）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">多用户的偏好和事实、在意取回的 token 账、套在现有 agent 外面</td>
+      </tr>
+      <tr>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Zep（图引擎 Graphiti）</b></td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">时间知识图：事实带生效区间和来源</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">留痕式（旧事实标失效、不删，按时间仲裁）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">托管云；Graphiti 开源（社区版 2025-04 起不再维护）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">LongMemEval 90.2 · LoCoMo 94.7（Zep 官网自报）⚠ 与 Mem0 页所载 Zep 的 71.2 对不上——同尺不同数，别横比</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">事实会变、还要答得出"当时是什么"</td>
+      </tr>
+      <tr>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Letta（原 MemGPT）</b></td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">agent 自己编辑自己的记忆块（常驻块 + 存档）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">agent 自己改写（像给自己记笔记）</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">开源框架——agent 建在它里面</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">LoCoMo 74.0（第三方页转引）；LongMemEval 未见公开分数</td>
+        <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">想要"有状态的 agent 框架"一体方案，不只是记忆层</td>
+      </tr>
+      <tr>
+        <td style="padding:0.45rem"><b>LangMem</b></td>
+        <td style="padding:0.45rem">LangChain 生态里的记忆库，自己拼装</td>
+        <td style="padding:0.45rem">库，怎么管由你编排</td>
+        <td style="padding:0.45rem">开源库</td>
+        <td style="padding:0.45rem">未见公开基准分数</td>
+        <td style="padding:0.45rem">已经在 LangChain / LangGraph 生态里</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>③ 基准尺子：LoCoMo 与 LongMemEval</h2>
+  <ul>
+    <li><b>LoCoMo</b>（ACL 2024）：10 段跨会话长对话、约 2000 道题，考单跳、多跳、时间、开放域等。老牌尺子，如今多数系统都能考到 80 分上下，区分度在下降。</li>
+    <li><b>LongMemEval</b>（ICLR 2025）：500 道题、单档最多 500 个会话，把"记得好"拆成五个能力：<b>信息提取、跨会话串联、时间推理、知识更新、该说不知道</b>。S 档约 115k token，M 档约 150 万。</li>
+    <li><b>共同的盲区</b>：两把尺子都出在"聊天助手"场景；客服工单、代码仓库、文档协作这类形态，分数只能当门槛。最终验收还是那句：<b>拿你自己的 20 个真实问题去测</b>（测法见技巧篇 0006 第 3 节）。</li>
+  </ul>
+
+  <h2>④ 怎么用这张表</h2>
+  <p>先答四个问题，再回来对号入座：<b>① 你要记的是哪种东西？</b>（偏好和事实 → 条目式；事情的经过 → 事件式；做过的流程 → 技能库）<b>② 改口之后，要不要还能答"当时是什么"？</b>（要 → 留痕式；不要 → 覆盖式就够）<b>③ 数据放哪？</b>（合规、内网要求 → 可自托管或自己写；个人日常用 → harness 自带就够）<b>④ 取回的 token 预算紧不紧？</b>（紧 → 选"只取相关几条"的方案）。<b>拿不准就先用"自己写"</b>——它永远能升级到产品，反过来不行。</p>
+
+  <p class="next">
+    <b>原理</b>：<a href="../lessons/agent/0001-what-is-an-agent.html">Agent 篇 · 第 1 课 · 记忆</a>（两层、四种产品的存·取·管）<br>
+    <b>做法</b>：<a href="../lessons/agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆解 TeleAgent</a>（记忆实拆＋拆完怎么验）<br>
+    术语表：<a href="glossary.html#memory">记忆</a> · <a href="glossary.html#context">上下文</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · 速查 · 长期记忆产品对照</footer>
+</div>
+</body>
+</html>

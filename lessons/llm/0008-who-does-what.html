@@ -52,7 +52,7 @@
     <tbody>
       <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule);vertical-align:top"><b>你的程序</b>（harness）<br>
           <span style="color:var(--muted)">跑 agent 的那段程序</span></td>
-          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">拼提示词 · 装上工具 · 管上下文 · <b>决定什么时候停</b> · 失败了自己重试。<a href="../agent/0006-harness.html">Agent 原理篇第 6 课</a>讲的就是它</td></tr>
+          <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">拼提示词 · 装上工具 · 管上下文 · <b>决定什么时候停</b> · 失败了自己重试。<a href="../agent/0008-harness.html">Agent 篇 · 第 8 课</a>讲的就是它</td></tr>
       <tr><td style="padding:0.5rem;border-bottom:1px solid var(--rule);vertical-align:top"><b>API 网关</b><br>
           <span style="color:var(--muted)">服务商门口的"前台"</span></td>
           <td style="padding:0.5rem;border-bottom:1px solid var(--rule)">验你的身份 · <b>管你的用量配额</b>（用超了就限流）· 计费 · 决定把你的请求转给哪台机器</td></tr>
@@ -94,7 +94,7 @@
   <p>前面是地图，这四条是拿地图去排查。<b>每一条的修法都不在模型身上</b>——这是本课最实用的部分。</p>
 
   <h3>① 工具调用返回的 JSON 不合法，你的 agent 直接崩</h3>
-  <p>你在<a href="../agent/0002-tool-use.html">Agent 原理篇 · 第 2 课</a>学到的流程是：模型说「要调哪个工具、参数是什么」，<b>你的代码去解析它、去执行</b>。Anthropic 文档开头写的就是这个痛点：<b>不开结构化输出，模型会吐出坏 JSON 和不合法的工具参数，让你的程序崩掉</b>——光是提示词写得再仔细也躲不掉。</p>
+  <p>你在<a href="../agent/0001-what-is-an-agent.html">Agent 篇 · 第 1 课</a>学到的流程是：模型说「要调哪个工具、参数是什么」，<b>你的代码去解析它、去执行</b>。Anthropic 文档开头写的就是这个痛点：<b>不开结构化输出，模型会吐出坏 JSON 和不合法的工具参数，让你的程序崩掉</b>——光是提示词写得再仔细也躲不掉。</p>
   <p>所以修法不是改提示词、不是换更大的模型，而是<b>让接口帮你把格式钉住</b>（打开结构化输出那一类开关；<a href="0008-who-does-what-deep.html#q2-config">在哪配</a>）。工具参数也能这么钉（Anthropic 管它叫"严格工具调用"），和结构化输出一起用，就能<b>既要可靠的工具调用，又要可靠的最终答案</b>。</p>
   <p><b>要记住的是</b>：<b>「模型很听话、格式很稳」这个结论，前提常常是接口帮你钉着格式。</b>把它当成模型的功劳，你就找不到修法了。（<a href="0008-who-does-what-deep.html#q2-config">怎么验它真开着？</a>）</p>
 
@@ -237,7 +237,7 @@
   <p class="next">
     <b>前置</b>：<a href="0007-distillation.html">LLM 底层 · 第 7 课 · 蒸馏</a>（模型侧的事）· <a href="0004-batching.html">LLM 底层 · 第 4 课 · 一趟装满的卡车</a>（引擎干的活之一）<br>
     <b>相关</b>：<a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a>（引擎干的活之二）· <a href="0001-from-token-to-next-token.html">LLM 底层 · 第 1 课 · 从「token」到「下一个 token」</a>（模型那层的边界）<br>
-    <b>你会用到</b>：<a href="../agent/0002-tool-use.html">Agent 原理篇 · 第 2 课 · 工具调用</a>（本课第 ① 条的落点）· <a href="../agent/0006-harness.html">Agent 原理篇 · 第 6 课 · Harness</a>（四层里最上面那层）· <a href="../practice/0001-context-engineering.html">技巧篇 0001 · 上下文工程</a>（缓存那笔账）<br>
+    <b>你会用到</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 篇 · 第 1 课 · 工具调用</a>（本课第 ① 条的落点）· <a href="../agent/0008-harness.html">Agent 篇 · 第 8 课 · Harness</a>（四层里最上面那层）· <a href="../agent/0008-harness.html">上下文管理那一节</a>（缓存那笔账）<br>
     <b>这条轨道到此为止</b>：<a href="../index.html">回课程目录</a>看另外三条轨道。<br>
     术语表：<a href="../../reference/glossary.html#inference">推理引擎 inference</a> · <a href="../../reference/glossary.html#constrained-decoding">约束解码 / 结构化输出</a> · <a href="../../reference/glossary.html#speculative-decoding">投机解码</a> · <a href="../../reference/glossary.html#stop-reason">停止原因 stop reason</a>
   </p>

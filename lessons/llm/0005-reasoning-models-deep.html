@@ -49,7 +49,7 @@
   <p><b>开源那套：模型只吐一条字流，记号是它自己写的。</b>这条流里先草稿、后答案，中间夹着<b>边界记号</b>——Qwen3 和 DeepSeek-R 系就是一对 <code>&lt;think&gt;</code> / <code>&lt;/think&gt;</code> 标签。记号本身就是<b>模型词表里的 token</b>：vLLM 里 DeepSeek-R 的解析器源码写着 <code>start_token = "&lt;think&gt;"</code>、<code>end_token = "&lt;/think&gt;"</code>，还要先查出它们的 token 编号。</p>
   <p><b>推理引擎</b>（跑模型的服务程序，vLLM 是其中一个）拿到这条流之后，<b>不理解内容，只认记号切一刀</b>，装进「思考／答案」两个字段——vLLM 文档的说法是「extracting reasoning content <b>from the model output</b>」。<b>切分，不是理解。</b></p>
   <p><b>为什么引擎不能自己插记号？因为它不知道该切在哪。</b>切点是模型自己的决定（它觉得想完了就转去写答案），引擎只看得见一串 token、看不懂字。实证有一条很硬：vLLM 想提前收掉草稿（思考额度用尽）时，做法是<b>逼模型把结束记号自己吐出来</b>——原话「vLLM <b>forces the model to produce <code>reasoning_end_str</code></b>, effectively terminating the reasoning block」。<b>能自己插，何必逼模型？</b></p>
-  <p><b>闭源那套：接口直接给你已经分好的块</b>（思考一块、答案一块），<b>内部怎么切、记号长什么样，Anthropic 和 OpenAI 都没公开</b>。能确认的只有：边界精确到 token 的位置——Anthropic 能把草稿那一段一个 token 不差地数出来（用量字段里的 <code>thinking_tokens</code>）。<span style="color:var(--muted)">（「切不是懂」跟<a href="../agent/0002-tool-use.html">Agent 第 2 课的工具调用</a>是同一招：模型不声明「我在调工具」，程序只认形状。）</span></p>
+  <p><b>闭源那套：接口直接给你已经分好的块</b>（思考一块、答案一块），<b>内部怎么切、记号长什么样，Anthropic 和 OpenAI 都没公开</b>。能确认的只有：边界精确到 token 的位置——Anthropic 能把草稿那一段一个 token 不差地数出来（用量字段里的 <code>thinking_tokens</code>）。<span style="color:var(--muted)">（「切不是懂」跟<a href="../agent/0001-what-is-an-agent.html">Agent 第 1 课的工具调用</a>是同一招：模型不声明「我在调工具」，程序只认形状。）</span></p>
 
   <h2 id="q3-signature">Q3 · 闭源 API 的 signature 里装的是什么？为什么必须原样带回？</h2>
   <p><b>先说清范围：这是闭源 API 的机制</b>——Anthropic 叫 <code>signature</code>，OpenAI 的同类设计叫 <code>encrypted_content</code>。<b>开源模型没有这一套</b>：思考是明文，多轮把原文拼回去就行（Qwen3 官方的建议就是「passing the content as it is」，聊天模板自己会处理）。</p>
@@ -155,7 +155,7 @@ content_block_delta    text_delta ×N</code></pre>
   <p class="next">
     <b>回初学版</b>：<a href="0005-reasoning-models.html">LLM 底层 · 第 5 课 · 它真的在思考吗？</a><br>
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（草稿和答案同一条流水线）· <a href="0003-kv-cache-and-prompt-caching-deep.html#q1-thinking">第 3 课（进阶版）· Q1</a>（上一轮的思考留不留、谁说了算）<br>
-    <b>相关</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 技巧六</a>（改了模型配置要重测）<br>
+    <b>相关</b>：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>（改了模型配置要重测）<br>
     <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
     术语表：<a href="../../reference/glossary.html#reasoning">思考 reasoning</a> · <a href="../../reference/glossary.html#thinking-block">思考块 thinking block</a> · <a href="../../reference/glossary.html#signature">签名 signature</a>
   </p>

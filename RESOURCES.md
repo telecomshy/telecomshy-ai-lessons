@@ -375,7 +375,70 @@
 - [Evaluation of Retrieval-Augmented Generation: A Survey（2024）](https://arxiv.org/html/2405.07437v2)
   各框架（RAGAS / ARES / TruLens / DeepEval…）指标的**对照表**。**用来**：知道"同一个概念各家叫法不同"。
 
+### 记忆（Agent 篇第 1 课记忆节 · 2026-10-17 新增，2026-10-18 补产品口径）
+
+- [OpenCode — Rules（官方文档）](https://opencode.ai/docs/rules/)（2026-10-18 抓）
+  **跨会话靠规则文件，不是记忆子系统**：项目根 `AGENTS.md`（也兼容 `CLAUDE.md`）、全局 `~/.config/opencode/AGENTS.md`，这些指令"will be included in the LLM's context"；另有 `opencode.json` 的 `instructions` 字段可挂外部文件。文档里没有"长期记忆"这一层。**用来**：0001 记忆节"OpenCode 不内置长期记忆"那一例（按这一版文档）。
+- [Supermemory — How it works（官方文档）](https://supermemory.ai/docs/concepts/how-it-works)（2026-10-18 抓）
+  **记忆服务的存/取**：`add` 文档 → 切块、抽记忆（不是原文）→ 时序向量图；输出三样：chunks（RAG 用）、memories（事实图）、profile（常驻摘要）；`search` 取回；`dreaming` 是后台把相关记忆连起来/合并的阶段。**用来**：0001 的 Supermemory 一例。
+- [Supermemory — Graph memory（官方文档）](https://supermemory.ai/docs/concepts/graph-memory)（2026-10-18 抓）
+  **记忆怎么变、怎么忘**：关系三种 `updates`（新事实替换旧的，历史可留）、`extends`（补细节）、`derives`（推断出没明说的）；记忆类型 `facts` / `preferences` / `episodes`（**episodes 会衰减**）；自动遗忘三种：时间过期、矛盾更新、噪音过滤；也可显式 forget/update。**用来**：0001 的"按内容分"（facts/preferences/episodes）与"自动遗忘"。
+- [Mem0 — How Mem0 Works（官方文档）](https://docs.mem0.ai/core-concepts/how-it-works)（2026-10-18 抓）
+  **事实抽取 + 多路检索**：`add` 抽 durable facts，存 SQL（事实）、向量库（embedding）、实体库（实体）；`search` 融合语义/关键词/实体/时间四个信号；按 user/agent/run 隔离。**用来**：0001 的 Mem0 一例。
+- [Mem0 — Add Memory（官方文档）](https://docs.mem0.ai/core-concepts/memory-operations/add)（2026-10-18 抓）
+  **现在是 ADD-only**："New memories are added without overwriting or deleting existing memories"；要改旧/删旧得显式 update/delete；`infer=False` 才原样存。**用来**：0001 的"默认只追加"以及"论文四动作 vs 现产品口径"的对照。
+- [Sumers et al. — "Cognitive Architectures for Language Agents"（arXiv 2309.02427）](https://arxiv.org/abs/2309.02427)
+  **记忆三分法的出处**：经历（episodic）／事实（semantic）／做法（procedural）与"工作记忆"并列的认知架构分层。**用来**：讲"研究文献按内容分三种"；⚠ 它是研究分法，不是产品标准（0001 已改成按产品讲）。
+- [Chhikara et al. — "Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory"（arXiv 2504.19413）](https://arxiv.org/abs/2504.19413)
+  **记忆四个动作的出处**：提取阶段抽出候选事实，更新阶段由模型用**工具调用**在 **ADD / UPDATE / DELETE / NOOP** 里挑一个（覆盖式做法的代表）。⚠ **2026-10-18 复核**：现产品文档写的是 **ADD-only**（新记忆只追加，改旧要显式 update/delete），四动作是**论文当时**的口径；引用时写清"论文"还是"产品"，别把论文当现状。**用来**：0001 的 Mem0 段与"口径会变"那一条。
+- ["Zep: A Temporal Knowledge Graph Architecture for Agent Memory"（arXiv 2501.13956）](https://arxiv.org/abs/2501.13956)
+  **留痕式做法的代表**：双时间知识图——旧事实**标失效、不删除**，按时间仲裁"当时是什么"。**用来**：讲"推翻的旧条目删不删"的两种做法与取舍。
+- [Wu et al. — "LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory"（ICLR 2025 · arXiv 2410.10813）](https://arxiv.org/abs/2410.10813)
+  **"记忆怎么评"的尺子**：五个能力（信息提取／跨会话串联／时间推理／知识更新／**该说不知道**）；S 档约 115k token、M 档约 150 万。**用来**：讲验收五能力与"分数先问口径"。
+- [Maharana et al. — "Evaluating Very Long-Term Conversational Memory of LLM Agents"（LoCoMo，ACL 2024 · arXiv 2402.17753）](https://arxiv.org/abs/2402.17753)
+  老牌记忆基准（10 段长对话、约 2000 题，单跳／多跳／时间／开放域）。**用来**：与 LongMemEval 对照，讲"尺子也会饱和（多数系统 80 分上下）"。
+- [Packer et al. — "MemGPT: Towards LLMs as Operating Systems"（arXiv 2310.08560）](https://arxiv.org/abs/2310.08560)
+  **"记忆即工具"的源头**：分层记忆（主上下文／外部存储）＋模型自己发起存取。产品 Letta 出自它。**用来**：讲"agent 自己管自己的记忆"这一路。
+- [NirDiamant — Agent_Memory_Techniques（GitHub 教程仓库）](https://github.com/NirDiamant/Agent_Memory_Techniques)
+  30 个可跑 notebook 的记忆技术教程（工作／情节／语义／程序记忆、检索模式、LoCoMo／LongMemEval 跑法）。**用来**：给"想自己动手搭记忆"的延伸阅读。
+- [DeepLearning.AI — "Building Adaptive AI Agents"（2026）](https://www.deeplearning.ai/courses/building-adaptive-ai-agents)
+  四分类（working／episodic／semantic／procedural）的白话教学口径，与"从 trace 长出技能"的持续学习线。**用来**：核对四分类的讲法别讲歪。
+- 厂商自报对比页：[Mem0 — Compare](https://mem0.ai/compare) · [Zep — State of the art agent memory](https://www.getzep.com/blog/state-of-the-art-agent-memory)（均 2026-10-17 抓）
+  ⚠ **厂商自报数字，只作"自报"引用**：同尺不同数（LongMemEval 上 Zep 被 Mem0 页记 71.2、自家报 90.2），还有"没跑这块尺子"的。**用来**：速查页对照表的"自报分数"列，以及讲"分数先问谁说的、什么口径、哪天的"。
+
+### Agent 篇重构素材：TeleAgent 案例（2026-10-18 新增）
+
+- [天翼 AI — 星辰超级智能体 TeleAgent《快速上手指南》](https://www.teleai.com.cn/doc/bKrLmQNepNQpUHjWEfqX/pUxSKj00HB5artzpBdgZ)（2026-10-18 抓）
+  **harness 拆解课的官方引源之一**：安装/工作空间（任务跑在指定文件夹）、`@文件`/`@技能` 引用、任务与历史。**用来**：讲"一个真实 harness 的用户面"。
+- [天翼 AI — 《星辰超级智能体·桌面版操作手册》](https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7)（2026-10-18 抓）
+  **拆解素材主源**：技能系统（技能广场/导入 `.skill`＝SKILL.md＋YAML frontmatter/自然语言创建/**同一技能用 ≥20 次触发自进化**/上架安全审查）· **授权三选项（允许一次/一直允许/拒绝）＋YOLO 模式** · MCP 工具管理（`mcpServers` JSON：command/args/env）· 代码执行三模式与安全沙箱 · **任务监控区（深度思考/操作执行/任务委派（子智能体））** · 上下文用量查看与清理 · 自定义模型（OpenAI 兼容 Base URL＋Key）· 任务排查五类（文件/技能/工具/模型/网络）。**用来**：0007 安全课的授权实证、0011 拆解课逐块拆。
+- **TeleAgent 记忆子系统自述**（2026-10-18 学习者转述，手册无此节，引源标"自述"）：按**来源＋时间尺度**归档（`USER.md`＝用户明说记住的 / `MEMORY.md`＝系统推断的稳定事实 / `daily-log/YYYY-MM-DD.md`＝每日流水）；底层**纯 Markdown 文件**；检索＝**关键词/正则**（`memory_search`）＋按名读取（`memory_get`）；三种载入：USER.md+MEMORY.md **每次自动注入系统提示**、日志**按需检索**、`LATEST_DAILY_MEMORY.md` **滚动摘录**。**用来**：推翻"内容三分法是标准分法"“取回=相似度"两处旧口径（见 `docs/notes/rules/agent-track-redesign.md` §3）。
+- [Microsoft — AI Agents for Beginners（GitHub）](https://github.com/microsoft/ai-agents-for-beginners)
+  18 讲课表（tool use／planning／multi-agent／context engineering／agent memory／protocols／production／securing…）。**用来**：重构课表的对表清单，判"还缺什么"。
+
+- [Anthropic — "How we built our multi-agent research system"](https://www.anthropic.com/engineering/multi-agent-research-system)
+  **多 agent 课（0005/0006）的主源**：编排者-工作者形状、派单要写清（目标/输出格式/边界，"调研一下 X"这种含糊指令会重复劳动）、只回结论不回流水、失败模式（spawn 50 workers、无限搜寻、互相干扰）；量级全部是**他们自报口径**（简单查证 1 agent 3～10 次调用／对比 2～4 workers·10～15 次／复杂 10+ workers；token 单 agent ×4、多 agent ×15；复杂调研"强编排＋worker"比单强模型 +90.2%）。**用来**：讲"什么时候该上多 agent、怎么分工、账怎么算"。
+- [Anthropic — Orchestrator-workers 模式（Cookbook）](https://platform.claude.com/cookbook/patterns-agents-orchestrator-workers)
+  编排者动态拆活、worker 各拿一段任务的标准形状与最小实现。**用来**：0006 实操课的形状依据。
+
+### Agent 篇 0002 实操：真模型接入（2026-10-18 新增，全部当场抓取）
+
+- [DeepSeek — 首次调用 API](https://api-docs.deepseek.com/zh-cn/)（2026-10-18 抓）
+  `base_url`（OpenAI 格式）＝`https://api.deepseek.com`；模型名 `deepseek-flash`（旧名 `deepseek-v4-flash` 仍接受，实际由 V4.1-Flash 服务）与 `deepseek-v4-pro`；key 申请页 `https://platform.deepseek.com/api_keys`；官方示例就是 `from openai import OpenAI` ＋ `client.chat.completions.create`。**用来**：0002 第 1～2 节的装包/配 key/模型名，一个字都不凭记忆。
+- [DeepSeek — Tool Calls](https://api-docs.deepseek.com/zh-cn/guides/tool_calls)（2026-10-18 抓）
+  **非思考模式的完整 Python 例子**：`tools=[{"type":"function","function":{...}}]`，请求带 `extra_body={"thinking": {"type": "disabled"}}`；模型回 `message.tool_calls[0]`，执行后把 `{"role":"tool","tool_call_id": tool.id,"content": ...}` 塞回去。**用来**：0002 的适配层写法和"关掉思考模式"这一步。
+- [DeepSeek — Thinking Mode](https://api-docs.deepseek.com/zh-cn/guides/thinking_mode)（2026-10-18 抓）
+  **思考模式默认开启**（effort 默认 high）；带 `tools` 的请求**必须把历次 `reasoning_content` 原样传回**，否则 400；不带 `tools` 时传了也被忽略。**用来**：解释为什么 0002 要显式 `thinking: disabled`（否则循环得处理思考内容，主线被带偏）。
+- [DeepSeek — 模型 & 价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing)（2026-10-18 抓）
+  `deepseek-flash`：输入（缓存未命中）空闲 ¥1／百万 token、高峰 ¥2；输出空闲 ¥4、高峰 ¥8；缓存命中输入 ¥0.02／¥0.04。**高峰＝北京时间周一至周五 9:00–12:00、14:00–18:00**（不含法定节假日），其余时段空闲。**用来**：0002 第 8 节账单与"一次实操不到一分钱"的量级依据；脚本里的单价常量。
+- [DeepSeek — 错误码](https://api-docs.deepseek.com/zh-cn/quick_start/error_codes)（2026-10-18 抓）
+  400 格式／401 key 错／402 余额不足／422 参数错／429 限流／500 服务端／503 过载。**用来**：0002 的排错表；脚本把 401／429／其它状态码分开报。
+- [OpenAI Python SDK（PyPI）](https://pypi.org/project/openai/)（2026-10-18 抓）
+  `pip install openai`；当前 3.35.1，**要求 Python 3.10+**；`OpenAI(api_key=..., base_url=...)` 可用于任何 OpenAI 兼容接口；错误类型 `AuthenticationError`／`RateLimitError`／`APIStatusError`／`APIConnectionError`，默认对连接错误与 5xx 重试 2 次。**用来**：0002 第 1 节装包与第 5 节错误处理。
+- [Python — Downloads](https://www.python.org/downloads/)（2026-10-18 只作链接）
+  装 Python 的官方入口。**用来**：0002 第 1 节"先确认 python 命令能跑"。
+
 ## Gaps（尚缺的资源）
 - ~~缺一份可靠的、跨框架的 agent 评估资料~~ **已补（2026-09）**：见上面四条，首选 Anthropic《Demystifying evals for AI agents》
 - 缺中文的高质量一手资料（目前几乎全是英文）
-- 缺 **多 agent 协作**的高可信工程资料（编排者-工作者之外的取舍、典型失败模式）——目前只在术语表和 Agent 0006 的追问里出现过
+- ~~缺 **多 agent 协作**的高可信工程资料~~ **已补（2026-10-18）**：Anthropic《How we built our multi-agent research system》（带实测量级、派单与失败教训）＋Orchestrator-workers Cookbook——`agent/0005`/`0006` 已开课。

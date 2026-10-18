@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 5 课 · 多 agent 协作：什么时候该上、怎么分工</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 5 课 · 理论</div>
+  <h1>多 agent 协作：什么时候该上、怎么分工</h1>
+  <p class="subtitle">叫帮手不是白叫的。<b>多 agent 是放大器</b>——活对了路才放大产出，不对路只放大烧钱。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>一个 agent 干不完的活，叫一群来干，是不是就更快、更好？</p>
+    <p>不一定。真实数据是：<b>多 agent 烧的 token 是单 agent 的好几倍</b>；活太小，叫帮手纯属亏本。但活真的大——比如横跨十几个来源做调研——它又能把单 agent 甩开一大截。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：判断什么时候该上多 agent；说清编排者怎么派活才不跑偏；知道这笔账怎么算。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>多 agent 的本质是<b>分工换上下文</b>：每个 worker 只看自己那一摊，干完<b>只回结论</b>。</p>
+    <p>省下的上下文是收益，拆活派单汇总的成本是代价——<b>值不值，看两边的差。</b></p>
+  </div>
+
+  <h2>1. 什么时候该上（不是默认）</h2>
+  <p>先说反面：<b>大多数活不该上多 agent</b>。Anthropic 在自己的多 agent 调研系统里给过量级（他们自报的口径）：</p>
+  <ul>
+    <li><b>简单查证</b>：1 个 agent、3～10 次工具调用就干完了——叫帮手纯属亏本；</li>
+    <li><b>直接对比</b>：2～4 个 worker、每人 10～15 次调用，才开始划算；</li>
+    <li><b>复杂调研</b>：10 个以上 worker、分工明确，才拉开差距。</li>
+  </ul>
+  <p>该上的信号就三种：<b>能并行的独立分身活</b>（各查一个方向）、<b>需要多个视角的活</b>（正反两方、多个候选）、<b>单个上下文根本装不下的活</b>（一个 worker 啃一块，别硬塞一个脑子）。</p>
+
+  <h2>2. 怎么分工：编排者-工作者</h2>
+  <p>最常见的形状是一个 <b>lead（编排者）</b>加一群 <b>worker（工作者）</b>：</p>
+
+  <div class="pillars">
+    <div class="pillar">
+      <h3>lead：拆活、派单、汇总</h3>
+      <p>自己几乎不动手，只做三件事：把大任务拆成边界清楚的子任务、派出去、收结论合成答案。</p>
+    </div>
+    <div class="pillar">
+      <h3>worker：啃一块、回一句</h3>
+      <p>领到一个边界清楚的小目标，自己转自己的循环；干完<b>只交结论</b>，流水留在自己那儿。</p>
+    </div>
+    <div class="pillar">
+      <h3>接口：派单三件套</h3>
+      <p>每个 worker 必须拿到：<b>目标</b>（干什么）、<b>输出格式</b>（交什么）、<b>边界</b>（别管什么）。</p>
+    </div>
+  </div>
+
+  <p><b>派单写糊了会怎样？</b>Anthropic 的教训原话级大意：让 worker"调研一下半导体短缺"这种含糊指令，会让他们<b>重复劳动、互相抄、留缺口</b>；写成"列出 2024–2026 年关于 X 的 5 篇论文，每篇一句话摘要加链接"才跑得齐。<b>只回结论不回流水</b>同样关键——worker 的十万字流水全塞回 lead 的上下文，lead 第一个被撑死（下一课的对账会给你看数字）。</p>
+
+  <h2>3. 这笔账：收益和代价</h2>
+  <ul>
+    <li><b>代价</b>：多 agent 的 token 消耗约是单 agent 的 <b>15 倍</b>（单 agent 做复杂任务本身也要约 4 倍，对比的是简单任务）——全出自 Anthropic 自报口径。</li>
+    <li><b>收益</b>：同一个来源里，复杂调研任务上"强模型编排＋够用的 worker"比单个强模型<b>好 90.2%</b>（同为自报）。为什么？分工换来的<b>上下文隔离</b>：每个 worker 有一整个干净的上下文啃自己那块。</li>
+    <li><b>怎么用这两个数</b>：先问"我这活是第几档"——第一档（几个工具调用）连算都不用算，别上；第二、三档再拿自己任务试一把，比投入的 token 和产出质量。</li>
+  </ul>
+
+  <h2>4. 常见翻车</h2>
+  <ul>
+    <li><b>小题大做</b>：一个小问题 spawn 十几个 worker——烧钱且更乱。</li>
+    <li><b>汇总变拼接</b>：lead 把几份报告原文堆一起就交卷——读者要的是结论，不是汇编。</li>
+    <li><b>同步等待</b>：一个 worker 卡住，全体干等——慢的那根决定总时长。</li>
+    <li><b>编排者一错全错</b>：拆活拆歪了，每个 worker 都在错方向上使劲——lead 是最该测的那一个。</li>
+  </ul>
+
+  <h2>5. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 一个任务三五个工具调用就能干完，该不该上多 agent？</p>
+    <button class="quiz-option">该，多个人干更快</button>
+    <button class="quiz-option" data-correct="true">不该——拆活派单汇总本身就有成本，纯亏</button>
+    <button class="quiz-option">该，多 agent 质量一定更高</button>
+    <button class="quiz-option">看模型大小再定</button>
+    <p class="feedback"
+       data-ok="对。量级参考：简单查证 1 个 agent、3～10 次调用就够。"
+       data-no="多 agent 是放大器：活不够大，放大掉的是钱。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> lead 派单时，每个 worker 必须拿到什么？</p>
+    <button class="quiz-option">模型的 API key</button>
+    <button class="quiz-option" data-correct="true">目标、输出格式、边界三件套</button>
+    <button class="quiz-option">lead 的完整对话历史</button>
+    <button class="quiz-option">其他 worker 的中间结果</button>
+    <p class="feedback"
+       data-ok="对。写糊了就重复劳动、留缺口——派单是 lead 最大的杠杆。"
+       data-no="key 不是派单内容；给历史反而把 lead 撑爆；worker 之间互看会互相带偏。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> worker 干完活，往回交什么？</p>
+    <button class="quiz-option">全部过程流水，方便 lead 检查</button>
+    <button class="quiz-option" data-correct="true">一句话结论——流水留在自己那</button>
+    <button class="quiz-option">原始数据，lead 自己挑</button>
+    <button class="quiz-option">什么都不交，直接把结果发给用户</button>
+    <p class="feedback"
+       data-ok="对。这就是「分工换上下文」的兑现点：lead 只装得下结论。"
+       data-no="流水全塞回来，lead 第一个被撑死；原始数据同理。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 多 agent 为什么反而常常更快？</p>
+    <button class="quiz-option">模型算得更快了</button>
+    <button class="quiz-option" data-correct="true">能并行、且每个 worker 上下文干净互不挤占</button>
+    <button class="quiz-option">多 agent 不消耗 token</button>
+    <button class="quiz-option">网络请求变多了所以快</button>
+    <p class="feedback"
+       data-ok="对。并行省时间，上下文隔离省干扰——但代价是 token 成倍涨。"
+       data-no="它并不省钱也不省 token；快来自并行和干净的上下文。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.anthropic.com/engineering/multi-agent-research-system">Anthropic — "How we built our multi-agent research system"</a>：本课所有量级的出处（1 agent 3～10 次调用 / 2～4 workers / token ×4·×15 / 复杂调研 +90.2%——<b>均为他们自报的口径</b>），以及"派单写糊了会怎样"的实战教训。<br>
+    <a href="https://platform.claude.com/cookbook/patterns-agents-orchestrator-workers">Anthropic — Orchestrator-workers 模式（Cookbook）</a>：编排者动态拆活、worker 各拿一段任务的标准形状。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"worker 之间要不要互相说话？""lead 用便宜模型行不行？""多 agent 和一个 agent 分步跑差在哪？""失败了谁负责重试？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="0002-build-an-agent.html">Agent 篇 · 第 2 课 · 手写一个 agent</a>（单个循环先跑熟）<br>
+    <b>顺着往下</b>：<a href="0006-orchestrate-agents.html">Agent 篇 · 第 6 课 · 编排一群 agent</a>（动手把这课跑出来）<br>
+    术语表：<a href="../../reference/glossary.html#loop">Agent 循环</a> · <a href="../../reference/glossary.html#context">上下文</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 5 课 · 理论 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

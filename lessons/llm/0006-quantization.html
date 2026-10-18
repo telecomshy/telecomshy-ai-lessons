@@ -118,7 +118,7 @@
   <p>于是最容易暴露问题的，是<b>逐个字都要对的活</b>：严格的 JSON、必须一字不差的函数名、精确的数字、很长的指令遵循。回到第 1 节那张 16 色的比方：<b>看大效果的活，糊一点看不出来；要逐个字对的活，糊一点就全废</b>——错一个字符，整段作废。</p>
   <p><span style="color:var(--muted)">（「哪类活最容易掉」还没有直接的对照实测，上面那句是实践观察。有人把 13 份考题一起评过一遍，说得更准：<b>难的题不一定掉最多，量化是放大模型本来的弱点</b>——掉得明显的几类是<b>听话照做、识别胡编、写代码、理工科题</b>。顺手能用的另外两条：<b>8 bit（FP8）是各任务上最稳的一档</b>；小模型压到 4 bit 掉得狠，70B（700 亿个数）那种大的反而稳。<a href="https://arxiv.org/abs/2409.11055">出处</a>）</span></p>
   <p>有一类活正好撞在枪口上：<b>工具调用</b>。它要求模型吐出一份<b>结构严格的 JSON</b>（哪个工具、参数是什么）——<b>正是「逐个字都要对」的那一类</b>。</p>
-  <p>所以这一节要交给你的不是「压到哪一档」的口诀，而是<b>一条判断：压得越狠，越要在自己的任务上实测</b>。至于上线之前测什么、怎么留余量，那是你自己的活，写在<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 技巧六</a>里。</p>
+  <p>所以这一节要交给你的不是「压到哪一档」的口诀，而是<b>一条判断：压得越狠，越要在自己的任务上实测</b>。至于上线之前测什么、怎么留余量，那是你自己的活，写在<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>里。</p>
 
   <h2>6. 动手跑一遍</h2>
   <p>脚本在工作区：<code>exercises/llm/0006-quantization.py</code>。它<b>只用 Python 自带的功能</b>（不用装任何插件），离线能跑，做了三件事：造一张带"大数列"的权重表、用三种分组法压一遍并量误差、再把<b>第 0 课那个真训练出来的玩具模型</b>压一遍看扣分变没变。</p>
@@ -249,7 +249,7 @@
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（本课第 2、3 节全挂在它那条「带宽受限」上）· <a href="0004-batching.html">第 4 课 · 批处理</a>（另一个砍搬运的招数，对照着看）<br>
     <b>回上一课</b>：<a href="0005-reasoning-models.html">LLM 底层 · 第 5 课 · 它真的在思考吗？</a>——那一课讲的是「多花 token 换准确率」这笔账；<b>从这一课起我们回到成本这条线，讲「少花字节换速度」</b>。两件事都是在做交易，但一个动的是能力，一个动的是存法。<br>
     <b>顺着往下</b>：<a href="0007-distillation.html">LLM 底层 · 第 7 课 · 蒸馏</a>——改「从哪来」的那一件，正好和本课「改怎么存」凑成一对<br>
-    <b>这条轨道</b>：<a href="../index.html">课程目录</a>　·　<b>换个角度</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（换过量化档之后，要重新测什么）<br>
+    <b>这条轨道</b>：<a href="../index.html">课程目录</a>　·　<b>换个角度</b>：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>（换过量化档之后，要重新测什么）<br>
     术语表：<a href="../../reference/glossary.html#quantization">量化</a> · <a href="../../reference/glossary.html#activation">激活</a> · <a href="../../reference/glossary.html#bandwidth">显存带宽</a>
   </p>
 

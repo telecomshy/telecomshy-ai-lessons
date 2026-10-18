@@ -5,3 +5,12 @@ __pycache__/
 # 编辑器 / 系统
 .DS_Store
 Thumbs.db
+
+# 本地密钥（exercises/agent/0002 用）
+.env
+
+# 本地虚拟环境（exercises/agent/0002 用）
+.venv/
+
+# DSH 沙箱诊断输出
+.dsh-acl-reports/

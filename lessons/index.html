@@ -16,7 +16,7 @@
   <div class="note">
     <span class="label">怎么读这个目录</span>
     <p>这个仓库只有<b>一个目标</b>：搞懂 AI Agent 的原理与工程。但课程分成四条轨道——</p>
-    <p><b>LLM 底层</b>只讲"影响 agent 成本 / 延迟 / 设计"的机制，以及能力和失效的来源；<b>Agent 原理篇</b>直接服务这个目标（是什么、为什么）；<b>技巧篇</b>讲"怎么做、怎么不翻车"（上下文工程、工具设计、失败模式）；<b>RAG</b>讲"怎么让模型用上手边没有的信息"，只讲机制与取舍。</p>
+    <p><b>LLM 底层</b>只讲"影响 agent 成本 / 延迟 / 设计"的机制，以及能力和失效的来源；<b>Agent 篇</b>直接服务这个目标（<b>理论</b>讲是什么、为什么，<b>实操</b>动手做出来、拆真实的壳）；<b>RAG</b>讲"怎么让模型用上手边没有的信息"，只讲机制与取舍。</p>
     <p>四条轨道<b>各自从 0001 编号</b>，所以提课号时要说清轨道，例如「LLM 底层第 3 课」。轨道之间用超链接互相打通。</p>
     <p>课程是<b>AI 先生成、我再逐课修改</b>的，进度分三档：标题后带 <span class="badge">completed</span> 的是<b>已经改过一遍</b>的；普通卡片是<b>还在改</b>；虚线卡片标着「下一步开」的<b>还没写</b>。带标记的课可以直接照着读。</p>
   </div>
@@ -124,75 +124,57 @@
       <p>第 0 课「算扣分、拧一点点」那一格的<b>数学展开</b>：损失、斜率、反向传播，<b>扣几分不直接决定拧多少</b>。</p>
       <p>动手：<code>exercises/llm/appendix-training-math.py</code></p>
     </div>
-  </div>
-
-  <h2>Agent 原理篇</h2>
-  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">是什么、<b>为什么</b>：怎么让模型自己决定下一步、动手、看结果。教材放在 <code>lessons/agent/</code>。</p>
-  <div class="pillars">
     <div class="pillar">
-      <h3><a href="agent/0001-what-is-an-agent.html">0001 · Agent 到底是什么？</a></h3>
-      <p>分清<b>「用 AI」和「用 agent」</b>，用一个<b>假模型</b>跑通最小循环：推理 → 行动 → 观察 → 再推理，再拆三大支柱。</p>
-      <p><code>exercises/agent/0001-minimal-agent.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="agent/0002-tool-use.html">0002 · 模型只能吐字，它怎么「伸手」做事？</a></h3>
-      <p><b>工具调用（Tool Use）</b>：模型只"说要调"，动手的是你的程序。</p>
-      <p><code>exercises/agent/0002-tool-call-roundtrip.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="agent/0003-mini-agent.html">0003 · 把零件装起来：一个真的 agent</a></h3>
-      <p><b>推理 → 行动 → 观察</b>，转起来就是 agent。全部核心代码十几行。</p>
-      <p><code>exercises/agent/0003-mini-agent.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="agent/0004-real-model-agent.html">0004 · 换上真模型，假的骗了你哪些地方</a></h3>
-      <p>骨架<b>一行没改</b>，只换一个函数。真模型要花钱、会犯错、会绕圈。</p>
-      <p><code>exercises/agent/0004-real-model-agent.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="agent/0005-mcp-and-skills.html">0005 · 工具长出两个新形状：MCP 与 Skill</a></h3>
-      <p><b>MCP</b> 管「怎么接」，<b>Skill</b> 管「怎么做」。动手写你自己的 skill。</p>
-      <p><code>exercises/agent/0005-make-a-skill.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="agent/0006-harness.html">0006 · Harness：你天天在用，却没分清的那个词</a></h3>
-      <p><b>Agent ＝ Model ＋ Harness</b>。模型、agent、harness 三者的边界。</p>
-      <p><code>exercises/agent/0006-harness-checklist.py</code></p>
-    </div>
-    <div class="pillar">
-      <h3><a href="agent/0007-memory.html">0007 · 记忆：它为什么会忘，又怎么记住？</a></h3>
-      <p>模型只看得见<b>上下文</b>；所谓记忆是<b>程序存、程序取</b>。要不要上长期记忆，给判断。</p>
-      <p><code>exercises/agent/0007-memory.py</code></p>
+      <h3><a href="llm/appendix-tuning-projects.html">附录 · 微调项目怎么不翻车</a></h3>
+      <p>需求到手先切<b>「怎么答」和「答什么」</b>：决策单＋内测五步排查＋「什么时候不要微调」。</p>
     </div>
   </div>
 
-  <h2>技巧篇</h2>
-  <p style="margin-top:0;color:var(--muted);font-size:0.95rem">怎么做、<b>怎么不翻车</b>。每条技巧都带「理由 + 反例 + 什么时候不适用」。教材放在 <code>lessons/practice/</code>，贴墙清单在 <code>reference/</code>。</p>
+  <h2>Agent 篇</h2>
+  <p style="margin-top:0;color:var(--muted);font-size:0.95rem"><b>理论</b>讲是什么、为什么，<b>实操</b>动手做出来、拆真实的壳（每课标着课型）。教材放在 <code>lessons/agent/</code>。</p>
   <div class="pillars">
     <div class="pillar">
-      <h3><a href="practice/0001-context-engineering.html">0001 · 上下文工程</a></h3>
-      <p>放什么、放哪、什么时候丢。<b>上下文腐烂</b>、稳定前缀、工具结果先裁再塞。</p>
-      <p><code>exercises/practice/0001-context-budget.py</code>　·　速查：<a href="../reference/context-budget.html">预算与排座次</a></p>
+      <h3><a href="agent/0001-what-is-an-agent.html">0001 · Agent 是什么：循环、工具、记忆</a></h3>
+      <p>分清<b>「用 AI」和「用 agent」</b>；循环怎么转、什么时候停；工具从哪来；记忆按产品怎么存、取、管。<b>本课只讲原理，动手在下一课。</b></p>
     </div>
     <div class="pillar">
-      <h3><a href="practice/0002-evaluating-agents.html">0002 · 怎么判断一个 agent 好不好用</a></h3>
-      <p><b>使用者视角</b>：跑多遍、看真实结果、盯代价。单次 90% 连做 8 次只剩 43%。</p>
-      <p><code>exercises/practice/0002-agent-scorecard.py</code>　·　速查：<a href="../reference/agent-eval-checklist.html">该问什么</a></p>
-    </div>
-    <div class="pillar planned">
-      <h3>0003 · 工具设计</h3>
-      <p>名字、描述、参数、<b>返回值</b>、错误信息怎么写。下一步开。</p>
+      <h3><a href="agent/0002-build-an-agent.html">0002 · 手写一个 agent</a></h3>
+      <p>从<b>装 Python 包、配 API key</b> 开始，用<b>真模型</b>跑通循环；亲手撞一次护栏。核心代码就是一个循环。</p>
+      <p><code>exercises/agent/0002-build-an-agent.py</code></p>
     </div>
     <div class="pillar">
-      <h3><a href="practice/0004-failure-modes.html">0004 · 失败模式与自救</a></h3>
-      <p>先看 <b>trace</b> 再动手：<b>症状 → 定位 → 救法</b>对照表，每条带理由和不适用。</p>
-      <p><code>exercises/practice/0004-failure-modes.py</code></p>
+      <h3><a href="agent/0003-mcp-and-skills.html">0003 · 工具长出两个新形状：MCP 与 Skill</a></h3>
+      <p><b>MCP</b> 管「怎么接」（工具的统一插口），<b>Skill</b> 管「怎么做」（把做法打包成文件）。</p>
     </div>
     <div class="pillar">
-      <h3><a href="practice/0005-tuning-projects.html">0005 · 微调项目怎么不翻车</a></h3>
-      <p>需求到手先切<b>「怎么答」和「答什么」</b>：附决策单和内测排查清单。</p>
+      <h3><a href="agent/0004-skill-and-mcp-lab.html">0004 · 写一个 skill、接一个 MCP</a></h3>
+      <p>动手两件事：生成 skill 骨架并自检、配 MCP 配置走通「发现」。附<b>工具描述五件套</b>怎么写。</p>
+      <p><code>exercises/agent/0004-make-a-skill.py</code>　·　<code>0004-mcp-config.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0005-multi-agent.html">0005 · 多 agent 协作：什么时候该上、怎么分工</a></h3>
+      <p>编排者-工作者、只回结论不回流水、<b>什么时候不该上</b>。多 agent 是放大器。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0006-orchestrate-agents.html">0006 · 编排一群 agent</a></h3>
+      <p>一个 lead 三个 worker 跑起来：派单三件套、失败重派、<b>上下文对账</b>。</p>
+      <p><code>exercises/agent/0006-orchestrate-agents.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0007-safety.html">0007 · 安全与权限：纸条攻击、沙箱、人审</a></h3>
+      <p>提示词注入是怎么回事；护栏三件套：<b>少信、少能、有人管</b>。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0008-harness.html">0008 · Harness：Agent = Model + Harness</a></h3>
+      <p>把学过的课全部<b>对号入座</b>回壳里；为什么同一个模型换个壳表现差很多。</p>
+    </div>
+    <div class="pillar">
+      <h3><a href="agent/0009-teleagent-teardown.html">0009 · 拆解 TeleAgent：一个真实的 harness</a></h3>
+      <p>收尾大作业：真实产品逐块拆——记忆子系统、授权与沙箱、任务排查，<b>拆完怎么验</b>。</p>
+      <p><code>exercises/agent/0009-harness-checklist.py</code>　·　<code>0009-memory-ledger.py</code></p>
     </div>
   </div>
+
   <h2>RAG</h2>
   <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲<b>机制与取舍</b>：为什么要检索、一条链六步各在干什么、什么时候不该上。<b>不讲向量库选型 / 产品对比</b>（会烂，也超出这份教程的使命）。教材放在 <code>lessons/rag/</code>。</p>
   <p style="margin-top:1.4rem;color:var(--muted);font-size:0.95rem"><b>基础课</b> —— 给初学者和业务人员。给结论和直觉，<b>不给推导和算式</b>。</p>

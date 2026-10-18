@@ -18,7 +18,7 @@
   <text x="412" y="51" font-family="sans-serif" font-size="13" fill="#1f6b3a">你的程序 + 外部世界（真动手）</text>
 
   <!-- ① 工具清单 + 问题 -->
-  <text x="360" y="112" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">①</text>
+  <text x="360" y="138" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">①</text>
   <line x1="672" y1="118" x2="60" y2="118" stroke="#8a2b06" stroke-width="1.6" marker-end="url(#ta)"/>
   <rect x="392" y="92" width="300" height="26" rx="5" fill="none"/>
   <text x="378" y="112" text-anchor="end" font-family="sans-serif" font-size="11.5" fill="#8a2b06">工具清单 + 用户的问题</text>
@@ -35,7 +35,7 @@
   <text x="412" y="298" font-family="monospace" font-size="11.5" fill="#1b1a17">查天气库 → {"temp_c": 26, "cond": "晴"}</text>
 
   <!-- ④ 结果塞回 -->
-  <text x="360" y="356" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">④</text>
+  <text x="360" y="382" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#6c675e">④</text>
   <line x1="672" y1="362" x2="60" y2="362" stroke="#1f6b3a" stroke-width="1.6" marker-end="url(#tb)"/>
   <text x="378" y="356" text-anchor="end" font-family="sans-serif" font-size="11.5" fill="#1f6b3a">结果塞回对话（tool_result）</text>
 

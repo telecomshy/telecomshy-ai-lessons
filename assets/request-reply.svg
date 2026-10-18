@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" role="img" aria-label="请求与回复：网页版、TeleAgent 和你自己的脚本，都是把输入打包成请求发给模型供应商的 API，再拿回一段结构化回复">
+  <defs>
+    <marker id="rr-right" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+    <marker id="rr-left" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f6b3a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="500" fill="#fdfcf8"/>
+
+  <!-- 两栏标题 -->
+  <rect x="30" y="24" width="380" height="42" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="48" y="51" font-family="sans-serif" font-size="15" fill="#8a2b06">你的壳（网页版 / TeleAgent / 你的脚本）</text>
+
+  <rect x="490" y="24" width="380" height="42" rx="8" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.5"/>
+  <text x="508" y="51" font-family="sans-serif" font-size="15" fill="#1f6b3a">模型供应商（API / 模型）</text>
+
+  <!-- 左栏 -->
+  <rect x="30" y="86" width="380" height="230" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="48" y="116" font-family="sans-serif" font-size="14" fill="#1b1a17">网页对话框</text>
+  <text x="48" y="144" font-family="sans-serif" font-size="14" fill="#1b1a17">TeleAgent 这类 harness</text>
+  <text x="48" y="172" font-family="sans-serif" font-size="14" fill="#1b1a17">你自己写的脚本</text>
+  <text x="48" y="226" font-family="sans-serif" font-size="14" fill="#1b1a17">收到回复后：</text>
+  <text x="48" y="250" font-family="sans-serif" font-size="13.5" fill="#6c675e">网页版显示给你；harness 接着做事</text>
+
+  <!-- 右栏 -->
+  <rect x="490" y="86" width="380" height="230" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="508" y="116" font-family="sans-serif" font-size="14" fill="#1b1a17">收下请求、跑模型</text>
+  <text x="508" y="144" font-family="sans-serif" font-size="14" fill="#1b1a17">不知道你上一轮说过什么</text>
+  <text x="508" y="172" font-family="sans-serif" font-size="13.5" fill="#6c675e">（历史全靠你的壳带过来）</text>
+  <text x="508" y="226" font-family="sans-serif" font-size="14" fill="#1b1a17">回一段话，</text>
+  <text x="508" y="250" font-family="sans-serif" font-size="14" fill="#1b1a17">或一组 tool_calls</text>
+
+  <!-- ① 请求 -->
+  <line x1="410" y1="180" x2="484" y2="180" stroke="#8a2b06" stroke-width="1.8" marker-end="url(#rr-right)"/>
+  <text x="450" y="164" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#8a2b06">① 请求</text>
+
+  <!-- ② 回复 -->
+  <line x1="490" y1="272" x2="416" y2="272" stroke="#1f6b3a" stroke-width="1.8" marker-end="url(#rr-left)"/>
+  <text x="450" y="256" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1f6b3a">② 回复</text>
+
+  <!-- 底部：两条路 -->
+  <rect x="30" y="344" width="840" height="96" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="48" y="372" font-family="sans-serif" font-size="14" fill="#1b1a17"><tspan font-weight="bold">网页版：</tspan>把这段回复显示给你，结束。</text>
+  <text x="48" y="400" font-family="sans-serif" font-size="14" fill="#1b1a17"><tspan font-weight="bold">harness：</tspan>若回复是工具调用 → 真的执行工具 → 结果塞回 messages → 再发一次请求（回到 ①）。</text>
+  <text x="48" y="426" font-family="sans-serif" font-size="12.5" fill="#6c675e">一次请求只换一次回复；循环是壳把很多次请求串起来。</text>
+
+  <!-- 底注 -->
+  <text x="30" y="478" font-family="sans-serif" font-size="12.5" fill="#6c675e">关键：不管界面长什么样，后台都是「打包请求 → 调 API → 拿回结构化回复」。</text>
+</svg>

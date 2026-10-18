@@ -63,20 +63,20 @@
 
 ### 怎么跑脚本
 
-大多数脚本**只用 Python 标准库，离线就能跑**：
-
-```bash
-python exercises/agent/0003-mini-agent.py
-```
-
-唯一需要联网的是 [`agent/0004-real-model-agent.py`](exercises/agent/0004-real-model-agent.py)，它要调真实的模型 API，得自己配 `OPENAI_API_KEY`：
+大多数脚本**只用 Python 标准库，离线就能跑**。只有 Agent 篇第 2 课要调真模型，装包、配 key 的完整步骤写在课里（[怎么跑](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0002-build-an-agent.html)）：
 
 ```powershell
-$env:OPENAI_API_KEY = "sk-..."
-python exercises/agent/0004-real-model-agent.py
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -U openai python-dotenv
+# 然后在仓库根目录建 .env，写一行：DEEPSEEK_API_KEY=sk-...
+python exercises/agent/0002-build-an-agent.py --check
+python exercises/agent/0002-build-an-agent.py
 ```
 
-脚本是**加分项，不是必修项**。主线不依赖跑代码 —— 完全跟着代码走的课（目前是 [`agent/0004`](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-real-model-agent.html)）在课里标出了哪几节可以整节跳过。
+`.env` 已经在 `.gitignore` 里，不会进 git。**这一步会真的花钱**——四个问题加起来不到一分钱（DeepSeek `deepseek-flash`，2026-10-18 价目）。
+
+脚本是**加分项，不是必修项**。主线不依赖跑代码 —— 第 2 课一边写一边讲，不跑也能读懂；跑起来才看得到 trace 和账单。
 
 ---
 
@@ -119,21 +119,19 @@ python exercises/agent/0004-real-model-agent.py
 
 | 课    | 标题                                                                                                                                      |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 0001 | [Agent 到底是什么？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0001-what-is-an-agent.html) —— 用一个**假模型**跑通最小循环         |
-| 0002 | [模型只能吐字，它怎么「伸手」做事？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0002-tool-use.html) —— 工具调用：模型只「说要调」，动手的是你的程序      |
-| 0003 | [把零件装起来：一个真的 agent](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0003-mini-agent.html) —— 核心代码十几行                   |
-| 0004 | [换上真模型，假的骗了你哪些地方](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-real-model-agent.html)                          |
-| 0005 | [工具长出两个新形状：MCP 与 Skill](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-mcp-and-skills.html)                      |
-| 0006 | [Harness：你天天在用，却没分清的那个词](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0006-harness.html) —— Agent = Model + Harness |
+| 0001 | [Agent 是什么：循环、工具、记忆](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0001-what-is-an-agent.html) —— 纯理论：循环怎么转、什么时候停，工具从哪来，记忆按产品怎么存 |
+| 0002 | [手写一个 agent](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0002-build-an-agent.html) —— 从装包、配 key 开始，用真模型跑通循环     |
+| 0003 | [工具长出两个新形状：MCP 与 Skill](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0003-mcp-and-skills.html) —— MCP 管「怎么接」，Skill 管「怎么做」 |
+| 0004 | [写一个 skill、接一个 MCP](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-skill-and-mcp-lab.html) —— 动手版：骨架自检、配置走通「发现」 |
+| 0005 | [多 agent 协作：什么时候该上、怎么分工](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-multi-agent.html) —— 编排者-工作者、只回结论不回流水、什么时候不该上 |
+| 0006 | [编排一群 agent](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0006-orchestrate-agents.html) —— lead＋workers 跑起来：派单三件套、失败重派、上下文对账 |
+| 0007 | [安全与权限：纸条攻击、沙箱、人审](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0007-safety.html) —— 提示词注入是什么；护栏三件套：少信、少能、有人管 |
+| 0008 | [Harness：Agent = Model + Harness](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0008-harness.html) —— 把学过的东西全部装回壳里 |
+| 0009 | [拆解 TeleAgent：一个真实的 harness](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0009-teleagent-teardown.html) —— 收尾大作业：真实产品逐块拆 |
 
-### 技巧篇
+### 技巧与工程
 
-怎么做、怎么不翻车。每条技巧都带「理由 + 一个反例 + 什么时候不适用」。
-
-| 课    | 标题                                                                                                                                          |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0001 | [上下文工程](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/practice/0001-context-engineering.html) —— 放什么、放哪、什么时候丢                  |
-| 0002 | [怎么判断一个 agent 好不好用](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/practice/0002-evaluating-agents.html) —— 单次 90% 连做 8 次只剩 43% |
+「怎么不翻车」的内容**按主题归轨**（2026-10-18 重构）：上下文、评估、失败自救并进 **Agent 篇**对应课；微调项目变成 **LLM 底层的附录**（[微调项目怎么不翻车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/appendix-tuning-projects.html)）；贴墙清单在 [`reference/`](reference/)。
 
 ### RAG
 
@@ -164,7 +162,7 @@ python exercises/agent/0004-real-model-agent.py
 | [采样参数速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/sampling-params.html)            | temperature / top_p / top_k / seed，配模型时照着抄 |
 | [KV Cache 与「缓存命中」速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/prompt-caching.html) | LLM 底层第 3 课的压缩版                            |
 | [一次请求，从头到尾](https://telecomshy.github.io/telecomshy-ai-lessons/reference/one-request-end-to-end.html)  | 可点逐步版 —— 看货架（KV cache）怎么一点点变满              |
-| [agent 评估该问什么](https://telecomshy.github.io/telecomshy-ai-lessons/reference/agent-eval-checklist.html) | 技巧篇第 2 课的检查单                         |
+| [agent 评估该问什么](https://telecomshy.github.io/telecomshy-ai-lessons/reference/agent-eval-checklist.html) | Agent 篇第 9 课「拆完怎么验」的检查单                         |
 | [预算与排座次](https://telecomshy.github.io/telecomshy-ai-lessons/reference/context-budget.html)             | 上下文工程的对照表                                  |
 | [权威架构图 · 对照](https://telecomshy.github.io/telecomshy-ai-lessons/reference/canonical-diagrams.html)     | 认得出英文资料里那几张图对应哪一块，当对照不当教材                  |
 
@@ -173,18 +171,21 @@ python exercises/agent/0004-real-model-agent.py
 ## 仓库结构
 
 ```
-MISSION.md            为什么做这个（这个仓库的一切都挂在它下面）
-NOTES.md              课程开发标准、约定与待办
-notes/rules/          开发操作细节（联网取材 · 标 completed 的步骤），用到才读
-notes/history/        决策与教训存档（5.1～5.19 一节一篇），NOTES.md 第 5 节只有索引
-RESOURCES.md          全部一手资料来源，注明「用来干什么」
-lessons/<轨道>/       课程本体，自包含 HTML
-exercises/<轨道>/     配套脚本，命名与课号对应
-reference/            术语表与速查（贴墙清单）
-assets/               共享样式表、测验组件、SVG 插图、演示动画（mp4 + poster）
+AGENTS.md               agent 入口：规矩在哪、目录怎么分
+MISSION.md              为什么做这个（这个仓库的一切都挂在它下面）
+NOTES.md                课程开发标准、约定与待办
+RESOURCES.md            全部一手资料来源，注明「用来干什么」
+docs/agents/            agent 技能的仓库配置（工单 · 分诊标签 · 领域文档）
+docs/learning-records/  学习者已掌握的证据（teach 技能用，算 ZPD）
+docs/notes/rules/       开发操作细节（联网取材 · 标 completed 的步骤），用到才读
+docs/notes/history/     决策与教训存档（一节一篇），NOTES.md 第 5 节只有索引
+lessons/<轨道>/         课程本体，自包含 HTML
+exercises/<轨道>/       配套脚本与实际产物（如 agent/my-first-skill/）
+reference/              术语表与速查（贴墙清单）
+assets/                 共享样式表、测验组件、SVG 插图、演示动画（mp4 + poster）
 ```
 
-想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 记着每条教学规矩本身，[`notes/history/`](notes/history/) 记着它们背后的原因 —— 包括不少「我一开始写错了，后来改对」的反面案例。
+想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 记着每条教学规矩本身，[`docs/notes/history/`](docs/notes/history/) 记着它们背后的原因 —— 包括不少「我一开始写错了，后来改对」的反面案例。
 
 ---
 

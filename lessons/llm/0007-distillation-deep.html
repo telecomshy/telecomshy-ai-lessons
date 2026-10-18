@@ -125,7 +125,7 @@
   <p>有一篇 2025 年的工作就叫这个：给小模型蒸一个 agent 出来（Agent Distillation，机器学习顶会 2025 的亮点论文）。它的教材不是一段「想」，而是<b>整条轨迹</b>——想一想、调检索或代码工具、看结果、再想，直到答完。实测：0.5B、1.5B、3B 的学生，能追平大一档（1.5B、3B、7B）只蒸「想」的模型。</p>
   <p>为什么非得带上工具？论文摘要给了原因：<b>只蒸「想」的模型，遇到需要冷门事实或精确计算的题就只能编</b>——小模型肚子里没那些货。给了工具，事实和计算交给工具去查、去算，小模型只负责想清楚该干什么。<b>所以「小模型跑不好 agent」很多时候不是笨，是教材里没教过怎么干活。</b></p>
   <p>在策略蒸馏和这件事是天然一对：让学生自己走「想—调工具—看结果」的循环，老师逐字批，<b>批的就是「这一步该不该调工具、参数写对没有、结果该怎么用」</b>。Thinking Machines 那篇训的行为清单里就列着工具调用。</p>
-  <p>落到选型上，给一条判断：<b>挑跑 agent 的小模型，别看数学跑分，看两件事</b>——教材里有没有你那类轨迹（用什么工具、什么格式、几轮对话），训完测没测你那类活。<span style="color:var(--muted)">（换模型之后测什么、怎么测，是做法不是机制，写在<a href="../practice/0002-evaluating-agents.html">技巧篇 0002</a>里。）</span></p>
+  <p>落到选型上，给一条判断：<b>挑跑 agent 的小模型，别看数学跑分，看两件事</b>——教材里有没有你那类轨迹（用什么工具、什么格式、几轮对话），训完测没测你那类活。<span style="color:var(--muted)">（换模型之后测什么、怎么测，是做法不是机制，写在<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>里。）</span></p>
 
   <h2>检查一下你懂了没</h2>
 
@@ -236,8 +236,8 @@
   <p class="next">
     <b>回初学版</b>：<a href="0007-distillation.html">LLM 底层 · 第 7 课 · 蒸馏：小模型的本事从哪来</a><br>
     <b>前置</b>：<a href="0000-how-models-learn.html">第 0 课 · 模型是怎么学出来的</a>（Q2 那两笔账，是在它「出题、扣分、往少扣分拧」的框架里加了一笔）· <a href="0005-reasoning-models.html">第 5 课 · 它真的在思考吗</a>（Q6 蒸的那个「想」是怎么练出来的）<br>
-    <b>相关</b>：<a href="0006-quantization-deep.html">第 6 课进阶 · 压法是什么、KV 是什么精度</a>（让模型变小的另一半）· <a href="../agent/0002-tool-use.html">Agent 原理篇 · 第 2 课</a>（Q6 要搬的那个「动手」是什么）<br>
-    <b>接下来往哪走</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（换模型之后测什么——Q6 那条判断的做法版）<br>
+    <b>相关</b>：<a href="0006-quantization-deep.html">第 6 课进阶 · 压法是什么、KV 是什么精度</a>（让模型变小的另一半）· <a href="../agent/0001-what-is-an-agent.html">Agent 篇 · 第 1 课</a>（Q6 要搬的那个「动手」是什么）<br>
+    <b>接下来往哪走</b>：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>（换模型之后测什么——Q6 那条判断的做法版）<br>
     <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
     术语表：<a href="../../reference/glossary.html#distillation">蒸馏 distillation</a> · <a href="../../reference/glossary.html#sft">监督微调 SFT</a> · <a href="../../reference/glossary.html#training">损失 loss</a> · <a href="../../reference/glossary.html#kl-divergence">KL 散度 / 交叉熵</a> · <a href="../../reference/glossary.html#on-policy">在策略 / 离策略</a> · <a href="../../reference/glossary.html#temperature">温度 temperature</a>
   </p>

@@ -38,7 +38,7 @@
     <dd>不把所有东西一次性塞进上下文：先给<b>一句说明</b>，用得上才展开正文，正文里提到的资料再按需打开。理由是<b>上下文是稀缺资源</b>——进上下文的东西都要花钱、占位置、互相干扰。</dd>
 
     <dt id="harness"><strong>Harness（运行外壳 / 脚手架）</strong></dt>
-    <dd>套在模型外面的<b>那套软件</b>：拼 prompt、执行工具、管上下文、施加护栏、加载 skill、接 MCP、做界面、存状态。<b>Agent ＝ Model ＋ Harness</b>（Martin Fowler / LangChain 的说法）。<br><b>注意</b>：agent 是「<b>行为</b>」，harness 是「<b>软件</b>」——你下载安装的其实是 harness，agent 是它跑起来后表现出的能力。<b>同一个模型换 harness，表现会差很多</b>。</dd>
+    <dd>套在模型外面的<b>那套软件</b>（也叫<b>客户端软件</b>）：拼 prompt、执行工具、管上下文、施加护栏、加载 skill、接 MCP、做界面、存状态。<b>Agent ＝ Model ＋ Harness</b>（Martin Fowler / LangChain 的说法）。<br><b>注意</b>：agent 是「<b>行为</b>」，harness 是「<b>软件</b>」——你下载安装的其实是 harness，agent 是它跑起来后表现出的能力。<b>同一个模型换 harness，表现会差很多</b>。</dd>
 
     <dt id="observation"><strong>Observation（观察）</strong></dt>
     <dd>工具执行后返回的结果。它被喂回给模型，成为下一轮推理的输入——这是循环得以"感知环境"的方式。</dd>
@@ -59,7 +59,7 @@
     <dd>把一个大目标拆成可执行的子步骤，并且<b>失败后会改主意</b>的能力（Lilian Weng 分的两半：<b>拆子目标</b>（task decomposition）· <b>自我反思</b>（self-reflection）——不一条路走到黑）。agent 三大支柱之一。</dd>
 
     <dt id="memory"><strong>Memory（记忆）</strong></dt>
-    <dd>短时记忆＝当前上下文窗口里的内容；长时记忆＝跨会话持久化存储、需要时检索回来。agent 三大支柱之一。</dd>
+    <dd>短时记忆＝当前上下文窗口里的内容（行话叫<b>工作记忆</b>）；长时记忆＝跨会话存下来、用到再取回的东西。<b>怎么存没有统一标准</b>，是设计选择：有按内容分三种的（<b>经历</b>／<b>事实</b>／<b>做法</b>，即 episodic／semantic／procedural），有按<b>来源＋时间尺度</b>归档的（用户明说的／系统推断的／每日流水）；底层可以是几个 Markdown 文件，<b>不一定是向量库</b>。取法也是一族：常驻注入、关键词查、按名读取、相似度检索。存和取都是<b>程序</b>（或模型调记忆工具）干的；新话进来怎么处理，Mem0 <b>论文</b>的四个动作（ADD／UPDATE／DELETE／NOOP）是<b>一家的做法</b>，不是通用机制（现产品文档改成 ADD-only 为主）。agent 三大支柱之一。</dd>
 
     <dt id="context"><strong>Context / 上下文工程</strong></dt>
     <dd>模型这一次能看到的所有内容。它有硬上限，叫<b>上下文窗口（context window）</b>：<b>输入的 token + 已写出来的 token</b> 加起来不能超过它。它是<b>稀缺且昂贵</b>的资源，往里塞什么、丢掉什么，直接决定 agent 表现。</dd>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 4 课 · 写一个 skill、接一个 MCP</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 4 课 · 实操</div>
+  <h1>写一个 skill、接一个 MCP</h1>
+  <p class="subtitle">两件事动手做：打包一份<b>「做法」</b>，配上一个<b>「插口」</b>。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>上一课说清了 MCP 和 Skill 是什么。这课把两件事都落到手上：生成一个自己的 skill 骨架并自检，配一份 MCP 配置并走通"发现"。</p>
+    <p>顺手解决一个藏了很久的问题：<b>工具的名字、描述、参数，到底怎么写模型才调得准</b>——这是影响成功率最直接的一件事。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：写出一个能被模型用起来的 skill；给 harness 接一个 MCP 工具；给任何工具写出"模型看得懂"的说明。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>两个命根子：<b>skill 的命根子是 <code>description</code> 那句话</b>（模型全靠它决定用不用）；<b>MCP 的命根子是"发现"</b>（先问"你能干什么"，别硬编码）。</p>
+    <p>这两处写坏，别的做得再好都白搭。</p>
+  </div>
+
+  <h2>1. 先跑起来</h2>
+  <p>两个脚本都在工作区，纯离线、不调 API：</p>
+  <pre><code>python exercises/agent/0004-make-a-skill.py
+python exercises/agent/0004-mcp-config.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code> 切换成 UTF-8。</p>
+
+  <h2>2. 写 skill：生成、读懂、改坏一次</h2>
+  <p>第一个脚本生成一个 skill 骨架（<code>exercises/agent/my-first-skill/</code>），并自检最常见的翻车点。实跑输出：</p>
+  <pre><code>==========================================================
+skill 骨架已生成：E:\code\my_projects\learn-ai-agents\exercises\agent\my-first-skill
+==========================================================
+  SKILL.md
+  reference.md
+
+[各部分干嘛]
+  SKILL.md 的 frontmatter
+      name         唯一标识
+      description  「最关键的一句」——平时只有这句进上下文
+  SKILL.md 的正文
+      什么时候用 / 怎么做 / 输出格式 / 翻车怎么救
+  reference.md
+      正文里一句「看 reference.md」链过来，用到才加载
+
+[自检] 这几条最容易翻车，逐条看：
+  OK  名字小写字母+连字符、1~64 字符：weather-dress
+  OK  description 长度 20~1024 字符（现在 45）
+  OK  description 里说了「什么时候用」——光说功能不够，模型靠这句决定用不用
+  WARN description 里最好写清适用场景，而不只是一句话概括</code></pre>
+  <p><b>逐段看</b>：目录里两个文件——<code>SKILL.md</code> 是正文（什么时候用我／怎么做／输出格式／翻车怎么救四段），<code>reference.md</code> 是补充资料（正文里一句"看 reference.md"链过来，<b>用到才加载</b>——这就是上一课的渐进式加载）。<b>自检四条是按翻车频率排的</b>：名字格式、描述长度、描述里有没有"什么时候用"、有没有写清场景。注意第三条——<b>光说功能不够</b>，"查天气并给出穿衣建议"只说了它是干嘛的，"当用户问今天穿什么、要不要带伞时使用"才是模型做判断的依据。</p>
+  <p><b>改一改</b>：把 <code>DESCRIPTION</code> 换成"查天气。"再跑一遍——自检会亮出 <code>WARN</code>/<code>BAD</code>：太短、没说什么时候用。<b>亲眼看它报一次警</b>，比记十条规矩管用。</p>
+
+  <h2>3. 接 MCP：配置、校验、发现</h2>
+  <p>第二个脚本离线走一遍接入的四步。实跑输出（配置部分略，JSON 就三行）：</p>
+  <pre><code>[第 2 步] 校验字段：
+  OK   weather-server：command/args 齐了，env 可选
+  （字段口径：command 必填；args 必填可空；env 可选，放 API key 这类）
+
+[第 3 步] 发现：连上先问「你能干什么？」
+  client -&gt; server： 你能干什么？
+  server -&gt; client： get_weather —— 查某个城市今天的天气。返回气温（摄氏度）和天气状况。
+  server -&gt; client： get_forecast —— 查某个城市未来三天的天气趋势。返回每天的气温和天气状况。
+
+[第 4 步] 清单就绪：2 个工具，交给模型的是「名字＋说明＋参数」：
+  get_weather    参数必填：city
+  get_forecast   参数必填：city</code></pre>
+  <p><b>逐段看</b>：配置就是一份 <code>mcpServers</code> JSON——服务名、启动命令（<code>command</code>）、参数（<code>args</code>）、环境变量（<code>env</code>，放 API key 这类）。真实 harness 读的就是它（TeleAgent 的"工具管理"就是往里填这份 JSON）。<b>校验一步别省</b>：照抄配置最容易翻在字段上（<code>args</code> 写成字符串、<code>env</code> 写成数组）；脚本把必填/可选的口径打在第二步。<b>发现那一步是 MCP 的灵魂</b>：连上先问"你能干什么"，server 把工具连名字带说明吐回来，你再交给模型——所以工具不用硬编码。</p>
+  <p><b>改一改</b>：把配置里的 <code>command</code> 一行删掉再跑——校验会打出 <code>BAD weather-server：缺 command</code>。<b>再想一下</b>：清单里的工具越多越好吗？不是——清单会被算进上下文，用不上的工具每一轮都在收你的钱。</p>
+
+  <h2>4. 工具描述决定调用准不准</h2>
+  <p>模型看不到你的代码，它看到的只有你写的五样。这五样怎么写，直接决定它调得准不准：</p>
+  <ul>
+    <li><b>名字</b>：动词＋名词，一眼看出干嘛（<code>get_weather</code> ✓ ／ <code>do_thing</code> ✗）。模型偶尔会照名字"编"相近的工具，名字越明确越少编。</li>
+    <li><b>描述</b>：两句话——<b>它是干嘛的</b>＋<b>什么时候该用它</b>（skill 的 description 同一个道理）。含糊的描述是"该调不调"和"调了不该调"的头号原因。</li>
+    <li><b>参数</b>：每个参数写清类型、格式、例子（"城市名，例如「北京」"）。<b>能给例子就给例子</b>——参数填错大多是没见过样例。</li>
+    <li><b>返回值</b>：小而明确。别把整个数据库扔回来——模型要的是答案不是原料；返回值也会塞回上下文，越大越贵、越容易看漏。</li>
+    <li><b>错误信息</b>：写成"模型看得懂、能改动作"的。"查不到「北京市」的天气"比"Error 404"强一百倍——<b>错误也会塞回上下文</b>，模型靠它自救（"哦，换个城市名再试"）。</li>
+  </ul>
+  <p><b>反例</b>：描述只写功能不写时机（模型不知道该不该用）；返回值原样吐一堆 JSON 让模型自己淘。<b>什么时候不用抠这么细</b>：一次性玩具脚本，能跑就行——这五件是给"要反复用"的工具准备的。</p>
+
+  <h2>5. 翻车预演</h2>
+  <ul>
+    <li><b>description 只写功能</b>：模型用不起来，或者在不该用的时候硬用——先看自检第三条。</li>
+    <li><b>配置抄错字段</b>：连不上先看校验那步，别急着怀疑网络。</li>
+    <li><b>清单挂太多工具</b>：每个都在吃 token；挑工具的准确率还会随数量下降。</li>
+    <li><b>skill 改了没同步</b>：正文里写的步骤和脚本对不上，模型照旧文做——改 skill 记得连 <code>description</code> 一起过一遍。</li>
+  </ul>
+
+  <h2>6. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 模型决定"要不要用某个 skill"，依据是什么？</p>
+    <button class="quiz-option">SKILL.md 正文写得长不长</button>
+    <button class="quiz-option" data-correct="true">frontmatter 里那句 description</button>
+    <button class="quiz-option">skill 文件夹的命名顺序</button>
+    <button class="quiz-option">上次用没用成功</button>
+    <p class="feedback"
+       data-ok="对。平时只有这一句进上下文——它写得含糊，skill 就等于不存在。"
+       data-no="正文要等模型决定用之后才打开；第一关是 description。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 接一个 MCP server，连上之后第一件事是什么？</p>
+    <button class="quiz-option">把工具名一个个抄进系统提示</button>
+    <button class="quiz-option" data-correct="true">问它"你能干什么"，拿回工具清单</button>
+    <button class="quiz-option">给它发一个测试任务看能不能干</button>
+    <button class="quiz-option">把它的代码下载下来读一遍</button>
+    <p class="feedback"
+       data-ok="对。这就是「发现」——工具被找到而不是被写死，正是 MCP 的意义。"
+       data-no="硬编码工具名就退回了没有 MCP 的时代；先发现，再交给模型。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 工具的错误信息写成"Error 404"，会出什么问题？</p>
+    <button class="quiz-option">程序会直接崩溃</button>
+    <button class="quiz-option">工具会被自动禁用</button>
+    <button class="quiz-option" data-correct="true">模型看不懂，不知道下一步该改什么</button>
+    <button class="quiz-option">上下文会被清空</button>
+    <p class="feedback"
+       data-ok="对。错误也塞回上下文——写成模型看得懂、能改动作的话，它才能自救。"
+       data-no="不会崩，但模型拿到一个没有信息量的报错，只能瞎猜下一步。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 工具的返回值应该写成什么样？</p>
+    <button class="quiz-option">越全越好，把原始数据全吐回来</button>
+    <button class="quiz-option" data-correct="true">小而明确：模型要的是答案不是原料</button>
+    <button class="quiz-option">统一用加密格式防泄露</button>
+    <button class="quiz-option">无所谓，模型自己会挑</button>
+    <p class="feedback"
+       data-ok="对。返回值也占上下文——越大越贵、越容易看漏。"
+       data-no="「全吐回来」既贵又乱：塞回的东西都要买单，还稀释注意力。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Anthropic — Equipping agents for the real world with Agent Skills</a>：description 是模型的唯一判据、渐进式加载的设计理由。<br>
+    <a href="https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro">Model Context Protocol — 官方文档</a>：配置与发现的字段口径。<br>
+    <a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">天翼 AI — TeleAgent 桌面版操作手册</a>：真实产品的 skill 导入要求（根目录 SKILL.md＋YAML）与 MCP JSON 配置（2026-10-18 抓）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"我的 skill 该拆成几个？""MCP server 自己怎么写一个？""工具描述要不要写多语言？""返回值要截到多小？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="0003-mcp-and-skills.html">Agent 篇 · 第 3 课 · 工具长出两个新形状：MCP 与 Skill</a>（这课的每个动作都是那课讲过的）<br>
+    <b>顺着往下</b>：<a href="0005-multi-agent.html">Agent 篇 · 第 5 课 · 多 agent 协作</a> → <a href="0007-safety.html">第 7 课 · 安全与权限</a> → 最后以<a href="0009-teleagent-teardown.html">拆解一个真实 harness</a>收尾<br>
+    <b>LLM 底层</b>：<a href="../llm/0008-who-does-what.html">第 8 课 · 这件事到底是谁干的</a>（输出格式归哪层管）<br>
+    术语表：<a href="../../reference/glossary.html#mcp">MCP</a> · <a href="../../reference/glossary.html#skill">Skill</a> · <a href="../../reference/glossary.html#tool">工具</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 4 课 · 实操 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

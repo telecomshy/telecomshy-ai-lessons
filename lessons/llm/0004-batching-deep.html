@@ -30,7 +30,7 @@
   </ul>
   <p>再往后情况会反过来：<b>批已经坐满了，新来的请求只能排队等</b>。Anyscale 观察到「系统越忙，新请求能立刻插进批里的机会越少」；他们那台机器上 vLLM 大约<b>每秒来 8 个请求、每秒产出 1900 个字</b>就到顶了。</p>
   <p>所以「慢」得先分清是哪一种：<b>坐在队里等的那一段</b>（算进「你等第一个字等了多久」）和<b>批里人多导致的每轮变慢</b>（算进「每蹦一个字花多久」）。机制不同，办法也不同。</p>
-  <p style="color:var(--muted)">（最大批多大、排多久算超时、要不要给付费用户优先，都是服务商自己定的，上面的数字只是他们那台机器上的实测。归属分界线：这一问的答案全在服务端，所以留在 LLM 轨道；「拿到一个慢的 agent，怎么分清是排队还是模型慢」是你的活 → <a href="../practice/0002-evaluating-agents.html">技巧篇 0002</a>。）</p>
+  <p style="color:var(--muted)">（最大批多大、排多久算超时、要不要给付费用户优先，都是服务商自己定的，上面的数字只是他们那台机器上的实测。归属分界线：这一问的答案全在服务端，所以留在 LLM 轨道；「拿到一个慢的 agent」怎么量，见 <a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a> 的「盯代价」那一条。）</p>
 
   <h2 id="q2-knee">Q2 · 那个「拐点」长什么样？为什么批大了吞吐就不涨了？</h2>
   <p>接着<a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a>那把尺子往下推。<b>算术强度＝干多少次运算 ÷ 搬多少字节</b>，比值越大越划算。一批 <code>N</code> 个请求走一步：</p>
@@ -142,7 +142,7 @@
   <p class="next">
     <b>回初学版</b>：<a href="0004-batching.html">LLM 底层 · 第 4 课 · 一趟装满的卡车</a><br>
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">第 2 课 · 一次请求的两段</a>（本文的拐点从那课的算术强度推出来）· <a href="0002-prefill-vs-decode-deep.html#q3-intensity">第 2 课（进阶版）· Q2</a><br>
-    <b>你会用到</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 怎么判断一个 agent 好不好用</a>（agent 慢的时候怎么区分是模型慢还是在排队）<br>
+    <b>你会用到</b>：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>（agent 慢的时候，先把它的耗时按步量开）<br>
     <b>顺着往下</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么</a><br>
     术语表：<a href="../../reference/glossary.html#batching">批处理</a> · <a href="../../reference/glossary.html#batch-size">批大小</a> · <a href="../../reference/glossary.html#queueing">排队</a> · <a href="../../reference/glossary.html#throughput">吞吐</a> · <a href="../../reference/glossary.html#continuous-batching">连续批处理</a> · <a href="../../reference/glossary.html#arithmetic-intensity">算术强度</a>
   </p>

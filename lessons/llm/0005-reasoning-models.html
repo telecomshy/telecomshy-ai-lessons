@@ -108,7 +108,7 @@
     <li><b>额度从最低档起步，按自己的任务实测着加</b>——这是 Anthropic 文档给的建议（额度有下限，通常 1024；而且它是<b>目标不是硬上限</b>，实际用量随任务浮动）。<b>别一上来就顶格。</b></li>
   </ul>
   <p>给要跑循环的人算一笔现实的：<b>10 步、每步想 2000 字</b>，按第 2 课那套时间模型，每步要等<b>四十多秒</b>，十步就是<b>七分钟</b>——而这类活常常是<b>按用户的耐心在计时</b>的。</p>
-  <p><span style="color:var(--muted)">（开了思考之后要不要重新测一遍你的任务？那是你自己的活：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 技巧六</a>。）</span></p>
+  <p><span style="color:var(--muted)">（开了思考之后要不要重新测一遍你的任务？那是你自己的活：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>。）</span></p>
 
   <h2>6. 动手跑一遍</h2>
   <p>脚本在工作区：<code>exercises/llm/0005-reasoning-cost.py</code>。<b>只用 Python 标准库</b>，不联网——它<b>直接把思考的字加进第 2 课那套账里</b>（同样的时间模型和价格模型），所以结论是算出来的，不是讲出来的。</p>
@@ -256,7 +256,7 @@
     <b>同课进阶</b>：<a href="0005-reasoning-models-deep.html">进阶版 · 谁写的、怎么切的、谁收着、怎么练出来的</a><br>
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（草稿为什么跟答案同一条流水线、两种「慢」的来处）· <a href="0003-kv-cache-and-prompt-caching.html">第 3 课 · 缓存命中</a>（第 4 节④「缓存断了」那笔账的来处）<br>
     <b>顺着往下</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化</a>（另一件「拿什么换什么」的工程取舍：省字节）→ <a href="0007-distillation.html">第 7 课 · 蒸馏</a>（能力怎么从大模型搬到小模型）<br>
-    <b>相关</b>：<a href="../practice/0002-evaluating-agents.html">技巧篇 0002 · 技巧六</a>（开了思考要不要重新测）<br>
+    <b>相关</b>：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>（开了思考要不要重新测）<br>
     <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
     术语表：<a href="../../reference/glossary.html#reasoning">思考 reasoning</a> · <a href="../../reference/glossary.html#thinking-block">思考块 thinking block</a> · <a href="../../reference/glossary.html#signature">签名 signature</a> · <a href="../../reference/glossary.html#ttft">TTFT</a> · <a href="../../reference/glossary.html#tpot">TPOT</a>
   </p>

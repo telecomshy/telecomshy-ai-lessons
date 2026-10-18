@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 8 课 · Harness：Agent = Model + Harness</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 8 课 · 理论</div>
+  <h1>Harness：Agent = Model + Harness</h1>
+  <p class="subtitle"><b>Agent ＝ Model ＋ Harness</b>。把学过的东西，全部装回这层壳里。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>学到现在，零件认识了一堆：循环、工具、记忆、MCP 与 Skill、多 agent、安全。但"agent 到底是个什么东西"，可能还是拼不起来。</p>
+    <p>其实它早就拼好了：<b>你天天在用的那套软件</b>（OpenCode / Claude Code / Cursor 之类），就是这些零件装在一起的样子。这层壳叫 <b>harness</b>。</p>
+    <p style="margin-top:0.7rem">这课只做一件事：<b>拆开这层壳，指着每一块说——这是你学过的哪一课</b>。</p>
+    <p><b>学完这课，你能</b>：把你学过的东西全部对号入座到 harness 的零件上；说清为什么同一个模型换个壳表现差很多。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>整个领域最好记的一条公式：</p>
+    <p style="text-align:center;font-size:1.15rem"><b>Agent ＝ Model ＋ Harness</b></p>
+    <p>第 1 课分清了三个词：模型只会吐字，agent 是跑起来表现出的行为，你装的是中间那层壳。这一课把右边这一半拆开——<b>你学过的课，全是它的零件</b>。</p>
+  </div>
+
+  <h2>1. 三个词的边界，再往深一层</h2>
+  <p>第 1 课的一句话版本：<b>模型只会算，你装的是壳（harness），agent 是跑起来表现出的行为</b>。往深一层看，这句话里藏着两个经常踩的坑：</p>
+  <ul>
+    <li><b>口语把"agent"借去指那个软件</b>——"我装了个 agent"，装的其实是 harness。混着说平时没事，一到"换模型怎么就不行了"就开始找错地方：你动的多半是壳那一层，不是模型。</li>
+    <li><b>模型和壳的责任线在哪</b>：模型负责"想"（下一个字吐什么），壳负责"能"——能不能动手、能不能记事、能不能被拦住，全是壳的活。<b>模型永远只在吐字。</b></li>
+  </ul>
+
+  <h2>2. 壳里装了什么：零件清单</h2>
+  <p>一套 harness 的活儿，拆开就这些：</p>
+  <ul>
+    <li><b>拼 prompt</b>：系统提示＋工具清单＋历史，每轮拼成发给模型的输入；</li>
+    <li><b>执行工具</b>：模型说"要调"，它真的去调，把结果塞回去；</li>
+    <li><b>管理上下文</b>：多长、怎么截、怎么吃缓存（下一节专讲）；</li>
+    <li><b>存取记忆</b>：值得记的存到外面，用到时取回塞进上下文；</li>
+    <li><b>施加护栏</b>：最大步数、权限、沙箱；</li>
+    <li><b>加载能力、接外部工具</b>：skill 按需加载、MCP 标准接入；</li>
+    <li><b>以及界面、状态保存、日志</b>。</li>
+  </ul>
+
+  <h2>3. 专门看一块：上下文管理</h2>
+  <p>壳每天干得最多的活是替你管上下文。三条取舍，都是"放什么、放哪、什么时候丢"：</p>
+  <ul>
+    <li><b>放什么</b>：当前任务用得上的才进上下文——工具清单、任务说明、刚拿到的观察。用不上的别塞：每一轮都要为它买单，还会互相干扰（上下文腐烂，第 1 课讲过）。</li>
+    <li><b>放哪</b>：稳定的放前面（系统提示、工具清单——它们是"稳定前缀"，吃缓存），老在变的放后面（新对话、新结果）。这一条直接决定你的缓存命中率（<a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课</a>）。</li>
+    <li><b>什么时候丢</b>：塞不下就裁——先裁最老的工具结果（往往最大最没用），摘要压缩整段历史，或者把要紧的写进记忆再清空。<b>丢的是"原料"，留的是"结论"。</b></li>
+  </ul>
+
+  <h2>4. 对号入座：学过的课，全是壳的零件</h2>
+  <p>这一步最爽：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">你学过的</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">在 harness 里是哪一块</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">推理 → 行动 → 观察（第 1、2 课）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>主循环</b>——壳里最核心的那个 <code>while</code></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">工具调用 tool_use / tool_result（第 1、2 课）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>工具执行层</b>——真的去动手的那部分</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">工具清单：名字＋说明＋参数（第 1、4 课）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>prompt 组装</b>——壳每轮都要拼进去</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">KV Cache / 稳定前缀、上下文放什么（本课第 3 节）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>上下文管理</b>——决定什么放前面、什么能省</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">记忆：程序存、程序取（第 1 课）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>记忆与状态管理</b>——存到哪、什么时候取回</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">Skill（第 3、4 课）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>能力加载层</b>——按需加载</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">MCP（第 3、4 课）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>外部接入层</b>——发现、即插即用</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">多 agent：编排者-工作者、子 agent（第 5、6 课）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>编排层</b>——派活、汇总、上下文隔离</td></tr>
+      <tr><td style="padding:0.45rem">最大步数、白名单、人审、防纸条攻击（第 1、7 课）</td>
+          <td style="padding:0.45rem"><b>护栏与权限</b>——决定什么能做、什么要问人</td></tr>
+    </tbody>
+  </table>
+  <p><b>看到没</b>：你一直在学"agent 是什么"，其实一直在学"harness 里都有什么"。</p>
+
+  <h2>5. 换个壳，表现差很多</h2>
+  <p>最后一条反直觉但很实用的点：<b>同一个模型，换个 harness，表现差很多。</b>因为 prompt 怎么拼、工具怎么给、上下文怎么管、护栏怎么设——<b>全是 harness 说了算</b>，模型只是被它喂的那个零件。所以"某某模型不行"这个结论，得先问一句：<b>是在哪个 harness 里试的？</b></p>
+
+  <h2>6. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 每一轮把「系统提示＋工具清单＋历史」拼成发给模型的输入——这是 harness 的哪块零件？</p>
+    <button class="quiz-option">工具执行层——真的去动手的那部分</button>
+    <button class="quiz-option" data-correct="true">prompt 组装——每轮拼好发给模型的输入</button>
+    <button class="quiz-option">护栏与权限——决定什么能做、什么要问人</button>
+    <button class="quiz-option">能力加载层——按需把 skill 装进来</button>
+    <p class="feedback"
+       data-ok="对。拼 prompt 是 harness 每轮都要做的活，对应第 1 课学的工具清单。"
+       data-no="动手的是工具执行层；拼「发给模型的输入」是 prompt 组装这块零件。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 同一个模型，换一个 harness，会发生什么？</p>
+    <button class="quiz-option">表现会完全一模一样</button>
+    <button class="quiz-option">模型的能力会直接被提高</button>
+    <button class="quiz-option" data-correct="true">表现可能差很多</button>
+    <button class="quiz-option">模型的知识会被直接更新</button>
+    <p class="feedback"
+       data-ok="对。所以「某某模型不行」得先问：是在哪个 harness 里试的？"
+       data-no="prompt、工具、上下文、护栏都是 harness 说了算——换了当然不一样。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 上下文"放哪"的取舍，直接影响什么？</p>
+    <button class="quiz-option">模型的训练速度</button>
+    <button class="quiz-option" data-correct="true">缓存命中率——稳定的放前面才吃得到缓存</button>
+    <button class="quiz-option">工具的执行速度</button>
+    <button class="quiz-option">硬盘的剩余空间</button>
+    <p class="feedback"
+       data-ok="对。系统提示、工具清单是稳定前缀，放前面；老在变的放后面。"
+       data-no="放哪决定的是「稳定前缀」长什么样——直接决定缓存能不能命中。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://martinfowler.com/articles/harness-engineering.html">Martin Fowler — Harness engineering for coding agent users</a>：那个公式的出处——"harness 指 agent 里除模型之外的一切，<b>Agent = Model + Harness</b>"。<br>
+    <a href="https://www.langchain.com/blog/the-anatomy-of-an-agent-harness">LangChain — The Anatomy of an Agent Harness</a>：同一公式，拆解 harness 的组成（代码、配置、执行逻辑）。<br>
+    <a href="https://www.databricks.com/blog/ai-harness">Databricks — What is an AI Agent Harness?</a>：白话定义——"围在语言模型外面的软件脚手架：工具、记忆、沙箱、反馈回路，<b>把模型变成 agent</b>"。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"harness 好坏怎么比？""为什么有的 harness 特别吃 token？""我该自建还是用现成的？""多 agent 是 harness 的功能还是另一回事？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：前七课的零件这课全用上了——缺哪块回哪课<br>
+    <b>顺着往下</b>：<a href="0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆解 TeleAgent</a>（把一个真实产品按这张表拆开）<br>
+    <b>其它轨道</b>：<a href="../llm/0008-who-does-what.html">LLM 底层 · 第 8 课 · 这件事到底是谁干的</a>（壳和模型的责任线）<br>
+    术语表：<a href="../../reference/glossary.html#harness">Harness</a> · <a href="../../reference/glossary.html#agent">Agent</a> · <a href="../../reference/glossary.html#context">上下文</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 8 课 · 理论 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

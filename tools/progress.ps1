@@ -1,7 +1,7 @@
 <#
   progress.ps1 —— 课程进度三处落点的唯一执行入口
 
-  背景：标 completed 要改三个文件（见 NOTES 1.7 与 notes/rules/mark-completed.md），漏一处就会自相矛盾。
+  背景：标 completed 要改三个文件（见 NOTES 1.7 与 docs/notes/rules/mark-completed.md），漏一处就会自相矛盾。
         2026-10-03 主页那个「N 门已定稿」就是这么被漏掉的，而且错了三个提交
         都没人发现 —— 因为没有任何东西会检查它。本脚本的 audit 模式就是补这个洞。
 
@@ -60,7 +60,7 @@ function ConvertFrom-CnNum([string]$s){
   return $null
 }
 
-$TRACKS = @{ llm='LLM 底层'; agent='Agent 原理篇'; practice='技巧篇'; rag='RAG' }
+$TRACKS = @{ llm='LLM 底层'; agent='Agent 篇'; rag='RAG' }
 $SITE = 'https://telecomshy.github.io/telecomshy-ai-lessons/'
 $ANCHOR = '目前标为 `completed` 的是：'
 # 只认 /lessons/ 前面不是连字符的（域名 telecomshy-ai-lessons/ 里那个不算）
@@ -195,7 +195,7 @@ function Audit {
     if ($bad -eq 0) { Ok "$($c.href) = $al（带编号 Q $($nums.Count) 个）" }
   }
 
-  Write-Output "== F. NOTES 卫生：历史进 notes/history/，NOTES.md 只留规矩与索引 =="
+  Write-Output "== F. NOTES 卫生：历史进 docs/notes/history/，NOTES.md 只留规矩与索引 =="
   $notes = ReadText 'NOTES.md'
   $noteLines = @($notes -split '\r?\n')
 
@@ -206,27 +206,27 @@ function Audit {
   } else {
     $stray = @([regex]::Matches($parts[1], '(?m)^#{3,4}\s+5\.\d'))
     if ($stray.Count -gt 0) {
-      No "NOTES.md 第 5 节里有 $($stray.Count) 个历史正文标题（如「$($stray[0].Value.Trim())」），挪去 notes/history/（NOTES 1.9）"
+      No "NOTES.md 第 5 节里有 $($stray.Count) 个历史正文标题（如「$($stray[0].Value.Trim())」），挪去 docs/notes/history/（NOTES 1.9）"
     } else {
       Ok "第 5 节只有索引，没有历史正文"
     }
   }
 
-  # (2) 索引 <-> notes/history/ 双向一致：新存档必须挂进索引，索引不许指空文件
-  $histDir = Join-Path $root 'notes/history'
+  # (2) 索引 <-> docs/notes/history/ 双向一致：新存档必须挂进索引，索引不许指空文件
+  $histDir = Join-Path $root 'docs/notes/history'
   if (-not (Test-Path $histDir)) {
-    No "notes/history/ 不存在（历史存档目录）"
+    No "docs/notes/history/ 不存在（历史存档目录）"
   } else {
     $files  = @(Get-ChildItem $histDir -Filter '*.md' -Name | Sort-Object)
-    $linked = @([regex]::Matches($notes, '\((notes/history/[^)]+\.md)\)') | ForEach-Object { Split-Path $_.Groups[1].Value -Leaf })
-    foreach ($f in $files)  { if ($linked -notcontains $f) { No "notes/history/$f 存在，但 NOTES 第 5 节索引里没有它的链接" } }
-    foreach ($l in $linked) { if ($files -notcontains $l) { No "NOTES 第 5 节索引链到 notes/history/$l，文件不存在" } }
-    if ($files.Count -gt 0 -and $linked.Count -eq $files.Count) { Ok "索引与 notes/history/ 双向一致（$($files.Count) 篇）" }
+    $linked = @([regex]::Matches($notes, '\((docs/notes/history/[^)]+\.md)\)') | ForEach-Object { Split-Path $_.Groups[1].Value -Leaf })
+    foreach ($f in $files)  { if ($linked -notcontains $f) { No "docs/notes/history/$f 存在，但 NOTES 第 5 节索引里没有它的链接" } }
+    foreach ($l in $linked) { if ($files -notcontains $l) { No "NOTES 第 5 节索引链到 docs/notes/history/$l，文件不存在" } }
+    if ($files.Count -gt 0 -and $linked.Count -eq $files.Count) { Ok "索引与 docs/notes/history/ 双向一致（$($files.Count) 篇）" }
   }
 
-  # (3) 体量阈值 —— 再涨就该挪东西出去（历史→notes/history/、操作细节→notes/rules/）
+  # (3) 体量阈值 —— 再涨就该挪东西出去（历史→docs/notes/history/、操作细节→docs/notes/rules/）
   if ($noteLines.Count -gt 400) {
-    No "NOTES.md 已 $($noteLines.Count) 行（阈值 400）：历史进 notes/history/、操作细节进 notes/rules/（NOTES 1.9）"
+    No "NOTES.md 已 $($noteLines.Count) 行（阈值 400）：历史进 docs/notes/history/、操作细节进 docs/notes/rules/（NOTES 1.9）"
   } else {
     Ok "NOTES.md $($noteLines.Count) 行（阈值 400）"
   }

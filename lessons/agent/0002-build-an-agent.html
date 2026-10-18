@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 2 课 · 手写一个 agent</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 2 课 · 实操</div>
+  <h1>手写一个 agent</h1>
+  <p class="subtitle">从装包、配 key 开始，用真模型跑通「推理 → 行动 → 观察」。全部核心代码就是一个循环。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>上一课的循环、工具、记忆，听着都对——但"听懂"和"跑起来"之间隔着好几步：装什么包？key 放哪？报错了先看什么？</p>
+    <p>这课从零把它跑起来。<b>你会有点意外：所谓 agent，全部核心代码其实只有十几行</b>——一个循环而已。真正费心的是外面那圈防错和护栏。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：从零把环境配好、跑通一个真 agent；看懂并改动它的完整代码；说清真模型会在哪翻车、代码里哪一行在兜。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>agent 的全部秘密就是<b>把一个循环转起来</b>：<b>推理</b>（模型说话）→ <b>行动</b>（调工具）→ <b>观察</b>（结果塞回）→ 再<b>推理</b>……直到模型认为说完了。</p>
+    <p>循环只写一遍。厂商接口的差异全关在 <code>model_fn</code> 那一层——这就是"适配层"。</p>
+  </div>
+
+  <p style="font-size:0.9rem;color:var(--muted)">（不打算真跑的话，第 1～6 节可以整节跳过——那几节是装包、配 key、验通路；第 7 节的输出，第 8 节会逐句讲。）</p>
+
+  <h2>1. 先确认 Python 能跑</h2>
+  <p>这一课要用的 SDK 要求 <b>Python 3.10 或更高</b>。打开 PowerShell，先看版本：</p>
+  <pre><code>python --version</code></pre>
+  <p>看到 <code>Python 3.12.9</code> 这样的输出就对了。没有 <code>python</code> 命令、或者一输就弹出微软商店，说明 Python 没装好或没进 PATH：去 <a href="https://www.python.org/downloads/">python.org/downloads</a> 重新装，安装第一屏记得勾上 <b>Add python.exe to PATH</b>。</p>
+  <p>Windows 上也可以换 <code>py</code> 启动器，效果一样：</p>
+  <pre><code>py -3.12 --version</code></pre>
+
+  <h2>2. 建一个干净的实验环境</h2>
+  <p>接下来的包装在项目自己的虚拟环境里，不污染系统 Python。先进入仓库根目录，再建环境、激活：</p>
+  <pre><code>cd E:\code\my_projects\learn-ai-agents   # 换成你自己的仓库路径
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1</code></pre>
+  <p>激活成功后，命令行前面会多一个 <code>(.venv)</code>。以后每次新开窗口跑这一课的脚本，都要先激活一次。macOS / Linux 的激活命令是 <code>source .venv/bin/activate</code>。</p>
+  <p><b>如果报"无法加载文件，因为在此系统上禁止运行脚本"</b>：这是 PowerShell 的执行策略，不是环境坏了。对当前窗口放行一次，再激活：</p>
+  <pre><code>Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1</code></pre>
+  <p><code>-Scope Process</code> 只影响这个窗口，关掉就恢复，不会改系统设置。<code>.venv/</code> 已经在 <code>.gitignore</code> 里，不会进 git。</p>
+
+  <h2>3. 装两个包</h2>
+  <p>确认 <code>(.venv)</code> 还在，然后：</p>
+  <pre><code>python -m pip install -U openai python-dotenv</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">卡在 <code>Resolving dependencies</code> 超过两三分钟，就 Ctrl+C 停掉，换本节末尾那条镜像命令重试。</p>
+  <p>两个包各管一件事：</p>
+  <ul>
+    <li><b><code>openai</code></b> —— OpenAI 官方 SDK。替我们拼请求、解析 <code>tool_calls</code>、处理重试和超时。不用它也能手写 HTTP，但那些坑没必要在学循环时踩。</li>
+    <li><b><code>python-dotenv</code></b> —— 从 <code>.env</code> 文件里读 key，这样 key 不写进代码。</li>
+  </ul>
+  <p>装完验一下版本：</p>
+  <pre><code>python -c "import openai, dotenv; print(openai.__version__)"</code></pre>
+  <p>本机实测输出 <code>3.35.1</code>（2026-10-18）。你装到更新的版本也行，这一课只用最稳定的 Chat Completions 接口。</p>
+  <p style="font-size:0.9rem;color:var(--muted)">下载慢的话可以换国内 PyPI 镜像，例如清华源：<code>python -m pip install -U openai python-dotenv -i https://pypi.tuna.tsinghua.edu.cn/simple</code>。</p>
+
+  <h2>4. 申请一个 API key</h2>
+  <p>这一课默认用 DeepSeek 的 <code>deepseek-flash</code>：它兼容 OpenAI 的接口格式，价格低，文档有中文。步骤：</p>
+  <ol>
+    <li>打开 <a href="https://platform.deepseek.com/">platform.deepseek.com</a>，注册 / 登录。</li>
+    <li>进 <b>API keys</b> 页面，点创建，把 key 复制下来——<b>它只完整显示这一次</b>。</li>
+    <li>去 <b>充值</b> 页充一点。这一步绕不过：余额为 0 时接口返回 402。</li>
+  </ol>
+  <p><b>key 等于密码 + 钱包</b>：不要写进代码、不要贴进聊天记录、不要截图发出去。下面把它放进一个不会进 git 的文件。</p>
+
+  <h2>5. 把 key 放进 .env，而不是代码里</h2>
+  <p>在仓库根目录新建一个文件，名字就叫 <code>.env</code>（注意不是 <code>.env.txt</code>），里面只写一行：</p>
+  <pre><code>DEEPSEEK_API_KEY=sk-你的key</code></pre>
+  <p>三条格式要求：<b>不要引号</b>、<b>等号两边不要空格</b>、<b>保存成 UTF-8</b>。多一个空格，读出来就是错的 key。</p>
+  <p>确认它被 git 忽略：</p>
+  <pre><code>git check-ignore -v .env</code></pre>
+  <p>能打印出 <code>.gitignore</code> 里那一行就对了。代码里用 <code>load_dotenv()</code> 读它，所以 key 永远不会出现在源码里——这份代码可以放心分享、提交。</p>
+  <p><b>另一种配法</b>是直接设环境变量，不开文件：</p>
+  <pre><code>$env:DEEPSEEK_API_KEY = "sk-..."</code></pre>
+  <p>但它<b>只在当前窗口有效</b>，关掉就没了；用 <code>setx</code> 可以永久保存，但要新开窗口才生效。日常学习推荐 <code>.env</code>。</p>
+  <p><b>三个变量名是这份脚本自己约定的</b>，不是 DeepSeek 规定的：<code>DEEPSEEK_API_KEY</code>（必填）、<code>DEEPSEEK_MODEL</code>（默认 <code>deepseek-flash</code>）、<code>DEEPSEEK_BASE_URL</code>（默认 <code>https://api.deepseek.com</code>）。后两个写进 <code>.env</code> 也能覆盖。</p>
+
+  <h2>6. 先花几分钱验通路</h2>
+  <p>正式跑之前，先做一次很小的调用：只发一句话、只让它回两个字。这一步把"key 对不对、网络通不通、模型名对不对"三件事一次验掉：</p>
+  <pre><code>python exercises/agent/0002-build-an-agent.py --check</code></pre>
+  <p>本机实测输出：</p>
+  <pre><code>模型：deepseek-flash   接口：https://api.deepseek.com
+回复：收到
+用掉 token：输入 9 / 输出 1，耗时 1.2 秒
+通路正常，可以跑正式的了：python exercises/agent/0002-build-an-agent.py</code></pre>
+  <p>看到"通路正常"再往下（耗时会随着网络和模型负载变，差一两秒正常）。报错的话照这几种查（DeepSeek 官方错误码）：<b>401 认证失败</b>——key 不对或已失效，先查 <code>.env</code> 里有没有引号、空格，再确认这个 key 没被删；<b>402 余额不足</b>——去平台充值；<b>429 限流</b>——等一会儿，或看余额与并发；<b>500 / 503</b>——服务端的事，等一会儿重试；<b>连不上</b>——检查网络或代理，<code>DEEPSEEK_BASE_URL</code> 别多写斜杠。</p>
+  <p>还有一个最常见的坑：<b><code>.env</code> 放错了地方</b>。脚本会从自己所在目录（<code>exercises/agent/</code>）逐级往上找 <code>.env</code>，所以放在仓库根目录能读到；放到别的盘或别的项目里就读不到了。</p>
+
+  <h2>7. 跑起来</h2>
+  <pre><code>python exercises/agent/0002-build-an-agent.py</code></pre>
+  <p>四个问题，本机实测输出：</p>
+  <pre><code>模型：deepseek-flash   接口：https://api.deepseek.com
+
+==========================================================
+真模型（deepseek-flash）：同一个 run_agent，看它怎么走
+==========================================================
+
+──────────────────────────────────────────────────────────
+用户问：北京今天多少度？
+──────────────────────────────────────────────────────────
+  [1] 调工具：get_weather({'city': '北京'}) -&gt; {"city": "北京", "temp_c": 26, "cond": "晴"}
+  [2] 完成：北京今天气温 **26°C**，天气晴朗 ☀️
+  &gt;&gt; done，共走 2 步，耗时 2.0 秒
+
+──────────────────────────────────────────────────────────
+用户问：上海比北京热多少？
+──────────────────────────────────────────────────────────
+  [1] 调工具：get_weather({'city': '上海'}) -&gt; {"city": "上海", "temp_c": 28, "cond": "多云"}
+  [1] 调工具：get_weather({'city': '北京'}) -&gt; {"city": "北京", "temp_c": 26, "cond": "晴"}
+  [2] 完成：上海今天比北京热 **2°C**：
+      
+      | 城市 | 气温 | 天气 |
+      |---|---|---|
+      | 上海 | 28°C | 多云 |
+      | 北京 | 26°C | 晴 |
+  &gt;&gt; done，共走 2 步，耗时 2.0 秒
+
+──────────────────────────────────────────────────────────
+用户问：有哪些城市能查？
+──────────────────────────────────────────────────────────
+  [1] 调工具：list_cities({}) -&gt; {"cities": ["上海", "北京", "广州"]}
+  [2] 完成：目前可以查天气的城市有 3 个：**上海、北京、广州**。
+      
+      需要我帮你查其中某个城市的天气吗？
+  &gt;&gt; done，共走 2 步，耗时 1.5 秒
+
+──────────────────────────────────────────────────────────
+用户问：魔都今天多少度？
+──────────────────────────────────────────────────────────
+  [1] 调工具：get_weather({'city': '上海'}) -&gt; {"city": "上海", "temp_c": 28, "cond": "多云"}
+  [2] 完成：魔都（上海）今天 **28°C**，多云 ☁️
+  &gt;&gt; done，共走 2 步，耗时 2.0 秒
+
+==========================================================
+这几次调用一共花掉了：
+  输入 token：2969   输出 token：279
+  按空闲时段价估算：约 0.00409 元（缓存命中会更便宜）
+==========================================================</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">（耗时和 token 数每次会有少量出入，下面的账单按当次实算。）</p>
+  <p>三个地方值得盯：</p>
+  <ul>
+    <li><b>第二个问题里出现了两条 <code>[1]</code></b>。不是打印错了——模型在<b>同一轮</b>里一次要了两个工具。这是只看别人写好的 demo 最容易漏掉的一点，第 8、9 节都会回到它。</li>
+    <li><b>"魔都"它认得出</b>。脚本里没写"魔都＝上海"这条规则，是模型自己从语义里认出来的。</li>
+    <li><b>答案里有 <code>**</code> 和 <code>|</code></b>。模型爱用 Markdown 排版，终端不渲染，所以星号和竖线原样露出来。接进网页或聊天框才好看。</li>
+  </ul>
+  <p>每一步的耗时在 1.5～2.0 秒之间。这就是"真模型要等"的字面意思——每一步都是一次网络往返，不是本地算出来的。</p>
+
+  <h2>8. 逐段讲：脚本只有四块</h2>
+  <p>先看一次工具调用的完整来回，认清楚谁在动手：</p>
+  <figure class="figure">
+    <img src="../../assets/tool-call-roundtrip.svg" alt="两栏时序图：左边是模型，只会吐字；右边是你的程序和外部世界。工具清单与用户问题送进去，模型回一段“我要调 get_weather(city='北京')”的文字；程序解析这段文字、真的去查天气库，把结果作为 tool_result 塞回对话；模型再输出人话。底部注明：模型的输出永远是文字，真正动手的是程序">
+    <figcaption><b>一次工具调用 = 五步走完一个来回</b>：清单和问题送进去 → 模型写"要调什么" → 程序真的去调 → 结果塞回 → 模型再说人话。图里画的是一个工具；真模型一步要两个时，就是"② 写两条、③ 调两次、④ 塞回两条"。</figcaption>
+  </figure>
+
+  <h3>第一块：工具（agent 能对外做的事）</h3>
+  <p>两个玩具工具，背后是个写死的小"天气库"：</p>
+  <pre><code>def get_weather(city):
+    if city in WEATHER_DB:
+        return {"city": city, **WEATHER_DB[city]}
+    return {"error": f"查不到「{city}」的天气"}</code></pre>
+  <p>再往下是<b>工具清单</b>——上一课说的"名字＋一句话说明＋参数"三件套，模型照着它挑工具、填参数：</p>
+  <pre><code>TOOL_LIST = [
+    {"type": "function",
+     "function": {
+         "name": "get_weather",
+         "description": "查某个城市今天的天气。返回气温（摄氏度）和天气状况。",
+         "parameters": {"type": "object",
+                        "properties": {"city": {"type": "string", "description": "城市名，例如「北京」"}},
+                        "required": ["city"]}}},
+    ...
+]</code></pre>
+  <p>注意外面多包了一层 <code>{"type": "function", "function": {...}}</code>——这是接口要求的信封，名字、说明、参数装在里面。真正执行时用的是另一个字典 <code>TOOLS</code>：名字 → 函数。两张表要同步改，漏一个就多一种翻车（第 10 节有练习）。</p>
+
+  <h3>第二块：model_fn——把接口适配成循环要的形状</h3>
+  <p>循环不关心 OpenAI 还是 DeepSeek。它只认两种回话：<code>text</code>（说完了）或 <code>tool_use</code>（要调工具）。把所有接口细节翻译成这两形状的，就是 <code>model_fn</code>：</p>
+  <pre><code>def model_fn(messages, tools):
+    m = call_model(messages, tools)
+
+    if m.tool_calls:
+        calls = [{"name": tc.function.name,
+                  "input": json.loads(tc.function.arguments or "{}"),
+                  "tool_msg": (lambda tid: lambda result: {
+                      "role": "tool", "tool_call_id": tid,
+                      "content": json.dumps(result, ensure_ascii=False)})(tc.id)}
+                 for tc in m.tool_calls]
+        return {"type": "tool_use", "calls": calls,
+                "history": [m.model_dump(exclude_none=True)]}
+
+    return {"type": "text", "text": (m.content or "").strip()}</code></pre>
+  <p>三个关键点：</p>
+  <ul>
+    <li><b><code>m.tool_calls</code> 是个列表</b>：可能一条，也可能好几条。这里<b>全部接住</b>，每条都带着自己的 <code>id</code>（<code>tool_call_id</code>）。</li>
+    <li><b><code>history</code> 把模型说的那句话原样放回对话</b>。<code>model_dump(exclude_none=True)</code> 把 SDK 对象转成字典，顺手去掉空字段。这条助手消息里带着 <code>tool_calls</code>，下一轮必须原样出现——接口靠它把结果和请求对上。</li>
+    <li><b>结果必须带 <code>tool_call_id</code> 挂回去</b>。少了它，接口不知道这条结果是回答哪一次调用的，直接 400。</li>
+  </ul>
+  <p>还有一处藏在 <code>call_model</code> 里：请求带了 <code>extra_body={"thinking": {"type": "disabled"}}</code>。<b>DeepSeek 的思考模式默认是开的</b>，而带工具时它要求把历次思考内容原样传回，否则 400。本课只看循环，关掉最省事——想了解思考模式，见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>。</p>
+
+  <h3>第三块：run_agent——agent 的全部核心代码</h3>
+  <pre><code>def run_agent(question, model_fn, max_steps=6):
+    messages = [
+        {"role": "system", "content": "你可以使用下列工具来回答问题。"},
+        {"role": "user", "content": question},
+    ]
+    trace = []
+
+    for step in range(1, max_steps + 1):
+        reply = model_fn(messages, TOOL_LIST)         # ① 推理
+
+        if reply["type"] == "text":                   # 模型认为说完了 → 停
+            trace.append((step, "完成", reply["text"]))
+            return {"status": "done", "answer": reply["text"], "steps": step, "trace": trace}
+
+        messages += reply["history"]                  # ③ 观察（上半）：它说的那句
+
+        for call in reply["calls"]:                   # ② 行动：模型一次可能要调好几个工具
+            fn = TOOLS.get(call["name"])
+            if fn is None:                            # 真模型真会编出不存在的工具
+                result = {"error": f"没有这个工具：{call['name']}"}
+            else:
+                try:
+                    result = fn(**call["input"])      # 真模型真会填错参数
+                except Exception as e:
+                    result = {"error": f"工具执行出错：{e}"}
+
+            trace.append((step, "调工具",
+                          f"{call['name']}({call['input']}) -&gt; {json.dumps(result, ensure_ascii=False)}"))
+            messages.append(call["tool_msg"](result))   # ③ 观察（下半）：结果逐条塞回
+
+    return {"status": "hit_max_steps", "answer": None, "steps": max_steps, "trace": trace}   # 护栏</code></pre>
+  <p>五件事值得逐行看清：<b>①</b> 推理＝把整个 <code>messages</code> 交给模型函数，它回一个动作；<b>②</b> 行动＝你的程序真的去调工具，一个动作可能带好几条调用；<b>③</b> 观察＝先把它说的那句放回去，再把<b>每条</b>结果挂回去——<b>顺序反了或漏了一条，接口就报 400</b>；<b>④</b> 两个兜底（<code>fn is None</code>、<code>try/except</code>）不是摆设，真模型真会编工具、填错参数；<b>⑤</b> 护栏＝<code>max_steps</code> 走满还没完，强制停。</p>
+
+  <h3>第四块：打印 trace 和账单</h3>
+  <p><code>run_stage()</code> 把每次的 <code>trace</code> 打印出来，<code>print_bill()</code> 把 token 记成钱。<b>想调试 agent，第一件事就是打印 trace</b>——它走了几步、调了什么、拿到了什么，全在里面。</p>
+
+  <h2>9. 真模型会怎么翻车（从一个真实现场说起）</h2>
+  <p>这份脚本的第一版是按"一次只回一个工具"写的，第一次真跑就撞了：</p>
+  <pre><code>接口报错 400：Error code: 400 - {'error': {'message': "An assistant message with 'tool_calls' must be followed by tool messages responding to each 'tool_call_id'. (insufficient tool messages following tool_calls message)", ...}}</code></pre>
+  <p>原因就在上一节：问"上海比北京热多少"时，模型<b>一轮里要了两个工具</b>，而第一版只执行了第一个，却把整条含两个 <code>tool_calls</code> 的助手消息放回了历史。接口一看：两个调用只收到一条结果，非法。</p>
+  <p><b>这条错误就是这一课最值钱的东西</b>：真模型的行为不由你设想。它可能：</p>
+  <ul>
+    <li><b>一次要多个工具</b>——就是上面这条。代码要按列表处理，每条都执行、每条都回。</li>
+    <li><b>认语义，不认关键词</b>——"魔都"它知道是上海。好处是不用把用户会怎么问全写进 if；代价是它的"理解"你预测不了。</li>
+    <li><b>编出清单里没有的工具、填错参数</b>——这次没撞上，但随时会。所以 <code>fn is None</code> 和 <code>try/except</code> 从第一天就在。</li>
+    <li><b>绕圈、中途放弃、提前收工</b>——可能查了一家就下结论，也可能一直"再查一家"。<code>max_steps</code> 是最后一道闸。</li>
+    <li><b>花钱、要等</b>——每一步都是一次网络往返＋真金白银（第 11 节算账）。</li>
+    <li><b>接口格式由厂商定</b>——<code>tool_call_id</code> 怎么挂、思考模式怎么关、并行调用支不支持，各家不一样。这就是适配层存在的理由。</li>
+  </ul>
+  <p><b>真 agent 的代码，一半是在防模型出错。</b>这不是不信任模型，是承认它按概率说话——概率偶尔会给你一个你没写过的形状。</p>
+
+  <h2>10. 改一改：亲手制造三次失败</h2>
+  <p>光看它跑通学不到太多，这三步最值钱。<b>每跑一次不到一分钱</b>，改完记得改回去。</p>
+  <ol>
+    <li><b>把护栏拧到 1 步</b>，再跑同样的四个问题：
+      <pre><code>python exercises/agent/0002-build-an-agent.py --max-steps 1</code></pre>
+      <p>本机实测第一问的输出变成：</p>
+      <pre><code>用户问：北京今天多少度？
+──────────────────────────────────────────────────────────
+  [1] 调工具：get_weather({'city': '北京'}) -&gt; {"city": "北京", "temp_c": 26, "cond": "晴"}
+  &gt;&gt; hit_max_steps，共走 1 步，耗时 1.1 秒</code></pre>
+      <p>工具调到了、结果也拿到了，就是没机会说人话——这就是"死循环被拦下"的现场。<b>顺手想一下</b>：生产里这个数字设多大，是钱和安全的取舍。</p>
+    </li>
+    <li><b>删掉一个城市再问</b>：把 <code>WEATHER_DB</code> 里的 <code>"北京"</code> 整个删掉，再问"北京今天多少度"。工具会返回 <code>{"error": "查不到「北京」的天气"}</code>，观察它接下来怎么处理这条错误——如实说查不到，还是换个城市硬答？</li>
+    <li><b>加一个"只写了一半"的工具</b>：在 <code>TOOL_LIST</code> 里加一条 <code>get_air_quality</code>（名字、说明、参数都写），但<b>不</b>往 <code>TOOLS</code> 里加实现。再问"北京空气质量怎么样"。模型很可能真去调它，然后撞上 <code>没有这个工具</code> 的兜底——这就是"清单和实现不同步"的现场。</li>
+  </ol>
+
+  <h2>11. 成本、延迟与护栏：这一课的账</h2>
+  <p>这次跑四个问题，账单是 <b>2969 输入 token ＋ 279 输出 token</b>。按 DeepSeek 官方价目（2026-10-18 查），<code>deepseek-flash</code> 的价格是：</p>
+  <pre><code>                        空闲时段        高峰时段
+输入（缓存未命中）      ¥1 / 百万       ¥2 / 百万
+输入（缓存命中）        ¥0.02 / 百万    ¥0.04 / 百万
+输出                    ¥4 / 百万       ¥8 / 百万</code></pre>
+  <p>按全价估：<code>2969 ÷ 1,000,000 × 1 ＋ 279 ÷ 1,000,000 × 4 ≈ 0.0041 元</code>。所以脚本打出来"约 0.00409 元"——<b>四个问题不到半分钱</b>。高峰时段翻倍；缓存命中还会更便宜。</p>
+  <p><b>但便宜不等于无脑跑。</b>每一步都要把<b>之前的全部对话</b>再送一遍，问题越长、工具清单越大，输入 token 涨得越快。这就是 LLM 底层第 3 课讲的缓存为什么在 agent 里特别值钱（<a href="../llm/0003-kv-cache-and-prompt-caching.html">KV Cache 与「缓存命中」</a>）。工程上三样护栏一个都不能少：<b>最大步数</b>、<b>超时</b>、<b>预算上限</b>。</p>
+
+  <h2>12. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> <code>--check</code> 报 401，第一步先查什么？</p>
+    <button class="quiz-option">模型名是不是写错了</button>
+    <button class="quiz-option" data-correct="true">.env 里的 key 有没有引号或空格</button>
+    <button class="quiz-option">网络是不是需要走代理</button>
+    <button class="quiz-option">余额是不是不够了</button>
+    <p class="feedback"
+       data-ok="对。401 是认证失败，先盯 key 本身：多一个空格、多一对引号都会错。"
+       data-no="401 是「你是谁」这一步没过——先查 key 的写法，余额是 402，网络是连不上。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 循环里把"结果塞回 messages"那一步整个漏掉，会发生什么？</p>
+    <button class="quiz-option">程序会直接报错退出</button>
+    <button class="quiz-option" data-correct="true">模型看不到刚才的结果，下一步不知道还差什么</button>
+    <button class="quiz-option">工具会被重复调用一次</button>
+    <button class="quiz-option">上下文窗口会变小</button>
+    <p class="feedback"
+       data-ok="对。观察断了，循环就断了——messages 是 agent 的全部状态。"
+       data-no="不会报错，但模型等于什么都没看见：调完工具它仍不知道拿到了什么。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 模型一步返回了两条 <code>tool_calls</code>，代码应该怎么处理？</p>
+    <button class="quiz-option">只执行第一条，剩下的丢掉</button>
+    <button class="quiz-option" data-correct="true">两条都执行，各回一条带自己 id 的 tool 消息</button>
+    <button class="quiz-option">把两条合成一条，只回一个结果</button>
+    <button class="quiz-option">重新发一次请求，要求它只给一条</button>
+    <p class="feedback"
+       data-ok="对。模型要几个就执行几个，每个 tool_call_id 都要有对应的结果，否则 400。"
+       data-no="少回任何一条，接口都会报 insufficient tool messages——这一课第一版就是这么撞的。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 跑完发现 <code>&gt;&gt; hit_max_steps</code>，下一步先做什么？</p>
+    <button class="quiz-option">把 max_steps 调大十倍再跑</button>
+    <button class="quiz-option">换个更贵的模型重跑</button>
+    <button class="quiz-option" data-correct="true">看 trace：它卡在哪一步、反复在调什么</button>
+    <button class="quiz-option">把工具全删掉试试</button>
+    <p class="feedback"
+       data-ok="对。trace 是 agent 的体检报告：先看它卡在哪，再决定动护栏还是动提示词。"
+       data-no="盲目调大步数只是让烧钱烧得更久——先看 trace。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 为什么 key 要放在 <code>.env</code>，而不是直接写进脚本？</p>
+    <button class="quiz-option">放在文件里读得更快</button>
+    <button class="quiz-option">写进脚本接口就不认了</button>
+    <button class="quiz-option" data-correct="true">代码可以分享、提交，key 不会跟着泄露</button>
+    <button class="quiz-option">.env 里的 key 不会被计费</button>
+    <p class="feedback"
+       data-ok="对。key 是密码也是钱：源码进 git、发给别人时，.env 留在本机。"
+       data-no="读取速度和计费都跟放哪无关；区别只有一个——key 会不会跟着代码泄露。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://api-docs.deepseek.com/zh-cn/guides/tool_calls">DeepSeek — Tool Calls（官方文档）</a>：<code>tools</code> 的定义、<code>tool_calls</code> 的返回、<code>tool_call_id</code> 怎么挂回去，以及非思考模式那个 <code>extra_body</code> 写法。<br>
+    <a href="https://pypi.org/project/openai/">OpenAI Python SDK（PyPI）</a>：<code>pip install openai</code>、<code>OpenAI(base_url=...)</code>、错误类型与默认重试。<br>
+    <a href="https://arxiv.org/abs/2210.03629">ReAct: Synergizing Reasoning and Acting in Language Models（Yao et al., ICLR 2023）</a>——本课这个"推理 → 行动 → 观察"循环的原始论文。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"为什么要用 SDK，不直接用 requests？""模型一步要两个工具，我能并行执行吗？""换个模型要改几行？""max_steps 设多少才合适？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="0001-what-is-an-agent.html">Agent 篇 · 第 1 课 · Agent 是什么：循环、工具、记忆</a>（这课的每个零件都是那课讲过的）<br>
+    <b>顺着往下</b>：<a href="0003-mcp-and-skills.html">Agent 篇 · 第 3 课 · MCP 与 Skill</a>（工具的新形状）→ <a href="0004-skill-and-mcp-lab.html">第 4 课 · 写一个 skill、接一个 MCP</a>（继续动手）<br>
+    <b>LLM 底层</b>：<a href="../llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache 与「缓存命中」</a>（工具清单正是"稳定前缀"，吃缓存）<br>
+    术语表：<a href="../../reference/glossary.html#loop">Agent 循环</a> · <a href="../../reference/glossary.html#tool">工具</a> · <a href="../../reference/glossary.html#observation">观察</a> · <a href="../../reference/glossary.html#guardrail">护栏</a> · <a href="../../reference/glossary.html#trace">轨迹</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 2 课 · 实操 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

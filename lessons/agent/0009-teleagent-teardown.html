@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 9 课 · 拆解 TeleAgent：一个真实的 harness</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 9 课 · 实操</div>
+  <h1>拆解 TeleAgent：一个真实的 harness</h1>
+  <p class="subtitle">拿一个真实产品，把八课的零件<b>一块块对上号</b>——这是收尾的大作业。</p>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>前面八课都是拿玩具例子讲机制。这课换个对象：<b>星辰超级智能体 TeleAgent</b>——装在桌面上、你能亲手用的办公 agent。</p>
+    <p>拆它不用螺丝刀，就用一张你已经会的零件表：<b>每个功能问三句——它解决什么？上下文和钱花在哪？翻车在哪？</b></p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：看懂任何一个 harness 产品说明书背后的机制；说出它记忆子系统的设计取向；拆完顺手验一验它到底记没记对。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p>拆壳就一个口诀：<b>它解决什么、上下文花在哪、翻车在哪</b>。</p>
+    <p>产品名词千变万化，落回零件表就那几块——<b>认出零件，说明书就变成你认识的东西。</b></p>
+  </div>
+
+  <h2>1. 拆解总览：功能名 ↔ 零件</h2>
+  <p>TeleAgent 的说明书里一堆功能名，先整体对一次号（依据：官方《桌面端操作手册》，2026-10-18 抓）：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">说明书里的功能</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">拆开是什么零件</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">三句问出来的点</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">工作空间（指定文件夹跑任务）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>沙箱边界</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">任务发起后不能换目录；产物都落在里面</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">@文件 / @技能</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>prompt 组装</b>＋<b>能力加载</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">用什么进上下文，是你手动点名的</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">技能广场 / 导入 .skill / 技能自进化</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Skill 系统</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">技能＝文件包；同一技能用 ≥20 次会自己改写</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">工具管理（填 JSON 连 MCP）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>外部接入层</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">接法就是一份 <code>mcpServers</code> 配置</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">授权（允许一次 / 一直允许 / 拒绝）＋YOLO 模式</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>护栏与权限</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">改东西要人点头；全自动是你要来的</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">任务监控（深度思考 / 操作执行 / 任务委派）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>主循环的可视 trace</b>＋<b>编排层</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">"任务委派"就是子 agent 的面板</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">上下文用量查看与清理</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>上下文管理</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">满了可以清一块给当前任务腾地方</td></tr>
+      <tr><td style="padding:0.45rem">定时任务 / 微信·企微·飞书接入</td>
+          <td style="padding:0.45rem"><b>壳的外围</b>（调度与界面）</td>
+          <td style="padding:0.45rem">循环从哪儿被叫醒、结果回到哪儿</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. 重点拆一块：它的记忆子系统</h2>
+  <p>这是全课最值得看的一块——正好把第 1 课"记忆没有统一标准"坐实。TeleAgent 的记忆（产品自述口径）是<b>按来源＋时间尺度</b>归档的三个文件：</p>
+  <ul>
+    <li><b>USER.md</b>——你明说"记住"的：身份、偏好、习惯；</li>
+    <li><b>MEMORY.md</b>——它自己从历史里推断的稳定事实（不写时间戳）；</li>
+    <li><b>daily-log/YYYY-MM-DD.md</b>——每天的工作小结、流水，按时间衰减。</li>
+  </ul>
+  <p><b>底层就是几个 Markdown 文件</b>，不是向量数据库；检索用<b>关键词/正则</b>（<code>memory_search</code>）＋按文件名读取（<code>memory_get</code>）——所以语义相近但不带关键词的，可能搜不到（产品的自述也承认这点）。<b>三种东西的载入方式完全不同</b>：</p>
+  <ul>
+    <li>USER.md＋MEMORY.md：<b>每次会话自动注入系统提示</b>（常驻可见，文件太大会截断）；</li>
+    <li>每日日志：<b>按需检索</b>（你问"回顾上周"，或它觉得跟当前任务相关才去翻）；</li>
+    <li>滚动摘录（<code>LATEST_DAILY_MEMORY.md</code>）：最近日志的片段，<b>默认可见但不盲信</b>。</li>
+  </ul>
+  <p>对照第 1 课的清单：取法一族四支，它一支不落全用上了。那"管"呢——改口了怎么办？跑一遍台账演示（<code>exercises/agent/0009-memory-ledger.py</code>，实跑输出）：</p>
+  <pre><code>  3/01 用户：座位记得要靠窗。
+    -&gt; 决定：记新。写进台账 #2（事实）
+  ...
+  3/20 用户：我现在爱坐走道了，靠窗那个不算了啊。
+    -&gt; 决定：推翻。台账 #2 标「已过期」（留底不删）
+    -&gt; 并写进台账 #4（事实）
+
+[第二步] 台账长这样：
+
+  编号  类型    内容                              时间    状态
+  #1    事实    常坐东航；出发走虹桥（浦东太远）  3/15    有效
+  #2    事实    偏好靠窗座位                      3/01    已过期
+  #3    做法    订票先查东航 620 那趟             3/08    有效
+  #4    事实    偏好走道座位                      3/20    有效</code></pre>
+  <p>看 <b>#2 那行"已过期"</b>：改口的旧条目留底不删——今天的取回不被它干扰，问"她以前爱坐哪"还答得出。<b>存得干净、管得住过期、取回得准</b>，三件都对，长期记忆才是加分项；三件里任何一件偷懒，就是"时灵时不灵"。</p>
+
+  <h2>3. 重点拆二块：权限、沙箱与人审</h2>
+  <p>翻车动静越大，护栏越重。TeleAgent 的护栏拆开是四层（手册口径）：</p>
+  <ul>
+    <li><b>人审关卡</b>：改文件、发消息这类操作弹授权——<b>允许一次 / 一直允许 / 拒绝</b>三选一；拒绝只是跳过这一步，任务继续做能做的部分。</li>
+    <li><b>全自动开关</b>：<b>YOLO 模式</b>——默认权限（每个动作都要你点头）还是全自动执行（不用确认），由你选。<b>权限是你要出去的，不是它自己拿的。</b></li>
+    <li><b>入口审查</b>：导入的技能包要过安全审查，有风险会提示你确认——技能是文件，文件能带指令，这就是为什么要审（第 7 课细讲"纸条攻击"）。</li>
+    <li><b>执行隔离</b>：工作空间划定目录、代码执行分远程/自定义/关闭三档、系统级安全沙箱护权限。</li>
+  </ul>
+
+  <h2>4. 一个对照：OpenCode 就没有长期记忆</h2>
+  <p>你正在读的这份教程，写作用的 harness 是 OpenCode——它<b>没有</b>长期记忆子系统。这是缺陷吗？<b>不是，是取向。</b>它的场景是"对着一个代码库干活"：状态都在文件和 git 里，记忆靠你喂的说明文件（AGENTS.md 这类）就够了。TeleAgent 的场景是"陪你长期办公"：你的偏好天天要用，没有记忆就是天天重讲。<b>该不该上记忆，看场景，不看谁先进</b>——第 1 课那三个问题（下次还用得上吗／一句话能补回来吗／存错了谁收拾）就是干这个用的。</p>
+
+  <h2>5. 拆完怎么验：四条就够</h2>
+  <p>光会拆不够，还得会验。用户版验收就四条，一节说完：</p>
+  <ol>
+    <li><b>拿你自己真实的 20 个问题去测</b>（"我上次说改走哪了？"），看答对率；<b>故意放两三个没提过的事</b>，看它敢不敢说不知道——瞎编是 agent 最常见的翻车。</li>
+    <li><b>同一任务多跑几遍看一致</b>。单次 90% 的成功率，连做 8 次全对的概率只剩 43%——不稳，是 agent 的天性，不是你的错觉。</li>
+    <li><b>盯代价</b>：积分、时间、返工。干得漂亮但烧掉一下午的，不算好。</li>
+    <li><b>干错了先看它干了什么</b>：任务监控里的"操作执行"面板就是 trace。TeleAgent 的排查口径按五类走：<b>文件读写失败</b>（文件在不在、被占用没）／<b>技能调用失败</b>（选对技能没、技能要不要更新）／<b>工具调用失败</b>（工具连上没）／<b>模型调用失败</b>（key、额度）／<b>网络请求失败</b>（网络、代理）。先归类，再动手。</li>
+  </ol>
+
+  <h2>6. 动手：盘点你正在用的那个壳</h2>
+  <p>最后把盘点清单跑一遍（纯离线，问 9 个问题）。给 TeleAgent 全答 yes 的实跑输出：</p>
+  <pre><code>你要盘点的是哪个软件？（直接回车跳过）&gt; TeleAgent
+  ...
+==========================================================
+盘点结果：TeleAgent
+==========================================================
+
+有的零件（9 个）：
+  [有] 工具执行层        ← Agent 第 1 课 · 工具调用
+  [有] 循环           ← Agent 第 1、2 课 · 循环
+  [有] 上下文管理        ← LLM 底层第 2 课 · KV Cache
+  [有] 记忆存取         ← Agent 第 1 课 · 记忆
+  [有] 护栏 / 权限      ← Agent 第 1 课 · 护栏
+  [有] Skill 加载     ← Agent 第 3、4 课 · Skill
+  [有] MCP 接入       ← Agent 第 3、4 课 · MCP
+  [有] 子 agent      ← Agent 第 5、6 课 · 多 agent
+  [有] 沙箱 / 隔离      ← （工程细节）</code></pre>
+  <p><b>换你自己的来</b>：OpenCode 全答下来会缺"记忆存取"和"子 agent"（至少目前没有）——缺不缺、缺得要不要紧，取决于你的场景。脚本收尾那三句话照抄给你：<b>零件不是越多越好</b>（每个都在吃 token、加延迟）；真正的分水岭是<b>工具执行</b>和<b>循环</b>——少了它俩，它只是个聊天框。</p>
+
+  <h2>7. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> TeleAgent 的长期记忆是按什么归档的？</p>
+    <button class="quiz-option">全部混在一个向量数据库里</button>
+    <button class="quiz-option" data-correct="true">按来源和时间尺度：用户明说的、系统推断的、每日流水</button>
+    <button class="quiz-option">按「经历、事实、做法」三个标签</button>
+    <button class="quiz-option">不归档，每次会话重新学一遍</button>
+    <p class="feedback"
+       data-ok="对。USER.md / MEMORY.md / daily-log——第 1 课说的「没有统一标准」，这就是一种真实答案。"
+       data-no="三分法是研究文献的分法；这个产品按来源＋时间尺度归档，底层是 Markdown 文件。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 它从每日日志里找东西，靠的是什么？</p>
+    <button class="quiz-option">向量相似度检索</button>
+    <button class="quiz-option" data-correct="true">关键词/正则搜索，加按文件名读取</button>
+    <button class="quiz-option">把日志全量塞进每次的上下文</button>
+    <button class="quiz-option">人工帮你翻</button>
+    <p class="feedback"
+       data-ok="对。取法是一族不是一种——代价是语义相近但不带关键词的可能搜不到。"
+       data-no="相似度只是取法之一；这个产品用的是关键词/正则＋按名读取。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 验一个 agent 的记忆记没记对，第一条做什么？</p>
+    <button class="quiz-option">看它的宣传页写了多少功能</button>
+    <button class="quiz-option" data-correct="true">拿自己真实的 20 个问题测，故意混几个没提过的</button>
+    <button class="quiz-option">把模型换成更大的再试</button>
+    <button class="quiz-option">问它自己记不记得</button>
+    <p class="feedback"
+       data-ok="对。自己的问题才是你的验收标准——没提过的事它敢说不知道，才算过关。"
+       data-no="功能清单和模型大小都不回答「记没记对」；问它自己更不行，它总是答得出来。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 任务干错了，先做什么？</p>
+    <button class="quiz-option">直接重跑一遍碰运气</button>
+    <button class="quiz-option" data-correct="true">看操作执行面板，把失败归进五类里的一类</button>
+    <button class="quiz-option">先把提示词写得更长</button>
+    <button class="quiz-option">先把最大步数调大</button>
+    <p class="feedback"
+       data-ok="对。先看它干了什么、归类（文件/技能/工具/模型/网络），再对症。"
+       data-no="重跑、加长提示词、调步数都是盲猜——先看 trace。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">天翼 AI — 《星辰超级智能体·桌面版操作手册》</a>：技能系统、授权三选项与 YOLO、MCP 工具管理、代码执行三模式、任务监控、上下文用量、排查五类（2026-10-18 抓）。<br>
+    <a href="https://www.teleai.com.cn/doc/bKrLmQNepNQpUHjWEfqX/pUxSKj00HB5artzpBdgZ">天翼 AI — 《快速上手指南》</a>：工作空间、@文件/@技能、任务与历史（2026-10-18 抓）。<br>
+    记忆子系统细节（USER.md / MEMORY.md / daily-log、memory_search / memory_get、三种载入）：<b>TeleAgent 自述</b>（2026-10-18，官方手册未载，按"自述"引用）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"这三层载入怎么配出来的？""技能自进化靠谱吗？""我该拿哪个 harness 开工？""拆完想自己配一个记忆，从哪下手？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：前八课的零件这课全用上了——缺哪块回哪课<br>
+    <b>想懂每个零件的细节</b>：回 <a href="0008-harness.html">第 8 课 · Harness</a>（零件清单与对号入座）· <a href="0001-what-is-an-agent.html">第 1 课</a>（循环、工具、记忆）<br>
+    <b>速查</b>：<a href="../../reference/memory-products.html">长期记忆产品对照</a>（记忆方案选型）<br>
+    术语表：<a href="../../reference/glossary.html#harness">Harness</a> · <a href="../../reference/glossary.html#memory">记忆</a> · <a href="../../reference/glossary.html#guardrail">护栏</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 9 课 · 实操 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>
