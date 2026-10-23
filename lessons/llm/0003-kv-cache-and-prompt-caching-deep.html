@@ -16,25 +16,25 @@
 
   <div class="note">
     <span class="label">怎么用这篇</span>
-    <p>只收<b>读完初学版仍会冒出来</b>的疑问。有些还带真实的坑——踩过的人不少。</p>
+    <p>只收<b>读完初学版仍会冒出来</b>的疑问。有些还带真实的坑：踩过的人不少。</p>
     <p style="color:var(--muted)">总链：<code>一次任务 → 很多次请求 → 每次请求里几百轮 decode</code>。"请求内复用"总是发生；"跨请求命中"要条件。</p>
   </div>
 
   
 
   <h2 id="q1-thinking">Q1 · 上一轮的思考内容会不会被丢掉？谁说了算？</h2>
-  <p>用会思考的模型（会输出"思考过程"的那种，见 <a href="0005-reasoning-models.html">第 5 课 · 它真的在思考吗？</a>）时，思考块（<b>thinking block</b>）算不算进你的前缀，<b>要看两边配合</b>——客户端和模型各管一半。</p>
+  <p>用会思考的模型（会输出"思考过程"的那种，见 <a href="0005-reasoning-models.html">第 5 课 · 它真的在思考吗？</a>）时，思考块（<b>thinking block</b>）算不算进你的前缀，<b>要看两边配合</b>：客户端和模型各管一半。</p>
   <p><b>客户端那一侧：必须原样带回去。</b>Anthropic 官方文档的规则写得很硬：<b>把 thinking block 完整、不改动地带回来</b>。而且要<b>原样回传那条助手消息</b>——文档原话是：重建了它、或者过滤掉里面的块，会直接 <b>400 报错</b>，请求根本发不出去。</p>
-  <p>那"网页版聊天和 harness 软件会不会自动带回去"？<b>能正常用，就说明它已经做了</b>——<span style="color:var(--muted)">（这是从"不带就报错"推出来的结论，不是对某个产品的实测。）</span></p>
+  <p>那"网页版聊天和 harness 软件会不会自动带回去"？<b>能正常用，就说明它已经做了</b>。<span style="color:var(--muted)">（这是从"不带就报错"推出来的结论，不是对某个产品的实测。）</span></p>
   <p><b>模型那一侧：留不留，取决于版本。</b>Anthropic 文档按模型版本列得很清楚：</p>
   <ul>
     <li><b>Opus 4.5+ 与 Sonnet 4.6+</b>：thinking block <b>默认保留</b>在上下文里，<b>缓存仍然有效</b>。</li>
     <li><b>更早的 Opus / Sonnet 和所有 Haiku</b>：它们会被<b>剥掉</b>，而且<b>跟在其后的消息也从缓存里移除</b>。</li>
   </ul>
-  <p>被保留下来的 thinking block <b>算输入 token</b>——从缓存里读出来时也一样计入你的 usage。<span style="color:var(--muted)">（为什么会思考、那笔账怎么算？<a href="0005-reasoning-models.html">→ 看 LLM 第 5 课</a>；<a href="../../reference/glossary.html#reasoning">术语表「思考 reasoning」</a>）</span></p>
+  <p>被保留下来的 thinking block <b>算输入 token</b>。从缓存里读出来时也一样计入你的 usage。<span style="color:var(--muted)">（为什么会思考、那笔账怎么算？<a href="0005-reasoning-models.html">→ 看 LLM 第 5 课</a>；<a href="../../reference/glossary.html#reasoning">术语表「思考 reasoning」</a>）</span></p>
   <p><b>比"带不带回去"更容易踩的坑，是改配置。</b>Anthropic 官方文档<a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking">《Extended thinking》</a>里的「Prompt caching in manual mode」一节明确写：<b>改 thinking 的配置会让缓存作废，而且是连着系统提示和工具定义一起作废</b>，因为<b>这份配置是被渲染进 prompt 的</b>。所以"我只是想把思考深度调低一点"，代价可能是<b>整段前缀全部重算</b>。</p>
-  <p>这里的"配置"是两个旋钮。<b>旧模式</b>用 <code>budget_tokens</code> 给思考定一个 token 目标（拿多少 token 用来想——文档特别说明<b>这是目标、不是硬上限</b>）；<b>新模式</b>改用 <code>output_config: {effort: ...}</code> 分档（low / medium / high），同一份文档的原话是"<b>用它代替 token 预算来控制推理深度</b>"——也就是<b>深度由模型自己定</b>。<b>两个都会被渲染进 prompt，所以动任何一个都要重建缓存。</b><span style="color:var(--muted)">（这两个是 Anthropic 的参数名，别的厂商不叫这个；它们属于思考模型本身，见 <a href="0005-reasoning-models.html">LLM 第 5 课</a>）</span></p>
-  <p>那一节还给了三行实测数字，可以直接摆成一张表看。<b>三个字段先看懂</b>：<b>cache_creation</b> ＝ 这一轮<b>新算出来、存进缓存</b>的 token 数；<b>cache_read</b> ＝ 这一轮<b>从缓存读回来</b>的 token 数；<b>input</b> ＝ <b>断点之后的那一截</b>——它进不了缓存，每次都重算、按原价计价（<a href="#q3-not-free">这三个字段在 Q3 细讲</a>）。</p>
+  <p>这里的"配置"是两个旋钮。<b>旧模式</b>用 <code>budget_tokens</code> 给思考定 token 目标（拿多少 token 用来想，文档特别说明<b>这是目标、不是硬上限</b>）；<b>新模式</b>改用 <code>output_config: {effort: ...}</code> 分档（low / medium / high），同一份文档的原话是"<b>用它代替 token 预算来控制推理深度</b>"，也就是<b>深度由模型自己定</b>。<b>两个都会被渲染进 prompt，所以动任何一个都要重建缓存。</b><span style="color:var(--muted)">（这两个是 Anthropic 的参数名，别的厂商不叫这个。它们属于思考模型本身，见 <a href="0005-reasoning-models.html">LLM 第 5 课</a>）</span></p>
+  <p>那三行数字可以直接摆成一张表看。<b>三个字段先看懂</b>：<b>cache_creation</b> ＝ 这一轮<b>新算出来、存进缓存</b>的 token 数；<b>cache_read</b> ＝ 这一轮<b>从缓存读回来</b>的 token 数；<b>input</b> ＝ <b>断点之后的那一截</b>。它进不了缓存，每次都重算、按原价计价（<a href="#q3-not-free">这三个字段在 Q3 细讲</a>）。</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">请求</th>
@@ -61,9 +61,9 @@
   <p style="color:var(--muted)">（表里那三行 <code>input</code> 分别是 17 / 303 / 747，都是<b>断点之后</b>的那截——本例的断点打在思考块＋系统提示之后，所以每次新加的那句提问都落在这一栏里。<b>它们不是"没命中"</b>，是压根不进缓存。）</p>
 
   <h2 id="q2-lookback">Q2 · 一个字都没改，为什么还是不命中？</h2>
-  <p style="color:var(--muted)"><b>这一问写给要自己发请求的人</b>（不写代码的可以整段跳过）。要带走的只有一句：<b>缓存只认上次存过的那一份，而且只往回找有限的距离。</b></p>
+  <p style="color:var(--muted)"><b>这一问写给要自己发请求的人</b>，不写代码的可以整段跳过。要带走的只有一句：<b>缓存只认上次存过的那一份，而且只往回找有限的距离。</b></p>
 
-  <p><b>先看一个真的发给模型的请求。</b>请求不是一整坨字，而是<b>分成若干块</b>——下面这个例子里：</p>
+  <p><b>先看一个真的发给模型的请求。</b><b>role</b> 那部分是<b>分成若干块</b>的。下面这个例子里：</p>
   <pre><code>{
   "model": "claude-sonnet-5-5",
   "max_tokens": 1024,
@@ -106,7 +106,7 @@
     <li><b>存</b>：断点那块算一个指纹，写下来。<b>只有断点这一处会存</b>。</li>
     <li><b>读</b>：<b>从第一个 token 到最后一块</b>算一个指纹，<b>跟以前存下来的那些比</b>。对上了，说明这段已经缓存，那一块之前的内容整段复用；对不上就<b>往上退一块，再算一次</b>，最多退 <b>20 块</b>。</li>
   </ul>
-  <p><b>本轮算出来的指纹，是跟"过去存过的"比，不是跟自己比。</b>它只认存过的记录，不会看你这段内容稳不稳定就临时帮你存——<b>一段一个字都没改的内容，你从来没在那一处打过标记，它就一次都不会被命中。</b></p>
+  <p><b>本轮算出来的指纹，是跟"过去存过的"比，不是跟自己比。</b>它只认存过的记录，不会看你这段内容稳不稳定就临时帮你存。<b>一段一个字都没改的内容，你从来没在那一处打过标记，它就一次都不会被命中。</b></p>
   <p><b>一次最多能标 4 个断点</b>。这跟"往回退最多 20 块"是两回事：<b>4 是你能打几个标记，20 是它能往回看几块。</b></p>
   <p><b>有时候前面内容都一样，却没有命中。</b>断点总是打在<b>当前最后一块</b>上，对话每走一轮，最后一块就往后挪好几块；而存下来的记录留在原地不动，距离一轮比一轮远。比如下面这个 Anthropic 文档里的例子：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
@@ -151,10 +151,10 @@
 
   <h2 id="q3-not-free">Q3 · 命中到底能省多少？怎么确认自己真命中了？</h2>
 
-  <p><b>命中是打折，不是免费。</b>它省掉的是"重新算 K/V"那份工作，<b>不是"不用把内容送过去"</b>——读缓存那一次<b>照样按 0.1× 付钱</b>，只是比原价便宜十倍。而且<b>缓存不保证还在</b>：可能被淘汰，也可能你的请求被路由到另一台机器上。</p>
+  <p><b>命中是打折，不是免费。</b>它省掉的是"重新算 K/V"那份工作，<b>不是"不用把内容送过去"</b>——读缓存那一次<b>照样按 0.1× 付钱</b>，只是比原价便宜十倍。而且<b>缓存不保证还在</b>：可能被淘汰也可能你的请求被路由到另一台机器上。</p>
   <p>所以两条都要记住：<b>命中是"打折"不是"免费"，是"尽量"不是"保证"。</b></p>
 
-  <p><b>怎么知道自己真命中了？看响应里的 <code>usage</code>。</b>Anthropic 官方文档给的核对方法就是它，三个字段各管一件事：</p>
+  <p><b>怎么知道自己真命中了？看响应里的 <code>usage</code>。</b><b>怎么知道自己真命中了？看响应里的 <code>usage</code>。</b>Anthropic 官方文档给的核对方法就是它。三个字段各管一件事：</p>
   <ul>
     <li><b><code>cache_read_input_tokens</code></b>：<b>命中</b>了多少（这次省了多少）</li>
     <li><b><code>cache_creation_input_tokens</code></b>：<b>写进</b>去多少（这次为缓存多付了多少）</li>
@@ -178,9 +178,9 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 一次响应的 usage 里，cache_read 和 cache_creation 两个字段都是 0，说明什么？</p>
-    <button class="quiz-option" data-correct="true">这次完全没命中，而且不会报错</button>
-    <button class="quiz-option">缓存命中了，只是统计还没更新</button>
     <button class="quiz-option">请求被服务商拒绝了</button>
+    <button class="quiz-option">缓存命中了，只是统计还没更新</button>
+    <button class="quiz-option" data-correct="true">这次完全没命中，而且不会报错</button>
     <button class="quiz-option">说明这段前缀太短，不适合做缓存</button>
     <p class="feedback"
        data-ok="对。两个字段都是 0 就是没缓存，而且请求照常处理、不报错 —— 所以不能拿「没报错」当「命中了」。"
@@ -189,10 +189,10 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q2</span> 用会思考的模型时，上一轮的思考内容会不会留在上下文里？</p>
-    <button class="quiz-option" data-correct="true">看模型版本，新版默认保留</button>
+    <button class="quiz-option">看这一轮提示词写了多长</button>
     <button class="quiz-option">看客户端有没有原样带回去</button>
     <button class="quiz-option">一律会被丢掉，缓存一定断掉</button>
-    <button class="quiz-option">看这一轮提示词写了多长</button>
+    <button class="quiz-option" data-correct="true">看模型版本，新版默认保留</button>
     <p class="feedback"
        data-ok="对。客户端必须原样带回，但留不留取决于模型版本：Opus 4.5+ / Sonnet 4.6+ 默认保留，更早的 Opus/Sonnet 和 Haiku 会剥除。"
        data-no="两件事要分开：客户端负责「原样带回」，模型决定「留不留」——后者跟版本有关。"></p>
@@ -211,9 +211,9 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q4</span> 三个断点分别打在工具说明、系统提示、提问的末尾。你改了系统提示，哪几份还可用？</p>
-    <button class="quiz-option" data-correct="true">只有打在工具说明那份</button>
-    <button class="quiz-option">三份全都还能用</button>
-    <button class="quiz-option">只有打在提问那份还能用</button>
+    <button class="quiz-option">三份都还能用，互不影响</button>
+    <button class="quiz-option" data-correct="true">只有打在工具说明的那份能用</button>
+    <button class="quiz-option">只有打在提问末尾的那份能用</button>
     <button class="quiz-option">工具说明和系统提示两份都能用</button>
     <p class="feedback"
        data-ok="对。每份存的是「从第一个 token 到那个断点为止」的整段，所以包含谁、谁就跟着作废 —— 系统提示那份和提问那份都包含它。"
@@ -238,7 +238,7 @@
   <p class="next">
     <b>回初学版</b>：<a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a><br>
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">第 2 课 · 一次请求的两段</a>——本课讲的重算，就发生在后一段。<br>
-    <b>Agent 侧</b>：<a href="../agent/0008-harness.html">Agent 篇 · 第 8 课 · 上下文管理</a> · <a href="../agent/0002-build-an-agent.html">第 2 课 · 手写一个 agent</a><br>
+    <b>Agent 侧</b>：<a href="../agent/0005-harness.html">Agent 篇 · 第 5 课 · 上下文管理</a> · <a href="../agent/0002-build-an-agent.html">第 2 课 · 手写一个 agent</a><br>
     术语表：<a href="../../reference/glossary.html#kv-cache">KV Cache</a> · <a href="../../reference/glossary.html#prefix-cache">前缀缓存</a> · <a href="../../reference/glossary.html#cache-breakpoint">缓存断点</a> · <a href="../../reference/glossary.html#fingerprint">指纹</a> · <a href="../../reference/glossary.html#cache-usage">缓存用量三栏</a> · <a href="../../reference/glossary.html#request">一次任务 / 一次请求 / 一轮 decode</a>
   </p>
 

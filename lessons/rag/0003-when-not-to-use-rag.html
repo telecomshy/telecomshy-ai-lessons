@@ -12,7 +12,6 @@
 
   <div class="lesson-meta">RAG · 第 3 课 · 初学版</div>
   <h1>什么时候不该上 RAG</h1>
-  <p class="subtitle">"我有文档 → 上 RAG"这个反应，<b>一半时候是错的</b>。</p>
 
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
@@ -86,9 +85,9 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 用户问「我账户里还有多少钱」，该用什么？</p>
-    <button class="quiz-option" data-correct="true">用工具去实时查，别用检索</button>
-    <button class="quiz-option">上 RAG 把余额存进向量库</button>
     <button class="quiz-option">让模型自己估算一下数额</button>
+    <button class="quiz-option">上 RAG 把余额存进向量库</button>
+    <button class="quiz-option" data-correct="true">用工具去实时查，别用检索</button>
     <button class="quiz-option">把余额写进系统提示里去</button>
     <p class="feedback"
        data-ok="对。余额每分钟都在变，向量库里是建库那天的快照。"
@@ -97,10 +96,10 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q2</span> 一份 500 字的说明书，用户会围绕它提问，怎么办？</p>
-    <button class="quiz-option" data-correct="true">整个塞进提示词，别上 RAG</button>
+    <button class="quiz-option">让用户自己去翻那份文档</button>
     <button class="quiz-option">切成十个小段再上 RAG</button>
     <button class="quiz-option">专门训练一个问答模型</button>
-    <button class="quiz-option">让用户自己去翻那份文档</button>
+    <button class="quiz-option" data-correct="true">整个塞进提示词，别上 RAG</button>
     <p class="feedback"
        data-ok="对。短就直接塞——切块只会额外引入两种新毛病。"
        data-no="RAG 是为「塞不进去」准备的；塞得进去就别绕这一圈。"></p>

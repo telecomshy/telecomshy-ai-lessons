@@ -12,14 +12,13 @@
 
   <div class="lesson-meta">LLM 底层 · 第 6 课 · 初学版</div>
   <h1>量化：把模型压小，把字吐快</h1>
-  <p class="subtitle">前面四课都在讲<b>怎么少浪费时间</b>。这一课讲其中最直接的一招：把模型压小。<b>可它只让一半的动作变快</b>——吐字快了，读长文几乎不变。</p>
 
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
     <p>你大概听说过这么一件事：<b>几年前笔记本根本跑不动的大模型，现在塞进普通电脑就能跑了。</b>而且模型名字后面还挂着一串看不懂的东西——<code>Q4_K_M</code>、<code>int8</code>、<code>FP8</code>。</p>
-    <p>那串东西是什么？一句话：<b>它在告诉你，模型里每个数要用几个「比特」来存</b>（一个比特就是一个 0 或 1）。<b>这些「数」就是权重</b>——训练学出来的那几十亿个数。<code>Q4</code> 就是每个数只用 4 个比特，<code>int8</code>／<code>FP8</code> 是留 8 个——原来那种老实的存法要 32 个，体积当然一下就下来了。</p>
+    <p>那串东西是什么？一句话：<b>它在告诉你，模型里每个数要用几个「比特」来存</b>（一个比特就是一个 0 或 1）。<b>这些「数」就是权重</b>——训练学出来的那几十亿个数。<code>Q4</code> 就是每个数只用 4 个比特，<code>int8</code>／<code>FP8</code> 是留 8 个；原来那种老实的存法要 32 个，体积当然一下就下来了。</p>
     <p style="margin-top:0.7rem">先拆穿一个误解：<b>它不是「把文件压缩一下」。</b>压缩（zip）压完还能解压还原，<b>而它是把原来的数换掉，取不回来了</b>——拿模型的一点点"记性"，换体积和速度。</p>
-    <p>真正反直觉的是这个：<b>所有人都说它能让模型变快，可它只让一半的动作变快。</b>模型「吐字」快了，「读长文」几乎一点不快。</p>
+    <p><b>所有人都说它能让模型变快，可它只让一半的动作变快。</b>模型「吐字」快了，「读长文」几乎一点不快。</p>
     <p style="margin-top:0.7rem"><b>学完这课，你能</b>看懂模型名里那些后缀、说清它<b>改了什么、又会掉什么</b>，也知道什么时候<b>不该</b>压到极限。</p>
   </div>
 
@@ -30,11 +29,11 @@
   </div>
 
   <h2>1. 它到底是什么：每个数少留几个比特</h2>
-  <p>第 0 课说过，模型里唯一的东西就是<b>一大堆数字</b>。这一课压的那些数，正式名字叫<a href="../../reference/glossary.html#weights"><b>权重</b></a>（也叫参数）——训练一遍遍拧出来的那些表，<b>连第 1 课那张「拿编号查第 N 行」的嵌入表也在里头</b>。<span style="color:var(--muted)">（这不是猜的：压模型的那个工具，说明书里把一张张表都列了名字——连「每个字的表」和出口那张打分表，都能单独指定压法。）</span></p>
+  <p>第 0 课说过，模型里唯一的东西就是<b>一大堆数字</b>。这一课压的那些数，正式名字叫<a href="../../reference/glossary.html#weights"><b>权重</b></a>（也叫参数）——训练一遍遍拧出来的那些表，<b>连第 1 课那张「拿编号查第 N 行」的嵌入表也在里头</b>。<span style="color:var(--muted)">（这不是猜的：压模型的那个工具，说明书里把一张张表都列了名字，连「每个字的表」和出口那张打分表，都能单独指定压法。）</span></p>
   <p>它们现在用 <code>float32</code> 存：<b>每个数占 4 个字节</b>（4 个字节＝32 个比特），所以一个 8B 的模型光数字就要 <b>32 GB</b>。量化的做法很朴素：<b>少给每个数留几个比特</b>。<b>留几个，是个选择</b>——留 8 个比特，就有 256 种组合；留 4 个，就只剩 16 种。组合越少，能记的值就越少，于是每个数只能记成<b>离它最近的那个</b>：<code>0.1237</code> 也许就记成了 <code>0.125</code>，抹掉的零头再也找不回来。（模型名里的 <code>Q8</code>／<code>Q4</code>／<code>int8</code>／<code>FP8</code>，说的就是留了几个比特。）</p>
   <p>这就像<b>把一张 1600 万色的照片改成只用 16 种颜色</b>：图小了几十倍、还看得出是什么；但<b>相近的颜色被并成了同一种</b>，渐变糊成一块块，细节最先没。<b>图小了是赚到的，细节没了是赔掉的。</b></p>
   <p>这一步的正式名字叫<a href="../../reference/glossary.html#quantization"><b>量化（quantization）</b></a>。「量化」的意思就是「把连续的量变成离散的几种值」——<b>精度是在这一步被切掉的</b>。所以它永远是一道选择题：<b>省多少，换掉多少精度</b>，没有「又快又好又不掉」的做法。</p>
-  <p>范围也要划清一句：<b>压的是「存起来的权重」，不是「算出来的数」。</b>模型跑起来临时算出来的那些数——逐层改出来的向量（术语叫<b>激活</b>）、还有第 3 课那套 <a href="../../reference/glossary.html#kv-cache">KV</a>——<b>存法不在这笔账里</b>。不过<b>它们的数值会被波及</b>：毕竟是用压过的权重算出来的。<span style="color:var(--muted)">（所以 <b>int4 的模型，KV 不是 4 bit</b>——它跟激活一个档，默认 <b>16 bit</b>。想让 KV 也小，要<b>另外打开一个开关</b>，那是另一笔账。）</span></p>
+  <p>范围也要划清一句：<b>压的是「存起来的权重」，不是「算出来的数」。</b>模型跑起来临时算出来的那些数——逐层改出来的向量（术语叫<b>激活</b>）、还有第 3 课那套 <a href="../../reference/glossary.html#kv-cache">KV</a>，<b>存法不在这笔账里</b>。不过<b>它们的数值会被波及</b>：毕竟是用压过的权重算出来的。<span style="color:var(--muted)">（所以 <b>int4 的模型，KV 不是 4 bit</b>：它跟激活一个档，默认 <b>16 bit</b>。想让 KV 也小，要<b>另外打开一个开关</b>，那是另一笔账。）</span></p>
   <p>压过之后的效果，是一笔实打实的体积账。下面是 <a href="https://github.com/ggml-org/llama.cpp/blob/master/tools/quantize/README.md">llama.cpp</a>（一个开源的<b>模型运行工具</b>——本课的实测数字就是拿它测的）自己公布的实测（同一个模型，压成 4 bit 那一档之后）：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
     <thead><tr>
@@ -103,7 +102,7 @@
 
   <p>为什么左边不涨反跌？因为<b>读长文那一段是「算力受限」</b>——显卡的算力本来就打满了，<b>多出来的空档它没有</b>。你把货搬轻了，省下的搬运时间<b>并不能兑现成速度</b>。而吐字那一段是「带宽受限」，时间几乎全花在搬运上，货一轻，时间就跟着少。</p>
   <p><b>这就是第 2 课那句「算力受限 / 带宽受限」的实测版。</b>那一课是推导出来的，这一课是量出来的——<b>两句说的是同一件事</b>。</p>
-  <p><b>落到你手上的活，判断就一条：</b>模型<b>回答长、输入短</b>（聊天、写代码、写长报告）——量化收益明显；模型<b>输入长、回答短</b>（塞一大资料的 RAG、很长的系统提示）——<b>别指望量化</b>。这种场景的慢在「读」那一段，要去治它，那是<a href="0002-prefill-vs-decode.html">第 2 课</a>和<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>的地盘（缓存、稳定前缀）。</p>
+  <p><b>落到你手上的活，判断就一条：</b>模型<b>回答长、输入短</b>（聊天、写代码、写长报告），量化收益明显；模型<b>输入长、回答短</b>（塞一大资料的 RAG、很长的系统提示），<b>别指望量化</b>。这种场景的慢在「读」那一段，要去治它，那是<a href="0002-prefill-vs-decode.html">第 2 课</a>和<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>的地盘（缓存、稳定前缀）。</p>
 
   <h2>4. 代价：差别被并掉了，会丢东西</h2>
   <p>省字节的代价，第 1 节说过一句：<b>每个数只能记成那 16 个可挑的值里的一个</b>。可「被并掉的差别」到底伤在哪？这里有个比「精度掉了一点」重要得多的发现。</p>
@@ -118,7 +117,7 @@
   <p>于是最容易暴露问题的，是<b>逐个字都要对的活</b>：严格的 JSON、必须一字不差的函数名、精确的数字、很长的指令遵循。回到第 1 节那张 16 色的比方：<b>看大效果的活，糊一点看不出来；要逐个字对的活，糊一点就全废</b>——错一个字符，整段作废。</p>
   <p><span style="color:var(--muted)">（「哪类活最容易掉」还没有直接的对照实测，上面那句是实践观察。有人把 13 份考题一起评过一遍，说得更准：<b>难的题不一定掉最多，量化是放大模型本来的弱点</b>——掉得明显的几类是<b>听话照做、识别胡编、写代码、理工科题</b>。顺手能用的另外两条：<b>8 bit（FP8）是各任务上最稳的一档</b>；小模型压到 4 bit 掉得狠，70B（700 亿个数）那种大的反而稳。<a href="https://arxiv.org/abs/2409.11055">出处</a>）</span></p>
   <p>有一类活正好撞在枪口上：<b>工具调用</b>。它要求模型吐出一份<b>结构严格的 JSON</b>（哪个工具、参数是什么）——<b>正是「逐个字都要对」的那一类</b>。</p>
-  <p>所以这一节要交给你的不是「压到哪一档」的口诀，而是<b>一条判断：压得越狠，越要在自己的任务上实测</b>。至于上线之前测什么、怎么留余量，那是你自己的活，写在<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>里。</p>
+  <p>所以这一节要交给你的不是「压到哪一档」的口诀，而是<b>一条判断：压得越狠，越要在自己的任务上实测</b>。至于上线之前测什么、怎么留余量，那是你自己的活，写在<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>里。</p>
 
   <h2>6. 动手跑一遍</h2>
   <p>脚本在工作区：<code>exercises/llm/0006-quantization.py</code>。它<b>只用 Python 自带的功能</b>（不用装任何插件），离线能跑，做了三件事：造一张带"大数列"的权重表、用三种分组法压一遍并量误差、再把<b>第 0 课那个真训练出来的玩具模型</b>压一遍看扣分变没变。</p>
@@ -169,8 +168,8 @@
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 量化到底改动了模型的什么？</p>
     <button class="quiz-option">改训练时喂进去的语料</button>
-    <button class="quiz-option">改模型一共有多少层</button>
     <button class="quiz-option" data-correct="true">改每个权重占几个字节</button>
+    <button class="quiz-option">改模型一共有多少层</button>
     <button class="quiz-option">改抽样时用的那套参数</button>
     <p class="feedback"
        data-ok="对。量化只换存法，模型学到的东西一个没动。"
@@ -190,10 +189,10 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q3</span> 模型名写着「4 bit」，为什么实际占用通常接近 5 bit？</p>
-    <button class="quiz-option">压完必须另存一份原始权重</button>
+    <button class="quiz-option">压完还得另存一份完整的原始权重</button>
     <button class="quiz-option">4 bit 会被自动补齐成 8 bit</button>
     <button class="quiz-option">权重得按 32 个一组重排才对齐</button>
-    <button class="quiz-option" data-correct="true">每组数的换算说明也要占地方</button>
+    <button class="quiz-option" data-correct="true">每组数还要额外存一份换算说明</button>
     <p class="feedback"
        data-ok="对。光换算说明就多出 0.5 bit（脚本算出 4.50）；llama.cpp 那一档还把一些权重存得更细，实测 4.89。"
        data-no="多出来的是那份换算说明：每一小组数都要记一个自己的换算倍数（scale）。"></p>
@@ -201,9 +200,9 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q4</span> 「挑着压」这个说法，指的是什么？</p>
-    <button class="quiz-option">每隔几层就换一种压法</button>
-    <button class="quiz-option">把最大的那几个权重直接删掉</button>
     <button class="quiz-option" data-correct="true">少数权重格外重要，保住它们</button>
+    <button class="quiz-option">把最大的那几个权重直接删掉</button>
+    <button class="quiz-option">每隔几层就换一种压法</button>
     <button class="quiz-option">按权重大小排序，只压后面一半</button>
     <p class="feedback"
        data-ok="对。重要性差得很远，所以重点保住那 1%，别处粗一点没关系。"
@@ -213,8 +212,8 @@
   <div class="quiz">
     <p class="q"><span class="num">Q5</span> 同样压到 4 bit，下面哪种活最容易掉链子？</p>
     <button class="quiz-option">闲聊，或者把一段话概括成两句</button>
-    <button class="quiz-option">给一堆材料分好类、贴好标签</button>
     <button class="quiz-option" data-correct="true">吐出一份严格的 JSON，字段不能错</button>
+    <button class="quiz-option">给一堆材料分好类、贴好标签</button>
     <button class="quiz-option">从一堆文本里找出相关的那几段</button>
     <p class="feedback"
        data-ok="对。逐个字对号的活最容易暴露——错一个字符整段作废，工具调用要的正是这种严格 JSON。"
@@ -249,7 +248,7 @@
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（本课第 2、3 节全挂在它那条「带宽受限」上）· <a href="0004-batching.html">第 4 课 · 批处理</a>（另一个砍搬运的招数，对照着看）<br>
     <b>回上一课</b>：<a href="0005-reasoning-models.html">LLM 底层 · 第 5 课 · 它真的在思考吗？</a>——那一课讲的是「多花 token 换准确率」这笔账；<b>从这一课起我们回到成本这条线，讲「少花字节换速度」</b>。两件事都是在做交易，但一个动的是能力，一个动的是存法。<br>
     <b>顺着往下</b>：<a href="0007-distillation.html">LLM 底层 · 第 7 课 · 蒸馏</a>——改「从哪来」的那一件，正好和本课「改怎么存」凑成一对<br>
-    <b>这条轨道</b>：<a href="../index.html">课程目录</a>　·　<b>换个角度</b>：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>（换过量化档之后，要重新测什么）<br>
+    <b>这条轨道</b>：<a href="../index.html">课程目录</a>　·　<b>换个角度</b>：<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>（换过量化档之后，要重新测什么）<br>
     术语表：<a href="../../reference/glossary.html#quantization">量化</a> · <a href="../../reference/glossary.html#activation">激活</a> · <a href="../../reference/glossary.html#bandwidth">显存带宽</a>
   </p>
 

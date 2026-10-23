@@ -2,14 +2,51 @@
 
 本课程的知识只能来自这里的来源，不能来自我的记忆。每条都注明"用来干什么"。
 
+## 从课找来源（写课前先查这张表）
+
+> 正文按来源逐条罗列；这张表只放**指针**——写哪门课，先来这里定位优先来源，再读正文对应条目。新来源进正文对应分组，不复制进本表。
+
+| 要写／改的课 | 优先来源（按正文条目名定位） |
+|---|---|
+| `agent/0001`（是什么·循环·workflow 谱系·三柱·记忆） | Knowledge 通用段（Anthropic Building effective agents · Dify Workflow · Lilian Weng 三支柱 · Anthropic context engineering · ReAct）＋「记忆」小节 |
+| `agent/0002`（实操·真模型接入） | 「Agent 篇 0002 实操」小节（全部当场抓）＋ OpenAI Function calling · Anthropic advanced tool use |
+| `agent/0003`（MCP 与 Skill） | MCP 系条目（MCP 官方文档 · 腾讯云 · 阿里云百炼 · ModelScope · npx · Anthropic Agent Skills）＋「TeleAgent 案例」小节的操作手册 |
+| `agent/0004`（多 agent 与安全） | Anthropic Building effective agents · multi-agent research system · Orchestrator-workers · OpenAI 实践指南 · TeleAgent 操作手册（任务委派） |
+| `agent/0005`（Harness） | 「TeleAgent 案例」小节（TeleAgent／OpenCode／Hermes／WorkBuddy 四款）＋ harness 系（Fowler · LangChain · Databricks · Learn Harness Engineering · Anthropic long-running） |
+| `llm/0000`（模型怎么学） | 注意力原始论文系（Vaswani · Formal Algorithms · CS224n）＋ Karpathy 系＋图解系（Jay Alammar · Transformer Explainer · Brandon Rohrer） |
+| `llm/0001`（token→下一 token） | Tokenizer 系（HF Tokenizers · Redis · Raschka BPE · fast.ai · Mikolov）＋采样系（HF how-to-generate · Holtzman · Transformer Explainer） |
+| `llm/0002`（prefill vs decode） | prefill／decode 系（Redis · Weka）＋延迟指标系（ClickHouse · Anyscale） |
+| `llm/0003`（KV cache 与 prompt caching） | KV cache 系（Raschka · HF KV Caching · Sankalp）＋缓存官方系（Anthropic Extended thinking · Prompt caching · OpenAI · Google · DeepSeek · xAI）＋价目（Anthropic · DeepSeek） |
+| `llm/0004`（batching） | batching 系（Anyscale · Databricks · Orca · DistServe · Sarathi · Runpod）＋ Pope et al. |
+| `llm/0005`（会思考的模型） | 「会思考的模型」小节 |
+| `llm/0006`（量化） | 「量化」小节 |
+| `llm/0007`（蒸馏） | 「蒸馏」小节 |
+| `llm/0008`（引擎在做什么） | 「推理引擎」小节（结构化输出 · 投机解码 · stop reasons · errors · Supported Models · SamplingParams） |
+| `llm/0009`＋附录（后训练） | 「蒸馏」小节的后训练条目（InstructGPT · DPO · GRPO · TRL · LoRA · PPO · Gudibande） |
+| `rag/0001`（为什么先查·三短板） | Lewis 原论文＋Pinecone RAG 指南（五局限·四组件） |
+| `rag/0002`（链路地图·六步） | Pinecone RAG 指南（四组件）＋RAGFlow quickstart/Dataset Configuration（六步→面板对照）＋管线实践 |
+| `rag/0003`（该不该上·三选一） | Lewis＋Pinecone RAG 指南（四条好处）＋llm/0009 微调课互链 |
+| `rag/0004`（实操·上手 RAGFlow） | 「RAG 系列」实验台组（RAGFlow quickstart · Windows 部署避坑） |
+| `rag/0005`（建库·清洗与切块） | Pinecone Chunking＋RAGFlow Dataset Configuration＋Windows 部署（调参顺序） |
+| `rag/0006`（嵌入与相似度） | RAGFlow quickstart（嵌入锁定）＋旧 0001-deep 收编内容 |
+| `rag/0007`（混合检索与重排） | Anthropic Contextual Retrieval（数字链）＋12 种增强（RRF k=60）＋管线实践（召回 50 精排 5） |
+| `rag/0008`（查询工程） | HyDE＋Step-back＋12 种增强（适用边界与温度） |
+| `rag/0009`（上下文组装与生成） | Lost in the Middle＋管线实践（约束 prompt）＋RAGFlow quickstart（Empty response） |
+| `rag/0010`（翻车诊断与评估原理） | Anyscale（分开评四尺）＋RAGAS metrics＋survey＋5 组配置评测（翻车数字） |
+| `rag/0011`（实操·评测实战） | 5 组配置评测（实验蓝本）＋RAGAS metrics（DeepSeek 当判官） |
+| `rag/0012`（Agentic RAG） | Self-RAG＋CRAG＋Pinecone RAG 指南（agentic 一节）＋agent/0002 互链 |
+| `reference/` 速查页 | 评估系（Anthropic evals · τ-bench · Inspect AI · AgentBench）→ agent-eval-checklist；「记忆」小节 → memory-products；缓存官方系 → prompt-caching；采样系 → sampling-params |
+
 ## Knowledge（知识来源）
 
 - [Anthropic — "Building effective agents"](https://www.anthropic.com/engineering/building-effective-agents)
-  最重要的入门工程文章。讲清 workflow 与 agent 的区别、五种常见编排模式（提示链、路由、并行、编排者-工作者、评估者-优化者）。**用来**：建立正确的第一心智模型，避免过度设计。
+  最重要的入门工程文章。讲清 workflow 与 agent 的区别、五种常见编排模式（提示链、路由、并行、编排者-工作者、评估者-优化者）。**用来**：建立正确的第一心智模型，避免过度设计。**2026-10-21 复抓（`agent/0001` §5 workflow 谱系节用）**：定义原话——Workflows＝"systems where LLMs and tools are orchestrated through **predefined code paths**"，Agents＝"systems where LLMs **dynamically direct their own processes** and tool usage"；五骨架名与例子核实无改；"先找最简单可行解"、"拿延迟和成本换任务表现"、"compounding errors（错误滚动放大）"三句为劝告口径。文首官方勘误注：工具生态部分已变旧，概念框架仍是正源。
 - [Lilian Weng — "LLM Powered Autonomous Agents"](https://lilianweng.github.io/posts/2023-06-23-agent/)
-  经典的"三大支柱"框架：Planning / Memory / Tool Use。**用来**：给整个领域画地图、确定课程结构的骨架。**2026-10-13 复抓（`agent/0001` §5 三柱深讲用，直连 200）**："Agent System Overview" 一节的分类原话——Planning＝**Subgoal and decomposition**（"breaks down large tasks into smaller, manageable subgoals"）＋ **Reflection and refinement**（"self-criticism and self-reflection over past actions, learn from mistakes and refine them for future steps"）；Memory＝**short-term**（"all the in-context learning"）／**long-term**（"retain and recall (infinite) information over extended periods, often by leveraging an external vector store and fast retrieval"）；Tool use＝"call external APIs for extra information that is **missing from the model weights**"，给的三类缺口＝**current information / code execution capability / access to proprietary information sources**。**用来**：`agent/0001` §5 每柱 2～3 句（分类名与"三样东西"照这节抄，白话译文不引申）。
+  经典的"三大支柱"框架：Planning / Memory / Tool Use。**用来**：给整个领域画地图、确定课程结构的骨架。**2026-10-13 复抓（`agent/0001` §6 三柱深讲用，直连 200）**："Agent System Overview" 一节的分类原话——Planning＝**Subgoal and decomposition**（"breaks down large tasks into smaller, manageable subgoals"）＋ **Reflection and refinement**（"self-criticism and self-reflection over past actions, learn from mistakes and refine them for future steps"）；Memory＝**short-term**（"all the in-context learning"）／**long-term**（"retain and recall (infinite) information over extended periods, often by leveraging an external vector store and fast retrieval"）；Tool use＝"call external APIs for extra information that is **missing from the model weights**"，给的三类缺口＝**current information / code execution capability / access to proprietary information sources**。**用来**：`agent/0001` §6 每柱 2～3 句（分类名与"三样东西"照这节抄，白话译文不引申）。
 - [OpenAI — "A practical guide to building agents"（PDF）](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/)
   面向产品/工程团队的实践指南，覆盖单 vs 多 agent、工具设计、护栏与人机协同。**用来**：从原理过渡到工程取舍。
+- [Dify 官方文档 — Workflow 与 Chatflow](https://docs.dify.ai/zh/cloud/use-dify/build/workflow-chatflow) ／ [编排逻辑](https://docs.dify.ai/zh/cloud/use-dify/build/orchestrate-node)
+  workflow 档的产品正源。**2026-10-21 抓（`agent/0001` §5「三处能摸到」用）**：Workflow 自我定位「可靠、可重复的流程」；节点族含<b>问题分类器、If-Else、迭代/循环、Agent 节点</b>（Agent 节点定义「将 Agent 作为工作流中的一步运行」——流程里嵌自主循环的公开实例）；编排页含「串行与并行」。<b>同类平台（二手口径，仅提及不展开）</b>：扣子 Coze＝字节旗下一站式智能体开发与工作流编排平台（百科口径）；n8n 偏自动化集成。
 - [Chip Huyen — "Agents"（博客，2025-01）](https://huyenchip.com/2025/01/07/agents.html)
   《AI Engineering》作者对 agent 的清晰拆解，尤其擅长讲**失败模式**与评估。**用来**：讲"会在哪里失败"。
 - [Chip Huyen —《AI Engineering》(O'Reilly)](https://www.oreilly.com/library/view/ai-engineering/9781098166298/)
@@ -60,13 +97,6 @@
   **「算法在引擎这一侧」的定义级证据**：①「If vLLM natively supports a model, **its implementation can be found in `vllm/model_executor/models`**」——模型的实现代码是 vLLM 安装包里的代码；②「To determine whether a given model is natively supported, you can check the **`config.json`** … If the **`"architectures"`** field contains a model architecture listed below, then it should be natively supported」——config.json 的 `architectures` 字段对号入座挑实现；③ 没实现过的架构要按 **Adding a New Model** 自己**写代码**（反过来证明光有权重跑不起来）；④ DeepSeek-V3／R1／V3.1 在支持列表里（`DeepseekV3ForCausalLM`）。**用来**：`0008` §1「装好 vLLM＝算法代码就装好了，不用另外下载/导入」。
 - [HuggingFace — `deepseek-ai/DeepSeek-V3` 仓库文件清单（HF API，2026-10-11 抓）](https://huggingface.co/api/models/deepseek-ai/DeepSeek-V3)
   **「部署一个开源模型到底下载什么」的实测清单**：163 个 `model-000xx-of-000163.safetensors` 权重分片（里面全是数字）＋ `config.json`（`architectures: ["DeepseekV3ForCausalLM"]`，另有层数等骨架尺寸）＋ `model.safetensors.index.json`（分片清单）＋ `tokenizer.json`／`tokenizer_config.json`（分词器）。⚠ **另带** `configuration_deepseek.py`／`modeling_deepseek.py`（custom code 的算法文件）与官方 `inference/` 脚本——**「仓库自带算法代码」的活例**（给 transformers 的 `trust_remote_code` 或 DeepSeek 自家脚本用）。**用来**：`0008` §1「要下载的是权重＋两个小文件；算法为什么不用下载」。
-
-## Wisdom（社区 · 用于真实世界检验）
-
-- [r/AI_Agents](https://www.reddit.com/r/AI_Agents/)
-  最大的 agent 讨论社区，有大量实操踩坑与项目分享。**用来**：把学到的判断拿去对撞、看别人怎么翻车。
-- Latent Space（Discord / 播客）
-  偏工程与前沿的高信噪比社区。**用来**：跟进正在发生的变化，向从业者提问。
 
 - [OpenAI — Prompt caching（API 指南）](https://developers.openai.com/api/docs/guides/prompt-caching)
   官方说明：缓存的是 **KV 张量而非 token**；缓存单元是"前缀"（cache breakpoint）；需整个渲染后的前缀完全匹配。**用来**：讲"缓存命中"到底指什么、为什么前缀要稳定。
@@ -308,10 +338,24 @@
 - [Anthropic — "Introducing advanced tool use"](https://www.anthropic.com/engineering/advanced-tool-use)
   Anthropic 官方工程文：模型返回 <code>tool_use</code> 块（工具名 + 输入），你的代码执行后把结果以 <code>tool_result</code> 送回，模型接着走。**用来**：讲 tool_use / tool_result 这一对来回。
 
-- [Model Context Protocol — 官方文档](https://modelcontextprotocol.io/docs/2026-07-28/getting-started/intro)
-  MCP 是"把 AI 应用连到外部系统"的**开放标准**。server 公布 **tools / resources / prompts** 三类能力，client 通过**发现**机制先问"你能干什么"，不用硬编码 endpoint。**用来**：讲工具的标准化与即插即用。
+- [Model Context Protocol — 官方文档（Architecture + Connect to local servers）](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture)（2026-10-18 抓；配置页 [connect-local-servers](https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers)）
+  **角色**：MCP host（AI 应用）给每个 server 建一个 MCP client；本地 stdio server 通常单客户端，远程 Streamable HTTP server 可服务多个客户端。**传输**：stdio（本机进程标准输入/输出）／Streamable HTTP（远程，支持 Bearer/API key/OAuth）。**数据层**：JSON-RPC 2.0、**无状态**（每个请求自带版本与能力）；发现 `server/discover`、`tools/list`，执行 `tools/call`；server 公布 **tools / resources / prompts**；工具清单变化可通知。**配置**：本地 server 的 JSON 形状是 `mcpServers` → 服务名 → `command` / `args` / `env`（env 放 key）；官方示例是 filesystem server。**安全**：本地 server 以你的用户权限运行，只给需要的目录。**用来**：0003 MCP 三个角色、传输、发现/调用、配置字段与安全；0003「MCP 还是 Skill」里"标准接口/多客户端/发现"那一列；0003 的"发现"。
+- [腾讯云开发者 — MCP 广场介绍（官方文档）](https://cloud.tencent.cn/document/product/1212/123193)（2026-10-18 抓）
+  **本地 vs 托管的一手口径**：MCP 广场提供 **Local 模式**（部署在本地设备，适合依赖本地文件/服务的 server，如文件系统；配置是 `mcpServers` 里的 `command`/`args`/`env`，示例用 `uvx` 启动）和 **Hosted 模式**（部署在广场的免费云资源上，远程连接、跨端友好，是主推模式）。广场还提供安全扫描、免费托管、远程连接。**用来**：0003「本地 server / 远程 server」对照、`npx`/`uvx` 只属于本地、资源广场一例。
+- [腾讯云 — MCP 广场（入口）](https://cloud.tencent.com/developer/mcp)（2026-10-18 抓）
+  官方 + 第三方 MCP 目录；分类（腾讯产品/搜索/数据库/支付/位置/文档…）与卡片，可直接看每个 server 的接法。**用来**：0003 §4 资源入口；截图 `mcp-square-tencent.png` 的来源。
+- [腾讯云 CloudBase — Connection Modes: Local vs Hosted（官方文档）](https://docs.cloudbase.net/en/ai/cloudbase-ai-toolkit/connection-modes)（2026-10-18 抓）
+  **远程配置的实际形状**：Local Mode 用 `npx` 跑本地 server；Hosted Mode 跑在腾讯云，IDE 通过 HTTP 连，**不用本地 Node**。Hosted 配置示例：`type: "http"` + `url` + `headers`（`X-TencentCloud-SecretId` / `X-TencentCloud-SecretKey`），没有 `command`/`args`。**用来**：0003 远程示例（与本地 `mcpServers` 对照）；也解释"npx 是本地，远程只要 URL/鉴权"。
+- [阿里云百炼 — 官方 MCP 服务（官方文档）](https://help.aliyun.com/zh/model-studio/official-and-third-party-mcp)（2026-10-18 抓）
+  **One Key MCP**：首次调用自动生效；在 MCP 广场选服务 → 服务详情页复制接入配置或一键配置到客户端，用 `DASHSCOPE_API_KEY` 鉴权。**云部署**：MCP 服务跑在云端；敏感数据用 KMS 加密。**用来**：0003 远程/托管 MCP 的第二个例子、资源入口。
+- [阿里云百炼 — Skill（官方文档）](https://help.aliyun.com/zh/model-studio/introduction-to-skill)（2026-10-18 抓）
+  **Skill 的通用格式**：ZIP 根目录必须有 `SKILL.md`，YAML frontmatter 写 `name`/`description`，≤10MB；官方 Skill 添加即用，自定义 Skill 上传后自动审查；描述建议包含输入类型、操作、触发关键词、不适用场景。**用来**：0003 §4 技能资源、导入/创建要求；`npx` 不是 Skill 的事。
+- [ModelScope — MCP 广场](https://modelscope.cn/mcp) · [Skills 技能中心](https://modelscope.cn/skills)（2026-10-18 抓）
+  国内的浏览入口：MCP 服务和技能分别有目录页（只核到页面标题与入口，具体条目按页面为准）。**用来**：0003 §4 资源入口。
+- [npm — npx（官方文档）](https://docs.npmjs.com/cli/v10/commands/npx)（2026-10-18 抓）
+  `npx` 是 npm 的包运行器：运行包里的命令；包不在本地时先取下来。**用来**：0003「npx 到底干了什么」；`-y` 跳过安装确认。
 - [Anthropic — "Equipping agents for the real world with Agent Skills"](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
-  Skill 的设计理念：把**指令 + 元数据 + 可选资源（脚本、模板）**打包成一个目录；**渐进式加载（progressive disclosure）是核心设计原则**——"像一本组织良好的手册"，只先给目录。**用来**：讲 skill 与按需加载。
+  Skill 的设计理念：**目录 + SKILL.md（YAML frontmatter 的 name/description + 正文）+ 可选脚本/资料**；**渐进式加载三层**（metadata 常驻 → 触发后读正文 → 按需读引用文件），"像一本组织良好的手册"。**创建建议**：从评估开始（先看 agent 在哪卡住再补 skill）、结构可扩展（正文太长就拆文件）、站在模型视角盯 name/description、用真实任务迭代；**安全**：只装可信来源，装前读指令和脚本。**用来**：0003 Skill 结构、渐进加载、创建技巧与安全；0003「MCP 还是 Skill」里"技能可带脚本、但不是带 schema 的 callable"那一句；0003 的 skill 骨架。
 
 - [Martin Fowler — "Harness engineering for coding agent users"](https://martinfowler.com/articles/harness-engineering.html)
   那个关键公式的出处："harness 指 agent 里除模型本身之外的一切 —— **Agent = Model + Harness**"。**用来**：讲 harness 与 agent 的术语区别。
@@ -319,6 +363,12 @@
   同一公式，并拆解 harness 的组成（代码、配置、执行逻辑）。**用来**：讲 harness 里都有什么零件。
 - [Databricks — "What is an AI Agent Harness?"](https://www.databricks.com/blog/ai-harness)
   白话定义："围在语言模型外面的**软件脚手架**——工具、记忆、沙箱、反馈回路——**把模型变成 agent**"。**用来**：给初学者的定义。
+- [LangChain — "How to Build a Custom Agent Harness"](https://www.langchain.com/blog/how-to-build-a-custom-agent-harness)（2026-10-18 抓）
+  **task-harness fit**：壳要和任务需要的上下文、失败模式、策略、环境匹配；harness 能力表（上下文防溢出、记忆、执行环境、子任务、重试/降级、策略、人审、成本）；middleware 在 loop 的模型调用/工具调用前后挂钩。**用来**：0005「没有最好的 harness，只有任务-壳匹配」和五个子系统的补充。
+- [Learn Harness Engineering（开源课程）](https://github.com/walkinglabs/learn-harness-engineering) · [文档站](https://walkinglabs.github.io/learn-harness-engineering/)（2026-10-18 抓）
+  **五个子系统**：Instructions（按需加载的指令结构）· State（进度/feature list/磁盘状态）· Verification（测试通过才算完成）· Scope（一次一个 feature）· Session Lifecycle（开始初始化、结束留干净状态）。**用来**：0005 §3 五个子系统、长任务交接。
+- [Anthropic — "Effective harnesses for long-running agents"](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)（2026-10-18 抓）
+  **长任务 harness 的实证**：initializer agent 先写 feature list/init.sh/progress/git commit；coding agent 每次读状态、只推一个 feature、端到端测试、提交并更新进度；四类翻车（一口吃成、过早宣布完成、留烂摊子、没测就说完成）。**用来**：0005 §4 长任务跨会话、状态/验证/范围/收尾。
 
 - [Anthropic — Extended thinking（官方文档）](https://platform.claude.com/docs/en/build-with-claude/extended-thinking)
   **2026-10-06 补核**：其「Prompt caching in manual mode」一节给了一个**三步实测**（思考块 + 系统提示共 1370 token）——第 1 次 `cache_creation_input_tokens=1370, cache_read_input_tokens=0`；第 2 次（**thinking 参数不动**）`cache_creation=0, cache_read=1370`（命中）；第 3 次（**改了 budget**）`cache_creation=1370, cache_read=0`（不命中，**前缀作废重算并重写**）。同一节还给出两个参数名：**`budget_tokens`**（旧模式，给一个 token 目标，**是目标不是硬上限**）与 **`output_config: {effort: ...}`**（新模式，low/medium/high 分档，原话"用它代替 token 预算来控制推理深度"），并明说**在新模式里 effort 扮演 budget_tokens 在这里的角色**。**用来**：讲"改 thinking 配置会让缓存连系统提示和工具定义一起作废"，也是第 3 课进阶 Q1 那张表的出处。⚠ 注意**这一页不是 prompt-caching 那页**，讲缓存计费/命中规则要去 Prompt caching。
@@ -359,6 +409,10 @@
 - [AgentBench（Liu et al., 2023）](https://arxiv.org/abs/2308.03688)
   多环境基准：**8 个不同环境**（代码、游戏、网页、操作系统、数据库…），测 LLM-as-Agent 的推理与决策；论文梳理了典型失败原因。**用来**：想看"跨环境广度"的基准时。
 
+### RAG 系列（2026-10-21 重构扩充）
+
+> RAG 轨 2026-10-21 起改制为「理论课＋实操课（RAGFlow 实验台）」，新课表与施工批次见根目录 `RAG-REVISION-PLAN.md`。本节前两段（原论文、切块与评估）为旧制时代存量，其后四段为改制当日扩充。
+
 - [Lewis et al. — "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"（NeurIPS 2020）](https://arxiv.org/abs/2005.11401)
   **RAG 这个名字的原始出处**。核心说法："模型对知识的访问与精确操控能力仍然有限""给出来源、更新世界知识仍是未解问题"。最值钱的一句结论：<b>换掉那份资料索引就能更新知识，不用重新训练</b>。**用来**：讲"RAG 到底在补什么、它不改模型"。
 - [Anthropic — "Introducing Contextual Retrieval"（2024-09）](https://www.anthropic.com/engineering/contextual-retrieval)
@@ -374,6 +428,43 @@
   Context Precision / Context Recall / **Faithfulness**（"答案里的断言能否追溯到检索到的上下文"）那一套。**用来**：讲生成侧的忠实度。
 - [Evaluation of Retrieval-Augmented Generation: A Survey（2024）](https://arxiv.org/html/2405.07437v2)
   各框架（RAGAS / ARES / TruLens / DeepEval…）指标的**对照表**。**用来**：知道"同一个概念各家叫法不同"。
+
+**概念地图（0001/0002/0003/0012 用 · 2026-10-21 抓）**
+
+- [Pinecone — "Retrieval-Augmented Generation (RAG)"](https://www.pinecone.io/learn/retrieval-augmented-generation/)
+  基础模型的五类局限（**知识截止／领域知识浅／拿不到私有数据／不可溯源／概率性生成**）与 RAG 四组件（**Ingestion → Retrieval → Augmentation → Generation**）；四条好处（实时与私有数据、信任与引用、可控、比训练/微调/硬塞上下文省钱）。**agentic 演进**（官方收尾口径，引号内为原话）：agent 当 RAG 组件的编排者——"construct more effective queries"（构造更有效的查询）、"access additional retrieval tools"、"evaluate the accuracy and relevance of the retrieved context"、"apply reasoning to validate retrieved information"（推理验证後再决定信不信）。**用来**：0001 三短板、0002 四组件地图、0003 三选一、0012 Agentic 收尾。
+
+**RAGFlow 实验台（0004/0005 用 · 2026-10-21 抓）**
+
+- [RAGFlow — quickstart（官方文档）](https://ragflow.io/docs/)
+  部署门槛原文："**4 CPU cores (x86-64), 16 GB RAM, and 50 GB free disk space**"；Docker ≥24.0.0＋Compose ≥v2.26.1；`vm.max_map_count`≥262144；流程＝起服务→配模型→建 dataset 传文件解析→检索测试→建 chat。两条**定义级原话**：① **嵌入锁定**——"Once you have selected an embedding model and used it to parse a file, **you are no longer allowed to change it**"（同一库必须在同一嵌入空间；换模型＝新建库全量重嵌）；② **Empty response**——填了则把回答限定在知识库内（检索不到就统一回这句话），留空则模型自由发挥（"may give rise to hallucinations"）。另有：Chunk 页可人工给块加关键词/问题提权。**用来**：0004 部署与验通路、0006"换模型全重算"、0009 拒答设置。
+- [RAGFlow — Dataset Configuration（官方文档）](https://ragflow.io/docs/dataset_configuration)
+  **12 种内置解析模板**：General／Q&A（每对一块）／Manual（按手册层级）／Table（每行一块）／Paper／Book／Laws／Presentation（每页一块）／One（整篇一块）／Tag／Audio（ASR）／Email；官方选法原话"choose the parsing method based on the form of the material"（常规先 General、表格先 Table）。**切块器参数**：chunk size 默认 **512 token**（"a target rather than a strict limit"）／overlap ratio（%）／自定义分隔符／表格与图片前后文窗口／**sub-chunks 父子块**（小块检索、父块供上下文）。**标题切块器两模式**：Hierarchy（块带完整标题路径，适合法规契约）vs Group（同层相邻小节合并，适合书/手册/报告）。**Extractor**：自动关键词／自动问题／标签／**Augmented context（给每块生成上下文摘要——与 Anthropic Contextual Retrieval 同思想）**／元数据。**Indexer**：Embedding／Full-text／双开（官方建议双开）；索引字段三选（Processed text／Questions／Augmented context）。⚠ 改解析配置后需重新解析才生效。**用来**：0002 面板对照表、0005 切块、0007 检索配置、0012 顺带一句 Knowledge Compilation。
+- [Windows Docker Desktop 部署 RAGFlow 0.17.2 避坑实录（CSDN）](https://blog.csdn.net/weixin_31220401/article/details/168435333)（⚠ 个人博客，经验值需实操校核）
+  Windows 五坑全清单：① 镜像拉取断→registry mirror；② ES 反复重启→WSL2 内存不足（`.wslconfig` memory=12GB/processors=6/swap=4GB ＋ `wsl --shutdown`，ES 堆限 2G）；③ 解析永久 pending→解析/嵌入模型没下载成（HF_ENDPOINT 指镜像端点或先手动下好模型再建库）；④ 挂载卷读不到→路径避开中文/空格/同步盘、用正斜杠；⑤ 登录页打不开→宿主端口映射与防火墙（默认 80 常冲突，改 9380 类）。**调参顺序法则**：先解析→再切块→最后才动检索参数（"检索参数影响找到什么，切块参数影响怎么被找到"）。中文经验值：chunk 300~500 token、overlap 50~100、top_k 8~12、相似度阈值 0.2~0.3。**用来**：0004"怎么不翻车"节、0005/0007 经验参考。⚠ 该文基于 0.17.2（Python 后端 zip 部署），与已选官方现行版（1.0.0-rc2 Go 后端）流程有出入，施工时以官方文档为准校对。
+
+**评测实战（0010/0011 用 · 2026-10-21 抓）**
+
+- [RAGAS＋RAGFlow 5 组配置评测实战（CSDN，2025-10）](https://blog.csdn.net/m0_59235945/article/details/153839845)（⚠ 第三方实测——作实验设计蓝本，数字不可当基准）
+  场景＝员工手册知识库（考勤休假/报销/福利/员工信息表），与本项目年假贯穿例同款。**5 组对照**：baseline（top_n=8, 阈值 0.2, temp 0.1）／high_recall（15, 0.15）／high_precision（5, 0.3）／anti_hallucination（检索不变＋prompt 强约束）／contextual（12＋CoT prompt）。**结果与三个反直觉**：high_recall 三指标全最佳（Context Recall 1.0／Answer Relevancy 0.597／Faithfulness 0.477）；high_precision 与 anti_hallucination 的 Answer Relevancy **归零（全拒答）**；anti 的 Faithfulness 仅 **0.025**——不是不忠实，是 Ragas 把"拒答"判为不忠实（评估假设与业务目标错位）；过度约束 prompt 反噬。**测试集三挑战**：代表性＞数量（10-15 道精题＞100 道泛化题）；LLM 初稿＋专家改写（"员工的年假政策是什么" vs "我 2021 年 3 月入职现在能休几天"）；GT 标注"够用即可"、条件分支写明限定词、核心题全标＋边缘题轻量评。**稳定指标**：context_precision 与 answer_correctness 常返 NaN，重点看 Context Recall／Answer Relevancy／Faithfulness；附"低分→优化方向"对照表。另：RAGFlow Manual 模式分块（Document.add_chunk API、按章节精确控块、跳过解析）。**用来**：0011 实验设计蓝本（主体）、0010 翻车与归因数字。
+
+**查询与 Agentic 前沿论文（0008/0012 用 · 2026-10-21 核摘要）**
+
+- [Gao et al. — "Precise Zero-Shot Dense Retrieval without Relevance Labels"（HyDE · arXiv 2212.10496）](https://arxiv.org/abs/2212.10496)
+  **HyDE 一手出处**：先让 LLM 生成假想文档（"captures relevance patterns but is unreal and may contain false details"），用无监督编码器把它编码成向量去检索真文档——"the encoder's dense bottleneck **filtering out the incorrect details**"（编码瓶颈天然滤掉假细节）。**用来**：0008——"答案的语义空间比问题更接近文档"。
+- [Zheng et al. — "Take a Step Back"（Step-Back Prompting · ICLR 2024 · arXiv 2310.06117）](https://arxiv.org/abs/2310.06117)
+  **Step-back 一手出处**：先从具体问题抽象出上位概念/原理再推理；PaLM-2L 在 MMLU 物理 +7%、化学 +11%、TimeQA +27%、MuSiQue +7%。**用来**：0008——"拿上位问题去检索背景知识"一支。
+- [Asai et al. — "Self-RAG"（ICLR 2024 · arXiv 2310.11511）](https://arxiv.org/abs/2310.11511)
+  **Self-RAG 一手出处**，两句关键：传统 RAG "indiscriminately retrieving and incorporating a fixed number of retrieved passages, regardless of whether retrieval is necessary, or passages are relevant, **diminishes LM versatility**"；Self-RAG "adaptively retrieves passages **on-demand**…using special tokens, called **reflection tokens**"（反思 token 控制检索时机与自我批判）。**用来**：0012。
+- [Yan et al. — "Corrective Retrieval Augmented Generation"（CRAG · arXiv 2401.15884）](https://arxiv.org/abs/2401.15884)
+  **CRAG 一手出处**：轻量**检索评估器**给检回文档打置信度、据此触发不同检索动作；静态语料不够时**网搜兜底**；"decompose-then-recompose"选择性聚焦关键信息。**用来**：0012。
+
+**工程经验综述（0007/0009 用 · 2026-10-21 抓 · ⚠ 二手，引用时标"经验"）**
+
+- [12 种 RAG 前沿增强技术与落地选型（CSDN，2026-10）](https://blog.csdn.net/weixin_29039773/article/details/168187407)
+  增强方法按五环节归类（查询/索引/检索/重排/生成）；好用口径："**基础 RAG＋混合检索＋重排＋干净切块**解决 80% 的问题"；HyDE 适用边界（短查询适合/完整句不适合）与温度 0~0.3；RRF 公式 k=60 起步；重排后设分数阈值丢噪声；Agent 调用设上限。**用来**：0007/0008 结构参考与经验口径。
+- [RAG 系统化拆解：索引/检索/生成的工程实践与调优（CSDN，2026-10）](https://blog.csdn.net/weixin_32377497/article/details/168161496)（⚠ 个人博客）
+  工程细节：约束式 prompt 模板四块（指令/资料/问题/约束，核心是"资料中没有就明确回答'未找到相关资料'，严禁编造"）；"召回 50 → 精排取 5"两阶段量级；temperature 0.1~0.2；**幻觉先归因检索**（"先把检索到的 chunk 打印出来，人工判断模型是不是真的有料可依"）；多轮对话必做查询改写；Recall@5 与 Recall@10 看差定位；chunk_size 改完必须重嵌重建索引。**用来**：0007/0009/0010 经验素材（与一手数字分开标注）。
 
 ### 记忆（Agent 篇第 1 课记忆节 · 2026-10-17 新增，2026-10-18 补产品口径）
 
@@ -409,17 +500,23 @@
 ### Agent 篇重构素材：TeleAgent 案例（2026-10-18 新增）
 
 - [天翼 AI — 星辰超级智能体 TeleAgent《快速上手指南》](https://www.teleai.com.cn/doc/bKrLmQNepNQpUHjWEfqX/pUxSKj00HB5artzpBdgZ)（2026-10-18 抓）
-  **harness 拆解课的官方引源之一**：安装/工作空间（任务跑在指定文件夹）、`@文件`/`@技能` 引用、任务与历史。**用来**：讲"一个真实 harness 的用户面"。
+  **0005 对照表的官方引源之一**：安装/工作空间（任务跑在指定文件夹）、`@文件`/`@技能` 引用、任务与历史。**用来**：讲"一个真实 harness 的用户面"。
 - [天翼 AI — 《星辰超级智能体·桌面版操作手册》](https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7)（2026-10-18 抓）
-  **拆解素材主源**：技能系统（技能广场/导入 `.skill`＝SKILL.md＋YAML frontmatter/自然语言创建/**同一技能用 ≥20 次触发自进化**/上架安全审查）· **授权三选项（允许一次/一直允许/拒绝）＋YOLO 模式** · MCP 工具管理（`mcpServers` JSON：command/args/env）· 代码执行三模式与安全沙箱 · **任务监控区（深度思考/操作执行/任务委派（子智能体））** · 上下文用量查看与清理 · 自定义模型（OpenAI 兼容 Base URL＋Key）· 任务排查五类（文件/技能/工具/模型/网络）。**用来**：0007 安全课的授权实证、0011 拆解课逐块拆。
+  **0005 对照表的 TeleAgent 素材主源**：技能系统——技能广场/导入（`.zip`／`.skill`；根目录必须有 `SKILL.md`；头部 YAML 写 name/description；≤10MB；导入过安全审查）／**自然语言创建**（技能广场右上角【创建技能】：描述需求、流程、场景，自动生成进"我的技能"）／**「技能孵化器」**（手把手引导从零创建/迭代，见 1.2.2 常用技能）／我的技能（启用/停用、`@` 引用、启用上限 50、上架广场）／**同一技能用 ≥20 次触发自进化** · **授权三选项（允许一次/一直允许/拒绝）＋YOLO 模式** · **MCP 工具管理**（设置→工具设置→从 JSON 导入/添加；`mcpServers` 根对象；服务名、`command`、`args`、`env` 字段；绿色"已连接"；连接/断开/编辑；改工具名后历史任务可能引用不到；示例 `math-server` 用 `npx @modelcontextprotocol/server-everything`）· 代码执行三模式与安全沙箱 · **任务监控区（深度思考/操作执行/任务委派（子智能体））** · 上下文用量查看与清理 · 自定义模型（OpenAI 兼容 Base URL＋Key）· 任务排查五类（文件/技能/工具/模型/网络）。**用来**：0003 MCP 配置与创建技能跟做、0004 安全篇的授权实证、0005 对照表的授权/技能/MCP/消息列。
 - **TeleAgent 记忆子系统自述**（2026-10-18 学习者转述，手册无此节，引源标"自述"）：按**来源＋时间尺度**归档（`USER.md`＝用户明说记住的 / `MEMORY.md`＝系统推断的稳定事实 / `daily-log/YYYY-MM-DD.md`＝每日流水）；底层**纯 Markdown 文件**；检索＝**关键词/正则**（`memory_search`）＋按名读取（`memory_get`）；三种载入：USER.md+MEMORY.md **每次自动注入系统提示**、日志**按需检索**、`LATEST_DAILY_MEMORY.md` **滚动摘录**。**用来**：推翻"内容三分法是标准分法"“取回=相似度"两处旧口径（见 `docs/notes/rules/agent-track-redesign.md` §3）。
+- [OpenCode — Docs](https://opencode.ai/docs/) · [Agents](https://opencode.ai/docs/agents/) · [Permissions](https://opencode.ai/docs/permissions/) · [MCP servers](https://opencode.ai/docs/mcp-servers/) · [Agent Skills](https://opencode.ai/docs/skills/)（2026-10-18 抓）
+  **0005 对照表的 OpenCode 来源**：开源 AI coding agent，终端 TUI/桌面/IDE；任意 provider/API key（含 OpenCode Zen）；Plan/Build primary agents + General/Explore/Scout subagents；按 agent 配 ask/allow/deny；Agent Skills/MCP/插件/自定义工具；AGENTS.md 项目规则；CLI/Server/SDK、GitHub/GitLab。**用来**：四款对照、按场景选。
+- [Hermes Agent — Docs](https://hermes-agent.nousresearch.com/docs) · [Security](https://hermes-agent.nousresearch.com/docs/user-guide/security) · [MCP](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp)（2026-10-18 抓）
+  **0005 对照表的 Hermes 来源**：Nous Research 的自主 agent，MIT；CLI/Desktop/服务器；Nous Portal/OpenRouter/OpenAI/任意 endpoint；60+ 工具、7 种终端后端（本机/Docker/SSH/Daytona/Singularity/Modal/Vercel Sandbox）；Skills/MCP/插件/Bot Mode；approval smart/manual/off + 容器隔离 + 硬黑名单；跨会话记忆/技能自改进；cron + 20+ 消息平台 + 语音。**用来**：四款对照、按场景选。
+- [Tencent WorkBuddy — Overview](https://www.workbuddy.ai/docs/workbuddy/Overview) · [Permission Modes](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Permission-Modes) · [Skills](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Skills-Market) · [Connectors](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Connector) · [MCP](https://www.workbuddy.ai/docs/zh/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/MCP-Guide) · [Model](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model) · [Automation](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Automation-Guide) · [Memory](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Memory)（2026-10-18 抓）
+  **0005 对照表的 WorkBuddy 来源**：腾讯办公桌面工作站（Windows/macOS）；内置+自定义模型（provider 预设/自定义 API/Ollama 本地）；本地文件/文档/表格/PPT/数据；Skill Marketplace/Connectors/MCP；Default Permissions/Full Access + 工作空间/沙箱；对话记忆+夜间摘要；定时/周期任务 + Slack/Telegram/Discord/企微/飞书/钉钉/QQ/微信。**用来**：四款对照、按场景选。
 - [Microsoft — AI Agents for Beginners（GitHub）](https://github.com/microsoft/ai-agents-for-beginners)
   18 讲课表（tool use／planning／multi-agent／context engineering／agent memory／protocols／production／securing…）。**用来**：重构课表的对表清单，判"还缺什么"。
 
 - [Anthropic — "How we built our multi-agent research system"](https://www.anthropic.com/engineering/multi-agent-research-system)
-  **多 agent 课（0005/0006）的主源**：编排者-工作者形状、派单要写清（目标/输出格式/边界，"调研一下 X"这种含糊指令会重复劳动）、只回结论不回流水、失败模式（spawn 50 workers、无限搜寻、互相干扰）；量级全部是**他们自报口径**（简单查证 1 agent 3～10 次调用／对比 2～4 workers·10～15 次／复杂 10+ workers；token 单 agent ×4、多 agent ×15；复杂调研"强编排＋worker"比单强模型 +90.2%）。**用来**：讲"什么时候该上多 agent、怎么分工、账怎么算"。
+  **多 agent 篇（0004 上篇）的主源**：编排者-工作者形状、派单要写清（目标/输出格式/边界，"调研一下 X"这种含糊指令会重复劳动）、只回结论不回流水、失败模式（spawn 50 workers、无限搜寻、互相干扰）；量级全部是**他们自报口径**（简单查证 1 agent 3～10 次调用／对比 2～4 workers·10～15 次／复杂 10+ workers；token 单 agent ×4、多 agent ×15；复杂调研"强编排＋worker"比单强模型 +90.2%）。**用来**：讲"什么时候该上多 agent、怎么分工、账怎么算"。
 - [Anthropic — Orchestrator-workers 模式（Cookbook）](https://platform.claude.com/cookbook/patterns-agents-orchestrator-workers)
-  编排者动态拆活、worker 各拿一段任务的标准形状与最小实现。**用来**：0006 实操课的形状依据。
+  编排者动态拆活、worker 各拿一段任务的标准形状与最小实现。**用来**：0004 多 agent 篇的形状依据。
 
 ### Agent 篇 0002 实操：真模型接入（2026-10-18 新增，全部当场抓取）
 
@@ -438,7 +535,16 @@
 - [Python — Downloads](https://www.python.org/downloads/)（2026-10-18 只作链接）
   装 Python 的官方入口。**用来**：0002 第 1 节"先确认 python 命令能跑"。
 
+## Wisdom（社区 · 用于真实世界检验）
+
+- [r/AI_Agents](https://www.reddit.com/r/AI_Agents/)
+  最大的 agent 讨论社区，有大量实操踩坑与项目分享。**用来**：把学到的判断拿去对撞、看别人怎么翻车。
+- Latent Space（Discord / 播客）
+  偏工程与前沿的高信噪比社区。**用来**：跟进正在发生的变化，向从业者提问。
+
 ## Gaps（尚缺的资源）
-- ~~缺一份可靠的、跨框架的 agent 评估资料~~ **已补（2026-09）**：见上面四条，首选 Anthropic《Demystifying evals for AI agents》
+- ~~缺一份可靠的、跨框架的 agent 评估资料~~ **已补（2026-09）**：见上面 **Knowledge** 里的四条，首选 Anthropic《Demystifying evals for AI agents》
 - 缺中文的高质量一手资料（目前几乎全是英文）
-- ~~缺 **多 agent 协作**的高可信工程资料~~ **已补（2026-10-18）**：Anthropic《How we built our multi-agent research system》（带实测量级、派单与失败教训）＋Orchestrator-workers Cookbook——`agent/0005`/`0006` 已开课。
+- ~~缺 **多 agent 协作**的高可信工程资料~~ **已补（2026-10-18）**：Anthropic《How we built our multi-agent research system》（带实测量级、派单与失败教训）＋Orchestrator-workers Cookbook——`agent/0004` 已开课。
+
+> AI生成

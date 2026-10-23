@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520" role="img" aria-label="MCP 架构：MCP host（你的 harness）里有两个 MCP client，分别连接本地的 stdio server 和远程的 Streamable HTTP server；client 与 server 之间用 JSON-RPC 2.0；每个 server 提供 tools、resources、prompts">
+  <defs>
+    <marker id="mcp-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+    <marker id="mcp-arrow-left" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M10,0 L0,5 L10,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="520" fill="#fdfcf8"/>
+
+  <!-- Host -->
+  <rect x="30" y="24" width="270" height="420" rx="10" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.6"/>
+  <text x="48" y="56" font-family="sans-serif" font-size="15" fill="#8a2b06">MCP host（你的 harness）</text>
+
+  <rect x="52" y="112" width="226" height="86" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.4"/>
+  <text x="68" y="142" font-family="sans-serif" font-size="14" fill="#1b1a17">MCP client A</text>
+  <text x="68" y="168" font-family="sans-serif" font-size="12.5" fill="#6c675e">一条连接，对一个 server</text>
+
+  <rect x="52" y="296" width="226" height="86" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.4"/>
+  <text x="68" y="326" font-family="sans-serif" font-size="14" fill="#1b1a17">MCP client B</text>
+  <text x="68" y="352" font-family="sans-serif" font-size="12.5" fill="#6c675e">另一条连接，对另一个 server</text>
+
+  <text x="52" y="244" font-family="sans-serif" font-size="12.5" fill="#6c675e">host 给每个 server</text>
+  <text x="52" y="264" font-family="sans-serif" font-size="12.5" fill="#6c675e">各建一个 client</text>
+
+  <!-- Server A -->
+  <rect x="590" y="82" width="280" height="150" rx="10" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.6"/>
+  <text x="608" y="112" font-family="sans-serif" font-size="15" fill="#1f6b3a">MCP server A · 本地</text>
+  <text x="608" y="140" font-family="sans-serif" font-size="13" fill="#1b1a17">stdio：标准输入 / 输出</text>
+  <text x="608" y="168" font-family="sans-serif" font-size="13" fill="#1b1a17">公布 tools / resources / prompts</text>
+  <text x="608" y="196" font-family="sans-serif" font-size="12.5" fill="#6c675e">跑在你本机，通常是单客户端</text>
+
+  <!-- Server B -->
+  <rect x="590" y="284" width="280" height="150" rx="10" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.6"/>
+  <text x="608" y="314" font-family="sans-serif" font-size="15" fill="#1f6b3a">MCP server B · 远程</text>
+  <text x="608" y="342" font-family="sans-serif" font-size="13" fill="#1b1a17">Streamable HTTP：URL + 鉴权</text>
+  <text x="608" y="370" font-family="sans-serif" font-size="13" fill="#1b1a17">公布 tools / resources / prompts</text>
+  <text x="608" y="398" font-family="sans-serif" font-size="12.5" fill="#6c675e">跑在服务端，可服务多个客户端</text>
+
+  <!-- Arrows -->
+  <line x1="278" y1="155" x2="584" y2="155" stroke="#8a2b06" stroke-width="1.8" marker-start="url(#mcp-arrow-left)" marker-end="url(#mcp-arrow)"/>
+  <text x="431" y="140" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#8a2b06">JSON-RPC 2.0（双向）</text>
+
+  <line x1="278" y1="357" x2="584" y2="357" stroke="#8a2b06" stroke-width="1.8" marker-start="url(#mcp-arrow-left)" marker-end="url(#mcp-arrow)"/>
+  <text x="431" y="342" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#8a2b06">JSON-RPC 2.0（双向）</text>
+
+  <!-- Bottom note -->
+  <text x="30" y="486" font-family="sans-serif" font-size="12.5" fill="#6c675e">server 是程序，不是模型：它提供能力，模型只负责挑工具、填参数。连上先发现（tools/list），再调用（tools/call）。</text>
+</svg>

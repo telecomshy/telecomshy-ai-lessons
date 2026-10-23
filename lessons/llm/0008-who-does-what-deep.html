@@ -12,23 +12,23 @@
 
   <div class="lesson-meta" data-alias="在哪配、怎么验、代价是什么">LLM 底层 · 第 8 课 · 进阶版</div>
   <h1>结构化输出：在哪配、怎么验、代价是什么</h1>
-  <p class="subtitle">初学版讲「结构化输出能保证格式」。这篇答五个更细的问：<b>本地部署偶尔还是解析失败，是引擎没这功能吗</b>；<b>在哪配、怎么确认它真开着</b>；<b>「不是免费的」，代价具体有哪些</b>；<b>约束解码和投机解码能同时开吗</b>；<b>为什么分四层、不分成「模型＋外壳」两块</b>。<b>按需跳读</b>——每问都能从<a href="0008-who-does-what.html">初学版</a>正文的括号链接直达。</p>
+  <p class="subtitle">初学版讲「结构化输出能保证格式」。这篇答五个更细的问：<b>本地部署偶尔还是解析失败，是引擎没这功能吗</b>；<b>在哪配、怎么确认它真开着</b>；<b>「不是免费的」，代价具体有哪些</b>；<b>约束解码和投机解码能同时开吗</b>；<b>为什么分四层、不分成「模型＋外壳」两块</b>。<b>按需跳读</b>：每问都能从<a href="0008-who-does-what.html">初学版</a>正文的括号链接直达。</p>
 
   <div class="note">
     <span class="label">怎么用这篇</span>
     <p>只收<b>读完初学版仍会冒出来</b>的疑问；初学版讲过的（两类「废」、约束解码把废字划掉、拒答优先于格式）这里不重复。</p>
-    <p>五问之间不连着讲，<b>每问开头先给答案</b>——跳进任何一问都能读下去。</p>
+    <p>五问之间不连着讲，<b>每问开头先给答案</b>。跳进任何一问都能读下去。</p>
   </div>
 
   <h2 id="q1-not-guaranteed">Q1 · 本地部署时偶尔 JSON 解析失败，是引擎没有这个功能吗？</h2>
   <p>你在本地跑一个模型，让它输出 JSON 供工具解析，结果<b>偶尔</b>解析失败。<b>答案：不是引擎没有这个功能，是这个功能没打开。</b></p>
-  <p>约束解码是<b>请求级的开关</b>：请求里没带 schema 或「必须是 JSON」，引擎就当普通生成处理，一个字也不替你挡。它也不是"新版本才有"——这功能好几年了，XGrammar 那套后端 2024 年就有技术报告，现在是 vLLM、SGLang、TensorRT-LLM 结构化输出的默认后端。</p>
-  <p>那没开的时候，格式靠谁？<b>靠模型自己写。</b>写出合法 JSON 靠的是它训练里练出来的格式习惯（第 0 课讲过：语法、习惯都压在那些数字里）。<b>习惯不是保证</b>，所以偶尔崩完全正常——初学版演示一里，不加闸那组约三成是废的（玩具分表，量级别当真；能当真的是两头：不加闸会漏，加闸不漏）。</p>
-  <p>本地部署还常有第二层：<b>整条链路没人带这个开关</b>——客户端或框架发的是普通对话请求；工具调用的 JSON 也是模型自己写、你的代码去解析，解析器只负责"读"、不负责"防"。（学习者本地实测到的"偶尔解析失败"，就是这一层。）</p>
+  <p>约束解码是<b>请求级的开关</b>：请求里没带 schema 或「必须是 JSON」，引擎就当普通生成处理，一个字也不替你挡。它也不是"新版本才有"。这功能好几年了，XGrammar 那套后端 2024 年就有技术报告，现在是 vLLM、SGLang、TensorRT-LLM 结构化输出的默认后端。</p>
+  <p>那没开的时候，格式靠谁？<b>靠模型自己写。</b>写出合法 JSON 靠的是它训练里练出来的格式习惯（第 0 课讲过：语法、习惯都压在那些数字里）。<b>习惯不是保证</b>，所以偶尔崩完全正常：初学版演示一里，不加闸那组约三成是废的（玩具分表，量级别当真；能当真的是两头：不加闸会漏，加闸不漏）。</p>
+  <p>本地部署还常有第二层：<b>整条链路没人带这个开关</b>：客户端或框架发的是普通对话请求。工具调用的 JSON 也是模型自己写、你的代码去解析，解析器只负责"读"、不负责"防"。（学习者本地实测到的"偶尔解析失败"，就是这一层。）</p>
 
   <h2 id="q2-config">Q2 · 结构化输出的开关在哪？怎么确认它真开着？</h2>
-  <p><b>答案分两层：能力在引擎侧、常备；开不开在请求侧、默认关。</b>引擎装好就有约束解码的本事（vLLM 文档原话：结构化输出「默认就支持」），可「输出必须长什么样」只有调用方知道——所以开关只能由请求带进来：<b>请求里带了 schema（「必须长什么样」的说明书）或一个「必须是 JSON」，约束才开</b>。</p>
-  <p>「默认是关的」说的就是<b>请求侧的默认状态</b>：默认没有哪条请求带约束。引擎侧能配的是「怎么干活」，不是「这条请求要不要约束」——本地跑 vLLM，服务端可选「用哪个约束后端」（<code>vllm serve --structured-outputs-config.backend</code>，默认 <code>auto</code>）、思考模型里要不要也约束（<code>--structured-outputs-config.enable_in_reasoning=True</code>）；托管 API 那头连后端都不用你挑，你能动的就是请求里那块。各家参数名不一样，同一个引擎还会改名。</p>
+  <p><b>答案分两层：能力在引擎侧、常备；开不开在请求侧、默认关。</b>引擎装好就有约束解码的本事（vLLM 文档原话：结构化输出「默认就支持」），可「输出必须长什么样」只有调用方知道。所以开关只能由请求带进来：<b>请求里带了 schema（「必须长什么样」的说明书）或一个「必须是 JSON」，约束才开</b>。</p>
+  <p>「默认是关的」说的就是<b>请求侧的默认状态</b>：默认没有哪条请求带约束。引擎侧能配的是「怎么干活」，不是「这条请求要不要约束」。本地跑 vLLM，服务端可选「用哪个约束后端」（<code>vllm serve --structured-outputs-config.backend</code>，默认 <code>auto</code>）、思考模型里要不要也约束（<code>--structured-outputs-config.enable_in_reasoning=True</code>）。托管 API 那头连后端都不用你挑，你能动的就是请求里那块。各家参数名不一样，同一个引擎还会改名。</p>
   <p>两个场景各一个最小例子。<b>场景一：托管 API</b>（Anthropic 那边，那块配置叫 <code>output_config.format</code>）：</p>
   <pre><code>import anthropic
 client = anthropic.Anthropic()
@@ -50,7 +50,7 @@ response = client.messages.create(
 )
 print(response.content[0].text)                 # {"city": "北京"}——形状被钉住</code></pre>
   <p>拆开就三件事：<b>消息照旧发</b>；<b>说明书里只要一个 <code>city</code> 字段</b>；<b><code>output_config.format</code> 就是那个开关</b>。</p>
-  <p><b>场景二：自己部署的开源引擎</b>（vLLM，服务起在你自己的机器上）——同一件事、另一套拼写：</p>
+  <p><b>场景二：自己部署的开源引擎</b>（vLLM，服务起在你自己的机器上）：同一件事、另一套拼写：</p>
   <pre><code>from openai import OpenAI
 client = OpenAI(base_url="http://localhost:8000/v1", api_key="-")   # 你自己的 vLLM
 
@@ -70,8 +70,8 @@ response = client.chat.completions.create(
     },
 )
 print(response.choices[0].message.content)      # {"city": "北京"}</code></pre>
-  <p>vLLM 还有第二种拼写：把说明书塞进 <code>extra_body={"structured_outputs": {"json": …}}</code>（约束形态另有固定选项／正则／文法几种，背后跑的是 xgrammar 或 guidance）。⚠ <b>别照抄旧教程</b>：vLLM 旧的 <code>guided_json</code> 那一族参数在 v0.12.0 已经移除，新写法是 <code>structured_outputs</code>——拿旧写法跑新版本，可能"写了不生效"，甚至直接报错。<b>照当前版本的文档写。</b></p>
-  <p>还有个能让效果更好的做法：<b>在提示词里也把 schema 写清楚</b>——vLLM 官方说这样通常会明显变好。</p>
+  <p>vLLM 还有第二种拼写：把说明书塞进 <code>extra_body={"structured_outputs": {"json": …}}</code>（约束形态另有固定选项／正则／文法几种，背后跑的是 xgrammar 或 guidance）。⚠ <b>别照抄旧教程</b>：vLLM 旧的 <code>guided_json</code> 那一族参数在 v0.12.0 已经移除，新写法是 <code>structured_outputs</code>。拿旧写法跑新版本，可能"写了不生效"，甚至直接报错。<b>照当前版本的文档写。</b></p>
+  <p>还有个能让效果更好的做法：<b>在提示词里也把 schema 写清楚</b>：vLLM 官方说这样通常会明显变好。</p>
   <p><b>配完怎么知道它真开着？亲手造一个「不约束必翻车」的场景，看它翻不翻：</b></p>
   <ul>
     <li><b>盯字段</b>：把说明书定成必须有某个字段（比如 <code>city</code>），连发几十次，看是不是永远带着——漏一次就是没生效。</li>
@@ -81,26 +81,26 @@ print(response.choices[0].message.content)      # {"city": "北京"}</code></pre
 
   <h2 id="q3-cost">Q3 · 「这招不是免费的」——代价具体有哪些？</h2>
   <p><b>代价有三笔：第一次用要等编译、说明书改了要重编、说明书太复杂会被直接拒掉。</b></p>
-  <p>语法得先<b>「编译」成机器能跑的规则</b>：<b>同一份说明书第一次用会多花一点时间</b>；编译结果按 <b>24 小时</b>缓存（Anthropic 的口径，从最后一次用起算），<b>改了说明书就得重编</b>——还会让这一轮对话的缓存作废（同<a href="0003-kv-cache-and-prompt-caching-deep.html#q1-thinking">第 3 课进阶 Q1</a>；只改说明书的 <code>name</code>/<code>description</code> 不作废）。</p>
-  <p>第三笔：<b>说明书太复杂会被直接拒掉</b>——Anthropic 的说法是"编译不出来"，返回 <b>400</b>，另有 <b>180 秒</b>兜底超时。所以参数别一口气堆满：<b>可选参数越多、编译越贵</b>（Anthropic 文档原话是"指数级编译代价"），上限 <b>24 个可选参数</b>（严格工具调用上限 20 个），超了就吃那个 400。</p>
+  <p>语法得先<b>「编译」成机器能跑的规则</b>。<b>同一份说明书第一次用会多花一点时间</b>。编译结果按 <b>24 小时</b>缓存（Anthropic 的口径，从最后一次用起算）。<b>改了说明书就得重编</b>，还会让这一轮对话的缓存作废（同<a href="0003-kv-cache-and-prompt-caching-deep.html#q1-thinking">第 3 课进阶 Q1</a>；只改说明书的 <code>name</code>/<code>description</code> 不作废）。</p>
+  <p>第三笔：<b>说明书太复杂会被直接拒掉</b>：Anthropic 的说法是"编译不出来"，返回 <b>400</b>，另有 <b>180 秒</b>兜底超时。所以参数别一口气堆满：<b>可选参数越多、编译越贵</b>（Anthropic 文档原话是"指数级编译代价"），上限 <b>24 个可选参数</b>（严格工具调用上限 20 个），超了就吃那个 400。</p>
 
   <h2 id="q4-together">Q4 · 约束解码和投机解码能同时开吗？两个承诺矛盾吗？</h2>
-  <p><b>答案：不矛盾，能同时开。</b>两个承诺不在一个层面上：<b>约束解码改的是"抽样池"</b>——把非法字从候选里划掉，定义"合法答案是哪些"；<b>投机解码改的是"怎么抽"</b>——小模型打草稿只是<b>提案</b>，大模型验收时按定死的规则<b>拒收</b>不合格的（这一步叫<b>拒绝采样</b>）。草稿要是提议了非法字，验收那关过不去。</p>
-  <p>所以同时开的时候，"跟它一模一样的那个基线"是<b>开了约束的那个模型</b>：输出<b>既合法</b>（约束的承诺），<b>又跟不开草稿时一致</b>（投机的承诺）。vLLM 文档有两处佐证：「Lossless guarantees」一节明说它的拒绝采样器<b>跟目标分布一致</b>、贪心采样开不开草稿结果相等；「已知不兼容」清单里<b>没有结构化输出</b>（列的只有流水线并行和旧版本的 draft model 限制）。</p>
-  <p>边界照实说：所谓"无损"是<b>在硬件数值精度范围内</b>——浮点细微差异仍可能有，和初学版演示三同一个来源。</p>
+  <p><b>答案：不矛盾，能同时开。</b>两个承诺不在一个层面上：<b>约束解码改的是"抽样池"</b>：把非法字从候选里划掉，定义"合法答案是哪些"。<b>投机解码改的是"怎么抽"</b>，小模型打草稿只是<b>提案</b>，大模型验收时按定死的规则<b>拒收</b>不合格的（这一步叫<b>拒绝采样</b>）。草稿要是提议了非法字，验收那关过不去。</p>
+  <p>所以同时开的时候，"跟它一模一样的那个基线"是<b>开了约束的那个模型</b>：输出<b>既合法</b>（约束的承诺），<b>又跟不开草稿时一致</b>（投机的承诺）。vLLM 文档有两处佐证：「Lossless guarantees」一节明说它的拒绝采样器<b>跟目标分布一致</b>、贪心采样开不开草稿结果相等。「已知不兼容」清单里<b>没有结构化输出</b>（列的只有流水线并行和旧版本的 draft model 限制）。</p>
+  <p>边界照实说：所谓"无损"是<b>在硬件数值精度范围内</b>：浮点细微差异仍可能有，和初学版演示三同一个来源。</p>
 
   <h2 id="q5-two-blocks">Q5 · 为什么分四层，不分成「模型＋外壳」两块？</h2>
-  <p><b>答案：因为「外壳」这个词装不下网关和引擎。</b>它们都在服务端那头——出了事，既不是模型的锅，也不是你代码的锅，<b>两分法里根本没有它们的位置</b>。分四层，才能把「格式坏、限流、变慢、停在哪」逐个落到具体某一层、某一家。</p>
+  <p><b>答案：因为「外壳」这个词装不下网关和引擎。</b>它们都在服务端那头。出了事，既不是模型的锅，也不是你代码的锅，<b>两分法里根本没有它们的位置</b>。分四层，才能把「格式坏、限流、变慢、停在哪」逐个落到具体某一层、某一家。</p>
   <p>「Agent ＝ 模型 ＋ 外壳」把世界切成「模型」和「其余一切」两半（模型是发动机、周边程序是车壳），可「其余一切」里至少有三种命运完全不同的东西：</p>
   <ul>
-    <li><b>你的程序</b>——归你管，改代码行为就变；</li>
-    <li><b>API 网关</b>——服务商门口的「前台」，验身份、管配额、计费；</li>
-    <li><b>推理引擎</b>——服务商的「车间」，排队、挑字、划掉非法字都在这层。</li>
+    <li><b>你的程序</b>：归你管，改代码行为就变；</li>
+    <li><b>API 网关</b>：服务商门口的「前台」，验身份、管配额、计费；</li>
+    <li><b>推理引擎</b>：服务商的「车间」，排队、挑字、划掉非法字都在这层。</li>
   </ul>
   <p>排查问题时区别就来了。拿两件事对号：</p>
   <ul>
     <li><b>429 和 529 的修法相反</b>：429 是网关在管你的配额（撞到月度花费上限的那种，重试没有意义），529 是引擎忙不过来（等一会儿再试）。两分法下这两个都会被记进「模型/服务不行」的糊涂账。</li>
-    <li><b>「同一个模型换一家部署，同样的参数不保证挑出一模一样的字」</b>——换掉的正是引擎这一层：权重文件一个字节没动，动的是挑字的默认值、计算精度、执行顺序。两分法里这个变量无处安放，你会误以为「模型变了」。</li>
+    <li><b>「同一个模型换一家部署，同样的参数不保证挑出一模一样的字」</b>。换掉的正是引擎这一层：权重文件一个字节没动，动的是挑字的默认值、计算精度、执行顺序。两分法里这个变量无处安放，你会误以为「模型变了」。</li>
   </ul>
   <p>所以这四层是给排查用的地图，问法固定两步：<b>这个行为是哪一层干的 → 那层归谁管、谁能改</b>。「模型＋外壳」讲故事够用，修问题不够用。</p>
 
@@ -108,9 +108,9 @@ print(response.choices[0].message.content)      # {"city": "北京"}</code></pre
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 本地跑模型输出 JSON，偶尔解析失败，最可能的原因是？</p>
-    <button class="quiz-option">引擎版本太老，根本没有结构化输出这个功能</button>
-    <button class="quiz-option">模型参数太少，写 JSON 的能力还不够</button>
     <button class="quiz-option" data-correct="true">这个开关是请求级的，整条链路根本没人打开它</button>
+    <button class="quiz-option">模型参数太少，写 JSON 的能力还不够</button>
+    <button class="quiz-option">引擎版本太老，根本没有结构化输出这个功能</button>
     <button class="quiz-option">显存不够用，生成到一半掉了链子</button>
     <p class="feedback"
        data-ok="对。这是请求级的开关：没带 schema，引擎就当普通生成处理。"
@@ -119,10 +119,10 @@ print(response.choices[0].message.content)      # {"city": "北京"}</code></pre
 
   <div class="quiz">
     <p class="q"><span class="num">Q2</span> 想让输出稳定符合 schema，这份额外的配置应该加在哪里？</p>
-    <button class="quiz-option">写进提示词里，用更严格的措辞要求它</button>
-    <button class="quiz-option">放进权重里，换一个专门练过格式的模型</button>
-    <button class="quiz-option">装到服务器上，部署时给引擎传启动参数</button>
-    <button class="quiz-option" data-correct="true">加在请求里，带上 schema 或「必须是 JSON」的开关</button>
+    <button class="quiz-option">写进提示词里，用更严格的措辞反复要求它</button>
+    <button class="quiz-option" data-correct="true">加在请求里，带 schema 或 JSON 开关</button>
+    <button class="quiz-option">装到服务器上，部署时给引擎传一个启动参数</button>
+    <button class="quiz-option">放进权重里，换一个专门练过输出格式的模型</button>
     <p class="feedback"
        data-ok="对。「配置」就是请求里多带一样东西：一个 schema，或者一个「必须是 JSON」的开关。"
        data-no="开关在请求里，不在提示词、不在权重——服务端只有「用哪个后端」这类配置，没有替你约束的总开关。"></p>
@@ -130,10 +130,10 @@ print(response.choices[0].message.content)      # {"city": "北京"}</code></pre
 
   <div class="quiz">
     <p class="q"><span class="num">Q3</span> 怎么确认约束解码真的开着？</p>
-    <button class="quiz-option">看服务端日志里有没有出现 constrained 字样</button>
+    <button class="quiz-option">看服务端日志里有没有 constrained</button>
+    <button class="quiz-option">直接问模型「你现在是不是带着约束」</button>
     <button class="quiz-option" data-correct="true">亲手造一个「不约束必翻车」的场景，看它翻不翻</button>
-    <button class="quiz-option">直接问模型「你现在带着约束吗」</button>
-    <button class="quiz-option">连发两次，看两回的字数是不是一模一样</button>
+    <button class="quiz-option">连发两次，看两回的字数是不是完全相同</button>
     <p class="feedback"
        data-ok="对。约束的本事是「让错的路不存在」——造一个不堵必翻车的场景，看它还翻不翻。"
        data-no="日志、问模型、比字数都不作数；盯一个「不约束必翻车」的场景，漏一次就是没生效。"></p>
@@ -152,9 +152,9 @@ print(response.choices[0].message.content)      # {"city": "北京"}</code></pre
 
   <div class="quiz">
     <p class="q"><span class="num">Q5</span> 约束解码和投机解码同时开着，输出会怎样？</p>
-    <button class="quiz-option">会打架，这两个开关本来就不能同时开</button>
-    <button class="quiz-option">草稿那招自动关掉，只剩约束还在起作用</button>
     <button class="quiz-option" data-correct="true">又合法、又跟不开草稿时一模一样</button>
+    <button class="quiz-option">草稿那招自动关掉，只剩约束还在起作用</button>
+    <button class="quiz-option">会打架，这两个开关本来就不能同时开</button>
     <button class="quiz-option">约束那招自动关掉，非法字又会漏出来</button>
     <p class="feedback"
        data-ok="对。约束定义「合法答案是哪些」，草稿改「怎么抽」——验收那关会拒收非法草稿，两个承诺不打架。"
@@ -163,10 +163,10 @@ print(response.choices[0].message.content)      # {"city": "北京"}</code></pre
 
   <div class="quiz">
     <p class="q"><span class="num">Q6</span> 排查问题时，为什么「Agent ＝ 模型＋外壳」两分法不够用？</p>
-    <button class="quiz-option">因为外壳的代码量加起来比模型本身还大</button>
-    <button class="quiz-option">因为外壳一般不跟模型部署在同一台机器上</button>
-    <button class="quiz-option">因为模型有时候也会自己伸手去调工具</button>
+    <button class="quiz-option">因为外壳的代码量加起来比模型本身还要大</button>
     <button class="quiz-option" data-correct="true">因为网关和引擎都在服务端那头，两分法没它们的位置</button>
+    <button class="quiz-option">因为模型有时候也会自己伸手去调用工具</button>
+    <button class="quiz-option">因为外壳一般不和模型部署在同一台机器上</button>
     <p class="feedback"
        data-ok="对。出事的常常是网关和引擎——既不是模型的锅，也不是你代码的锅，两分法里没它们的位置。"
        data-no="跟代码量、部署位置都无关：网关和引擎这两层在两分法里无处安放，分层才找得到修法。"></p>

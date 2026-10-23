@@ -12,16 +12,16 @@
 
   <div class="lesson-meta" data-alias="里面到底在转什么">LLM 底层 · 第 2 课 · 进阶版</div>
   <h1>Prefill 与 Decode：里面到底在转什么</h1>
-  <p class="subtitle">初学版讲「是什么」，这篇答「<b>里面具体在转什么</b>」。<b>按需跳读</b>——多条都能从<a href="0002-prefill-vs-decode.html">初学版</a>的括号直达。</p>
+  <p class="subtitle">初学版讲「是什么」，这篇答「<b>里面具体在转什么</b>」。<b>按需跳读</b>：多条都能从<a href="0002-prefill-vs-decode.html">初学版</a>的括号直达。</p>
 
   <div class="note">
     <span class="label">怎么用这篇</span>
     <p>只收<b>读完初学版仍会冒出来</b>的疑问。初学版已经讲清楚的（"一段算力、一段带宽""货架越写越厚"），这里不再重复。</p>
-    <p><b>这篇的所有问题，都挂在下面这条链的某一环上</b>——先看链，再挑你卡的那一环。</p>
+    <p><b>这篇的所有问题，都挂在下面这条链的某一环上</b>。先看链，再挑你卡的那一环。</p>
   </div>
 
   <h2 id="chain">总图 · 一次请求从头到尾（下面每一问，都是某一环的展开）</h2>
-  <p>以你输入「你是谁」、模型回「我是…」为例。<b>这次请求分两段跑：先 prefill 一次，再 decode 反复。</b>下面两栏只写<b>该段独有</b>的步骤，两段共用的一圈放在最下面那个框里——<b>同一段文字不用抄两遍</b>。</p>
+  <p>以你输入「你是谁」、模型回「我是…」为例。<b>这次请求分两段跑：先 prefill 一次，再 decode 反复。</b>下面两栏只写<b>该段独有</b>的步骤，两段共用的一圈放在最下面那个框里。<b>同一段文字不用抄两遍</b>。</p>
 
   <div class="phases">
     <div class="phase">
@@ -60,7 +60,7 @@
     <p class="shared-h">两段共用的一圈 · 跑一次产出一个编号</p>
     <ol>
       <li><b>每个进来的位置，穿过全部几十层</b>——每层 4 步：<b>注意力 → 残差 → FFN → 残差</b>。
-        <span class="in">这一步的输入：<b>上面那一栏送进来的行</b>。出来的是<b>同样行数、每行都被改写过的新张量</b>——<b>宽度从头到尾是 d</b>。<b>全程只有 k、v 那两个张量是历史长度 T 行。</b></span>
+        <span class="in">这一步的输入：<b>上面那一栏送进来的行</b>。出来的是<b>同样行数、每行都被改写过的新张量</b>，<b>宽度从头到尾是 d</b>。<b>全程只有 k、v 那两个张量是历史长度 T 行。</b></span>
         <span class="note-line">↻ 每过一层，那一层的 k、v 就写进缓存（KV cache），后面的轮次直接取。</span>
         <span class="to">详见<br>
           <a href="#q3-parallel">Q3 · 为什么能并排过、不排队</a></span></li>
@@ -76,29 +76,29 @@
           <a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 Q10 · 为什么吐出来的是编号不是向量 · 采样怎么抽</a></span></li>
     </ol>
   </div>
-  <p class="handoff">↻ 上面两栏<b>都往下送</b>，送进这一圈；这一圈每跑完一次，<b>产出一个编号</b>——<b>prefill 跑的那一次，产出的就是 decode 的第一个输入</b>；之后每一圈产出的编号都<b>回到右边那一栏</b>，查表得到 1 根向量，再往下送回来跑下一圈，直到吐出结束符。</p>
+  <p class="handoff">↻ 上面两栏<b>都往下送</b>，送进这一圈；这一圈每跑完一次，<b>产出一个编号</b>。<b>prefill 跑的那一次，产出的就是 decode 的第一个输入</b>。之后每一圈产出的编号都<b>回到右边那一栏</b>，查表得到 1 根向量，再往下送回来跑下一圈，直到吐出结束符。</p>
 
   <h2 id="q1-overlap">Q1 · decode 一步里，「搬」和「算」是先搬完、再开算吗？</h2>
   <span id="q2-overlap"></span>
-  <p>decode 卡在"搬"这件事，很容易被读成"<b>先搬完，再开算</b>"——<b>不是的</b>：搬和算在同一个前向里<b>交替、流水线式</b>发生。</p>
+  <p>decode 卡在"搬"这件事，很容易被读成"<b>先搬完，再开算</b>"。<b>不是的</b>：搬和算在同一个前向里<b>交替、流水线式</b>发生。</p>
   <p>先看<b>一层之内</b>的顺序。假设正在生成第 <code>t</code> 个字，走进第 <code>l</code> 层：</p>
   <ol>
     <li><b>搬权重</b>：把这一层的 Q/K/V 投影矩阵、输出矩阵、FFN 权重，从显存读到芯片上；</li>
     <li><b>搬历史 K/V</b>：把第 <code>l</code> 层货架里<b>所有历史</b>的 K/V 读出来；</li>
-    <li><b>算这一步的 Q/K/V</b>：只用<b>当前这一个字</b>的向量（就是刚挑出来那个 token 重新查嵌入表得到的那根，<a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 Q10</a>——严格说还要加上位置编码，也就是"第几个字"，<b>它的位置＝已缓存的长度</b>；<a href="../../reference/glossary.html#positional-encoding">术语表</a>），算出它自己的 q、k、v；</li>
+    <li><b>算这一步的 Q/K/V</b>：只用<b>当前这一个字</b>的向量，算出它自己的 q、k、v。这根向量就是刚挑出来那个 token 重新查嵌入表得到的（<a href="0001-from-token-to-next-token-deep.html#q10-sampling">第 1 课进阶 Q10</a>）；严格说还要加上位置编码，也就是"第几个字"，<b>它的位置＝已缓存的长度</b>；<a href="../../reference/glossary.html#positional-encoding">术语表</a>），算出它自己的 q、k、v；</li>
     <li><b>写回</b>：把它刚算出的 k、v 追加到第 <code>l</code> 层货架的末尾；</li>
     <li><b>算注意力</b>：用当前 q 去比 k——<b>历史那批</b>（就是刚才搬进来的）＋ <b>自己刚算的那根</b>；</li>
     <li><b>算 FFN</b>；</li>
     <li>交给下一层，重复 1–6。</li>
   </ol>
-  <p><b>把这七步在几十层里重复几十遍，就是一圈前向。</b>一层之内是"搬这一层要用的 → 算这一层"，走出这层，下一层又是"搬 → 算"——<b>所以搬和算是一层一层交替的</b>，不存在"先把几十层的数据全搬完，再统一开算"。</p>
+  <p><b>把这七步在几十层里重复几十遍，就是一圈前向。</b>一层之内是"搬这一层要用的 → 算这一层"，走出这层，下一层又是"搬 → 算"。<b>所以搬和算是一层一层交替的</b>，不存在"先把几十层的数据全搬完，再统一开算"。</p>
   <p>GPU 还会尽量让它们<b>重叠</b>：算这一层的时候，下一层的数据已经在搬了。<span style="color:var(--muted)">（搬的量有多大、为什么说它"卡"，见 <a href="#q2-intensity">Q2</a>。）</span></p>
 
   <h2 id="q2-intensity">Q2 · 「算术强度」是什么？它衡量的是什么？</h2>
   <span id="q3-intensity"></span>
-  <p>"prefill 卡算力、decode 卡带宽"这句结论，是拿一把尺子量出来的——<b>算术强度（arithmetic intensity）</b>。</p>
-  <p><b>它是什么</b>：干了多少次运算 ÷ 搬了多少字节——<b>平均每搬 1 个字节，摊上多少次运算</b>。</p>
-  <p><b>它衡量的不是快慢，是"计算单元闲不闲"。</b>显卡身上有一个<b>同口径</b>的数可以跟它比：<b>算力 ÷ 带宽</b>——<b>每搬 1 个字节的时间里，显卡够做多少次运算</b>（上百到几百次），可以理解成<b>显卡自己的算术强度</b>。拿一个活儿的算术强度跟它比：<b>高过它</b>，要算的比能搬的多，时间花在算上——<b>卡算力</b>；<b>低过它</b>，要算的少、搬的时间占大头，<b>计算单元闲着等数据——卡带宽</b>。</p>
+  <p>"prefill 卡算力、decode 卡带宽"这句结论，是拿一把尺子量出来的：<b>算术强度（arithmetic intensity）</b>。</p>
+  <p><b>它是什么</b>：干了多少次运算 ÷ 搬了多少字节，<b>平均每搬 1 个字节，摊上多少次运算</b>。</p>
+  <p><b>它衡量的不是快慢，是"计算单元闲不闲"。</b>显卡身上有一个<b>同口径</b>的数可以跟它比：<b>算力 ÷ 带宽</b>：<b>每搬 1 个字节的时间里，显卡够做多少次运算</b>（上百到几百次），可以理解成<b>显卡自己的算术强度</b>。拿一个活儿的算术强度跟它比：<b>高过它</b>，要算的比能搬的多，时间花在算上，<b>卡算力</b>；<b>低过它</b>，要算的少、搬的时间占大头，<b>计算单元闲着等数据，卡带宽</b>。</p>
   <p>于是问题变成：<b>prefill 和 decode 各自的算术强度是多少？</b>先数 decode 这一圈要<b>搬</b>的几笔（<a href="#q1-overlap">Q1</a> 那七步里的第 1、2、4 步）：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
     <thead><tr>
@@ -118,7 +118,7 @@
           <td style="padding:0.55rem">只有这 1 个字的量，可以忽略</td></tr>
     </tbody>
   </table>
-  <p><b>搬的压力全在"读"，不在"写"。</b>再看<b>算</b>的那一头：decode 一步只算这 1 个 token 的乘加，prefill 一次算 <code>L</code> 个。于是<b>同一份权重搬一遍</b>，decode 摊上 <b>1</b> 份计算，prefill 摊上 <b>L</b> 份——两段的算术强度就是 <b>decode ≈ 1</b>、<b>prefill ≈ <code>L</code></b>。具体怎么估出来的：</p>
+  <p><b>搬的压力全在"读"，不在"写"。</b>再看<b>算</b>的那一头：decode 一步只算这 1 个 token 的乘加，prefill 一次算 <code>L</code> 个。于是<b>同一份权重搬一遍</b>，decode 摊上 <b>1</b> 份计算，prefill 摊上 <b>L</b> 份，两段的算术强度就是 <b>decode ≈ 1</b>、<b>prefill ≈ <code>L</code></b>。具体怎么估出来的：</p>
   <details class="formula">
     <summary>看算式（可跳过）——1 和 L 是怎么估出来的</summary>
     <p>设 <code>d</code> 是向量长度、<code>L</code> 是一次处理多少个 token：</p>
@@ -140,26 +140,26 @@
             <td style="padding:0.5rem"><b><code>1</code></b></td></tr>
       </tbody>
     </table>
-    <p>关键在<b>权重那份是共享的</b>。DistServe 论文（附录 A.2/A.3）把这一步写成四个<b>矩阵乘法（GEMM）</b>，形状是这样的：<code>M=(t,h)</code>、<code>N=(h,·)</code>（t 就是这一趟有几个 token，h 是向量长度）。<b>权重 N 那一半不随 t 变</b>——不管 t 是 2 万还是 1，权重都是同一张、都要整张读一遍；变的是 M 那一半，它就是喂进来的行数。</p>
+    <p>关键在<b>权重那份是共享的</b>。DistServe 论文（附录 A.2/A.3）把这一步写成四个<b>矩阵乘法（GEMM）</b>，形状是这样的：<code>M=(t,h)</code>、<code>N=(h,·)</code>（t 就是这一趟有几个 token，h 是向量长度）。<b>权重 N 那一半不随 t 变</b>。不管 t 是 2 万还是 1，权重都是同一张、都要整张读一遍；变的是 M 那一半，它就是喂进来的行数。</p>
     <p>论文给这两个阶段的<b>算术强度</b>（AI ＝ 运算次数 ÷ 搬运字节数）就是 <code>O(t)</code> 对 <code>O(B)</code>（B 是 batch size）：<b>prefill 的 AI 随 token 数线性涨</b>，t 到几百时在 A100 上超过 156 的阈值，<b>确定是算力受限</b>；<b>decode 把 t 换成 B</b>（只服务一个请求时就是 1），<b>AI 掉回常数级</b>，论文原话是"这四个运算全是 memory-bound"。</p>
-    <p>论文给的延迟公式里能直接看到这件事——<code>T_prefill = C₁(4th²+2thm) + C₂·3ht²/b</code>，<code>T_decode = C₄(4h²+2hm) + C₅·3ht</code>：<b>权重那半截（4h²+2hm）两边一模一样</b>，差的全在后面那几项——2 万行要算 2 万行那么多乘法，1 行就只算 1 行。<b>搬的量级是同一量级，算的量差 2 万倍。</b>这就是基础课那句"卡的不是算，是搬"的公式依据。</p>
+    <p>论文给的延迟公式里能直接看到这件事——<code>T_prefill = C₁(4th²+2thm) + C₂·3ht²/b</code>，<code>T_decode = C₄(4h²+2hm) + C₅·3ht</code>：<b>权重那半截（4h²+2hm）两边一模一样</b>，差的全在后面那几项：2 万行要算 2 万行那么多乘法，1 行就只算 1 行。<b>搬的量级是同一量级，算的量差 2 万倍。</b>这就是基础课那句"卡的不是算，是搬"的公式依据。</p>
     <p style="color:var(--muted)">（上面只算了<b>矩阵乘</b>那一笔。prefill 还有第二笔：注意力那张 n×n 的"比较表"，输入越长越占优——它怎么一次算出来、掩码又白算了哪一半，见 <a href="#q3-parallel">Q3</a> 的公式块。）</p>
   </details>
-  <p><b>所以：</b>prefill 的强度随行数涨，几百行就<b>高过显卡的算术强度</b>——<b>卡算力</b>；decode 的强度掉在常数级，<b>比显卡的算术强度低了一个数量级上下</b>——搬的时间占大头，<b>计算单元大部分时间闲着等数据，这就是"卡在带宽"的意思</b>。</p>
-  <p>decode 的算术强度是 1——这是<b>一次只服务一个请求</b>的理想下限。实际跑起来，<b>一块显卡同时服务很多个请求</b>：同一份权重搬一遍、摊给它们一起算，强度就抬上去了；再<b>加上各种实际损耗</b>一起平均，Weka 实测 decode 的算术强度一般是 <b>60–80</b>。不过<b>显卡的算术强度是上百到几百</b>，<b>照样差着一个数量级上下</b>：结论不变，计算单元还是闲着等数据。</p>
+  <p><b>所以：</b>prefill 的强度随行数涨，几百行就<b>高过显卡的算术强度</b>，<b>卡算力</b>；decode 的强度掉在常数级，<b>比显卡的算术强度低了一个数量级上下</b>，搬的时间占大头，<b>计算单元大部分时间闲着等数据，这就是"卡在带宽"的意思</b>。</p>
+  <p>decode 的算术强度是 1：这是<b>一次只服务一个请求</b>的理想下限。实际跑起来，<b>一块显卡同时服务很多个请求</b>：同一份权重搬一遍、摊给它们一起算，强度就抬上去了；再<b>加上各种实际损耗</b>一起平均，Weka 实测 decode 的算术强度一般是 <b>60–80</b>。不过<b>显卡的算术强度是上百到几百</b>，<b>照样差着一个数量级上下</b>：结论不变，计算单元还是闲着等数据。</p>
 
   <h2 id="q3-parallel">Q3 · prefill 那一整批字，为什么可以一次算完、不用排队？</h2>
   <span id="q5-parallel"></span>
   <span id="q6-parallel"></span>
   <span id="q8-parallel"></span>
   <span id="q7-output"></span>
-  <p>先摆出那个矛盾：<b>注意力是"后面的字要看前面的字"</b>——那看着就该排队算：第 1 个字算完，第 2 个字才有东西可看，一个接一个。<b>可 prefill 是整批 n 个字一次算完的。</b>为什么不矛盾？因为——</p>
+  <p>先摆出那个矛盾：<b>注意力是"后面的字要看前面的字"</b>——那看着就该排队算：第 1 个字算完，第 2 个字才有东西可看，一个接一个。<b>可 prefill 是整批 n 个字一次算完的。</b>为什么不矛盾？因为：</p>
   <div class="goal" style="background:#fff;border-color:var(--ink)">
     <p><b>注意力这一步其实是两步，不是一步。</b><br><br>
        <b>第一步</b>：把整张表一次性投影出<b>每个位置的 q、k、v</b>（三个大矩阵乘）。<br>
        <b>第二步</b>：拿各自的 q 去比 k、按比重取 v——<b>算出每个位置各自的注意力</b>。</p>
   </div>
-  <p>排队的错觉来自把这两步当成了<b>一步</b>：以为"第 i 个字得边算边看前面"。其实<b>第一步已经把全部位置的 k、v 一次性备齐了</b>，轮到第二步时，各查各的，<b>互不等待</b>——<b>"看前面"不等于"等前面"</b>。</p>
+  <p>排队的错觉来自把这两步当成了<b>一步</b>：以为"第 i 个字得边算边看前面"。其实<b>第一步已经把全部位置的 k、v 一次性备齐了</b>，轮到第二步时，各查各的，<b>互不等待</b>。<b>"看前面"不等于"等前面"</b>。</p>
   <p>把两步的依赖摊开看：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
     <thead><tr>
@@ -179,13 +179,13 @@
           <td style="padding:0.55rem">挑完之后，<b>才知道下一轮该算哪一行</b></td></tr>
     </tbody>
   </table>
-  <p>所以 <b>①② 都不构成"排队"</b>——它们全是"大矩阵乘"。<b>真正串行的只有"挑出下一个 token"</b>那一步：下一个字还没被挑出来，就没法开始算它。第 2 轮起"只补 1 个字"，就是这个原因，<b>不是"只能一个一个算"</b>。</p>
+  <p>所以 <b>①② 都不构成"排队"</b>：它们全是"大矩阵乘"。<b>真正串行的只有"挑出下一个 token"</b>那一步：下一个字还没被挑出来，就没法开始算它。第 2 轮起"只补 1 个字"，就是这个原因，<b>不是"只能一个一个算"</b>。</p>
   <details class="formula">
     <summary>看公式（可跳过）——为什么第一步能一次算完</summary>
     <p>第一步就是三次矩阵乘，<code>X</code> 是那张 n 行 × d 列的表，<code>W</code> 是学出来的权重：</p>
     <pre><code>Q = X · W_Q        K = X · W_K        V = X · W_V
 （n × d）乘（d × d）得到（n × d）——n 行同时算完</code></pre>
-    <p>每输出行只依赖<b>自己的输入行</b>加<b>共用的权重</b>，不依赖别的输出行——这就是"能并行"的全部原因。像 Excel 公式往下拉。</p>
+    <p>每输出行只依赖<b>自己的输入行</b>加<b>共用的权重</b>，不依赖别的输出行，这就是"能并行"的全部原因。像 Excel 公式往下拉。</p>
   </details>
   <details class="formula">
     <summary>看公式（可跳过）——第二步那张 n×n 的"比较表"，怎么一次算出来</summary>
@@ -193,17 +193,17 @@
     <pre><code>S = Q · Kᵀ / √d_k        ← n×n，每一格 = "第 i 行的 q 跟第 j 行的 k 有多像"
 O = softmax(S) · V         ← 按每一行的权重，把 V 加权取回来</code></pre>
     <p><b>为什么能一次算完</b>：第 (i, j) 那一格只吃一个 q<sub>i</sub> 和一个 k<sub>j</sub>，两样都是现成的 → <b>每格互不依赖，整张表一次填满</b>。</p>
-    <p><b>顺带解释了一件事</b>：因果掩码是在<b>整张 n×n 表算完之后</b>才把"不该看"的那半遮掉的——位置 1 跟位置 3 的相似度<b>白算了，然后扔掉</b>。所以即使有掩码，prefill 干的活仍是完整的 n² 那一份，<b>掩码不影响"算了多少"，只影响"哪些分作废"</b>。</p>
+    <p><b>顺带解释了一件事</b>：因果掩码是在<b>整张 n×n 表算完之后</b>才把"不该看"的那半遮掉的：位置 1 跟位置 3 的相似度<b>白算了，然后扔掉</b>。所以即使有掩码，prefill 干的活仍是完整的 n² 那一份，<b>掩码不影响"算了多少"，只影响"哪些分作废"</b>。</p>
   </details>
 
   <h2>检查一下你懂了没</h2>
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> decode 一步里，「搬」和「算」是怎么排的？</p>
-    <button class="quiz-option" data-correct="true">每一层都是"先搬这一层要用的、再算这一层"，层层交替</button>
-    <button class="quiz-option">先把几十层的数据全搬完，再统一开算</button>
-    <button class="quiz-option">搬和算全程完全重叠，互不等待</button>
-    <button class="quiz-option">这一层算完了，才开始搬下一层</button>
+    <button class="quiz-option" data-correct="true">每一层都是先搬这一层要用的，再算这一层</button>
+    <button class="quiz-option">先把几十层的数据全部搬完，再统一开算</button>
+    <button class="quiz-option">搬和算全程完全重叠，谁也不用等谁</button>
+    <button class="quiz-option">这一层算完了，才开始搬下一层的数据</button>
     <p class="feedback"
        data-ok="对。交替发生在层与层之间；GPU 还会让「算这一层」和「搬下一层」尽量重叠。"
        data-no="七步是「一层之内」的顺序，走出这层、下一层又是「搬 → 算」——不是先搬完全部再算。"></p>
@@ -211,8 +211,8 @@ O = softmax(S) · V         ← 按每一行的权重，把 V 加权取回来</c
 
   <div class="quiz">
     <p class="q"><span class="num">Q2</span> decode 每步的显存带宽压力，主要来自哪一半？</p>
-    <button class="quiz-option" data-correct="true">读：权重和历史 K/V 都要读</button>
     <button class="quiz-option">写：每步写进去的新 K/V 太多</button>
+    <button class="quiz-option" data-correct="true">读：权重和历史 K/V 都要读</button>
     <button class="quiz-option">读写各占一半，完全一样多</button>
     <button class="quiz-option">都不来自显存，而是来自网络</button>
     <p class="feedback"

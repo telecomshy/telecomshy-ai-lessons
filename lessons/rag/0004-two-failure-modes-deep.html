@@ -106,10 +106,10 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 为什么 RAG 必须把检索和生成分开评？</p>
-    <button class="quiz-option" data-correct="true">混在一起只能知道坏了，不知道哪坏了</button>
+    <button class="quiz-option">因为分开评可以让总成本降下来</button>
     <button class="quiz-option">因为两个阶段用的是不同模型</button>
     <button class="quiz-option">因为检索这一段的运行速度更慢</button>
-    <button class="quiz-option">因为分开评可以让总成本降下来</button>
+    <button class="quiz-option" data-correct="true">混在一起只能知道坏了，不知道哪坏了</button>
     <p class="feedback"
        data-ok="对。分开评的意义是归因——它直接对应那两类翻车。"
        data-no="跟模型、速度、成本无关，关键是「能定位病灶」。"></p>
@@ -128,8 +128,8 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q3</span> Faithfulness（忠实度）低，具体是什么意思？</p>
-    <button class="quiz-option" data-correct="true">答案里的断言在资料里找不到依据</button>
     <button class="quiz-option">答案写得太长，用户读不完</button>
+    <button class="quiz-option" data-correct="true">答案里的断言在资料里找不到依据</button>
     <button class="quiz-option">检索到的资料数量不够用</button>
     <button class="quiz-option">回答的语气不够专业得体</button>
     <p class="feedback"

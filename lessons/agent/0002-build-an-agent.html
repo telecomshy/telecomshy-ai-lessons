@@ -12,7 +12,6 @@
 
   <div class="lesson-meta">Agent 篇 · 第 2 课 · 实操</div>
   <h1>手写一个 agent</h1>
-  <p class="subtitle">从装包、配 key 开始，用真模型跑通「推理 → 行动 → 观察」。全部核心代码就是一个循环。</p>
 
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
@@ -283,10 +282,10 @@ python -m venv .venv
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> <code>--check</code> 报 401，第一步先查什么？</p>
-    <button class="quiz-option">模型名是不是写错了</button>
+    <button class="quiz-option">模型名是不是写错，或根本不存在</button>
     <button class="quiz-option" data-correct="true">.env 里的 key 有没有引号或空格</button>
-    <button class="quiz-option">网络是不是需要走代理</button>
-    <button class="quiz-option">余额是不是不够了</button>
+    <button class="quiz-option">网络是不是不通，必须先挂上代理</button>
+    <button class="quiz-option">账户余额是不是不够，或者已经欠费</button>
     <p class="feedback"
        data-ok="对。401 是认证失败，先盯 key 本身：多一个空格、多一对引号都会错。"
        data-no="401 是「你是谁」这一步没过——先查 key 的写法，余额是 402，网络是连不上。"></p>
@@ -294,10 +293,10 @@ python -m venv .venv
 
   <div class="quiz">
     <p class="q"><span class="num">Q2</span> 循环里把"结果塞回 messages"那一步整个漏掉，会发生什么？</p>
-    <button class="quiz-option">程序会直接报错退出</button>
-    <button class="quiz-option" data-correct="true">模型看不到刚才的结果，下一步不知道还差什么</button>
-    <button class="quiz-option">工具会被重复调用一次</button>
-    <button class="quiz-option">上下文窗口会变小</button>
+    <button class="quiz-option">程序会直接报错，循环根本起不来</button>
+    <button class="quiz-option">工具会被重复调用，直到步数耗尽</button>
+    <button class="quiz-option" data-correct="true">模型看不到工具结果，下一步不知道还差什么</button>
+    <button class="quiz-option">上下文窗口会越用越小，最后溢出</button>
     <p class="feedback"
        data-ok="对。观察断了，循环就断了——messages 是 agent 的全部状态。"
        data-no="不会报错，但模型等于什么都没看见：调完工具它仍不知道拿到了什么。"></p>
@@ -305,10 +304,10 @@ python -m venv .venv
 
   <div class="quiz">
     <p class="q"><span class="num">Q3</span> 模型一步返回了两条 <code>tool_calls</code>，代码应该怎么处理？</p>
-    <button class="quiz-option">只执行第一条，剩下的丢掉</button>
-    <button class="quiz-option" data-correct="true">两条都执行，各回一条带自己 id 的 tool 消息</button>
-    <button class="quiz-option">把两条合成一条，只回一个结果</button>
-    <button class="quiz-option">重新发一次请求，要求它只给一条</button>
+    <button class="quiz-option">只执行第一条，第二条直接丢掉不管</button>
+    <button class="quiz-option">重新发一次请求，要求它一次只给一条</button>
+    <button class="quiz-option">把两条合成一条，只回一个合并结果</button>
+    <button class="quiz-option" data-correct="true">两条都执行，各回一条带自己 id 的结果</button>
     <p class="feedback"
        data-ok="对。模型要几个就执行几个，每个 tool_call_id 都要有对应的结果，否则 400。"
        data-no="少回任何一条，接口都会报 insufficient tool messages——这一课第一版就是这么撞的。"></p>
@@ -316,10 +315,10 @@ python -m venv .venv
 
   <div class="quiz">
     <p class="q"><span class="num">Q4</span> 跑完发现 <code>&gt;&gt; hit_max_steps</code>，下一步先做什么？</p>
-    <button class="quiz-option">把 max_steps 调大十倍再跑</button>
-    <button class="quiz-option">换个更贵的模型重跑</button>
-    <button class="quiz-option" data-correct="true">看 trace：它卡在哪一步、反复在调什么</button>
-    <button class="quiz-option">把工具全删掉试试</button>
+    <button class="quiz-option" data-correct="true">看 trace：卡在哪一步、反复在调什么</button>
+    <button class="quiz-option">换个更贵的模型，原样再跑一遍看结果</button>
+    <button class="quiz-option">把 max_steps 调大十倍，再跑一次</button>
+    <button class="quiz-option">把工具全部删掉，然后再从头跑一次</button>
     <p class="feedback"
        data-ok="对。trace 是 agent 的体检报告：先看它卡在哪，再决定动护栏还是动提示词。"
        data-no="盲目调大步数只是让烧钱烧得更久——先看 trace。"></p>
@@ -327,10 +326,10 @@ python -m venv .venv
 
   <div class="quiz">
     <p class="q"><span class="num">Q5</span> 为什么 key 要放在 <code>.env</code>，而不是直接写进脚本？</p>
-    <button class="quiz-option">放在文件里读得更快</button>
-    <button class="quiz-option">写进脚本接口就不认了</button>
+    <button class="quiz-option">放在单独的文件里，读起来会更快一点</button>
     <button class="quiz-option" data-correct="true">代码可以分享、提交，key 不会跟着泄露</button>
-    <button class="quiz-option">.env 里的 key 不会被计费</button>
+    <button class="quiz-option">写进脚本，接口就会不认这个 key</button>
+    <button class="quiz-option">.env 里的 key 不会被计费，能省钱</button>
     <p class="feedback"
        data-ok="对。key 是密码也是钱：源码进 git、发给别人时，.env 留在本机。"
        data-no="读取速度和计费都跟放哪无关；区别只有一个——key 会不会跟着代码泄露。"></p>
@@ -349,7 +348,7 @@ python -m venv .venv
 
   <p class="next">
     <b>前置</b>：<a href="0001-what-is-an-agent.html">Agent 篇 · 第 1 课 · Agent 是什么：循环、工具、记忆</a>（这课的每个零件都是那课讲过的）<br>
-    <b>顺着往下</b>：<a href="0003-mcp-and-skills.html">Agent 篇 · 第 3 课 · MCP 与 Skill</a>（工具的新形状）→ <a href="0004-skill-and-mcp-lab.html">第 4 课 · 写一个 skill、接一个 MCP</a>（继续动手）<br>
+    <b>顺着往下</b>：<a href="0003-mcp-and-skills.html">Agent 篇 · 第 3 课 · MCP 与 Skill</a>（工具的新形状）→ <a href="0004-multi-agent-and-safety.html">第 4 课 · 多 agent 与安全</a>（分工与边界）<br>
     <b>LLM 底层</b>：<a href="../llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache 与「缓存命中」</a>（工具清单正是"稳定前缀"，吃缓存）<br>
     术语表：<a href="../../reference/glossary.html#loop">Agent 循环</a> · <a href="../../reference/glossary.html#tool">工具</a> · <a href="../../reference/glossary.html#observation">观察</a> · <a href="../../reference/glossary.html#guardrail">护栏</a> · <a href="../../reference/glossary.html#trace">轨迹</a>
   </p>

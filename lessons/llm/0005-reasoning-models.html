@@ -12,25 +12,24 @@
 
   <div class="lesson-meta">LLM 底层 · 第 5 课 · 初学版</div>
   <h1>它真的在思考吗？</h1>
-  <p class="subtitle">难题丢给模型，它不秒回了——先沉默十几秒，屏幕上滚出一大段「思考」。<b>这段文字是它真的在想，还是演给你看？</b></p>
 
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
-    <p>你大概遇到过这种事：一个挺难的问题丢给模型，它<b>不秒回了</b>——先沉默十几秒，屏幕上滚出一大段「思考」，然后给出一个明显更稳的答案。</p>
+    <p>你大概遇到过这种事：一个挺难的问题丢给模型，它<b>不秒回了</b>，先沉默十几秒，屏幕上滚出一大段「思考」，然后给出一个明显更稳的答案。</p>
     <p>盯着那段滚动的文字，你多半冒过这个问题：<b>它真的在思考吗？还是演给我看的？</b></p>
-    <p style="margin-top:0.7rem">先拆穿它，一句话：<b>它确实在干一件真事——先打草稿，再交卷。</b>那段文字是一个字一个字写出来的，写的过程里它真的会试错、回头改、换办法。<b>但它不是像人那样在「想」</b>——那份草稿里没有它的全部想法，草稿本身也会有错。</p>
-    <p><b>学完这课，你能</b>：说清那段「思考」到底是什么、它凭什么让答案更准；并且知道这一步<b>值不值</b>——它按字收钱，有四笔账要一起算。</p>
+    <p style="margin-top:0.7rem">先拆穿它，一句话：<b>它确实在干一件真事：先打草稿，再交卷。</b>那段文字是一个字一个字写出来的，写的过程里它真的会试错、回头改、换办法。<b>但它不是像人那样在「想」</b>。那份草稿里没有它的全部想法，草稿本身也会有错。</p>
+    <p><b>学完这课，你能</b>：说清那段「思考」到底是什么、它凭什么让答案更准；并且知道这一步<b>值不值</b>：它按字收钱，有四笔账要一起算。</p>
   </div>
 
   <div class="note">
     <span class="label">记住一条主线，后面就不会晕</span>
-    <p><b>那段「思考」是一份真的草稿：一个字一个字写出来，真的在试错。</b>它不是旁白，是在干活——所以它能换来更准的答案。</p>
+    <p><b>那段「思考」是一份真的草稿：一个字一个字写出来，真的在试错。</b>它不是旁白，是在干活。所以它能换来更准的答案。</p>
     <p>也因为它是一段<b>真的字</b>，它跟答案一样收钱、一样占地方：<b>更慢、更贵、更占上下文</b>（上下文＝模型这一眼能看见的全部内容），<b>连你的代码都得跟着改。</b>要不要开它，是个工程决策，不是能力开关。</p>
   </div>
 
   <h2>1. 那段沉默里，它到底在做什么</h2>
-  <p>先接上<a href="0001-from-token-to-next-token.html">第 1 课</a>：模型回答你的时候，是<b>一个字一个字往外蹦</b>的，而且边写边交——<b>写出去的字收不回来</b>。</p>
-  <p>不开思考的时候，它面对的是这样一个处境。Anthropic 文档的原话是：一次成稿的模型必须一遍就全对——<b>no scratch work, no checking, no changing course halfway through</b>——<b>没有草稿、没有检查、没有中途改道</b>。答错了就是答错了。</p>
+  <p>先接上<a href="0001-from-token-to-next-token.html">第 1 课</a>：模型回答你的时候，是<b>一个字一个字往外蹦</b>的，而且边写边交。<b>写出去的字收不回来</b>。</p>
+  <p>不开思考的时候，它面对的是这样一个处境。Anthropic 文档的原话是：一次成稿的模型必须一遍就全对（<b>no scratch work, no checking, no changing course halfway through</b>）——<b>没有草稿、没有检查、没有中途改道</b>。答错了就是答错了。</p>
   <p>而思考打开之后，它会<b>先把答案「试」出来再交卷</b>。文档列的就是这四件事：</p>
   <ul>
     <li><b>用自己的话把问题复述一遍</b>；</li>
@@ -38,28 +37,28 @@
     <li><b>检查中间结果</b>；</li>
     <li><b>发现某条路站不住，就放弃它</b>。</li>
   </ul>
-  <p>那这段草稿<b>什么时候开始、什么时候结束</b>？没有专门的开关：问题一进来它就先写草稿，那是练出来的习惯；写到它自己觉得想完了，就转去写答案——<b>跟第 1 课「抽到一个结束记号，整条回复就停」是同一类事</b>，只是这次结束的不是整条回复，而是草稿这一段。那个「想完了」的记号<b>就是模型自己写出来的一个字</b>——开源模型里看得见它（比如一对 <code>&lt;think&gt;</code> 标签）。<span style="color:var(--muted)">（<a href="0005-reasoning-models-deep.html#q2-cut">边界为什么必须是模型自己写？</a>）</span></p>
-  <p>草稿、试错、回头改——这正是人写东西时真会做的动作。所以你会觉得「这像人思考」，<b>这个感觉不算错</b>。但它到底算不算「真的在思考」，得把答案拆成两半看，下一节就说。</p>
+  <p>那这段草稿<b>什么时候开始、什么时候结束</b>？没有专门的开关：问题一进来它就先写草稿，那是练出来的习惯；写到它自己觉得想完了，就转去写答案。<b>这跟第 1 课「抽到一个结束记号，整条回复就停」是同一类事</b>，只是这次结束的不是整条回复，而是草稿这一段。那个「想完了」的记号<b>就是模型自己写出来的一个字</b>，开源模型里看得见它（比如一对 <code>&lt;think&gt;</code> 标签）。<span style="color:var(--muted)">（<a href="0005-reasoning-models-deep.html#q2-cut">边界为什么必须是模型自己写？</a>）</span></p>
+  <p>草稿、试错、回头改，这正是人写东西时真会做的动作。所以你会觉得「这像人思考」，<b>这个感觉不算错</b>。但它到底算不算「真的在思考」，得把答案拆成两半看，下一节就说。</p>
 
   <h2>2. 这算「真的在思考」吗？答案分两半</h2>
-  <p><b>一半是「像」，而且像得有分量。</b>那段草稿是<b>真的字</b>（token，就是模型往外蹦的那些字）一个一个写出来的，不是程序配的旁白；写的过程里它<b>真的在试错</b>——试办法、查中间结果、放弃走不通的路；而且这一步<b>真的换来更准的答案</b>（凭什么，下一节讲）。</p>
+  <p><b>一半是「像」，而且像得有分量。</b>那段草稿是<b>真的字</b>（token，就是模型往外蹦的那些字）一个一个写出来的，不是程序配的旁白。写的过程里它<b>真的在试错</b>：试办法、查中间结果、放弃走不通的路。而且这一步<b>真的换来更准的答案</b>（凭什么，下一节讲）。</p>
   <p><b>另一半是「不像」。</b>而且下面三条不是我泼冷水，都是厂商自己写下的：</p>
   <ul>
     <li><b>读那段思考，判断不了它在干什么。</b>原文说，模型「very often make decisions based on factors that they <b>don't explicitly discuss</b> in their thinking process」——常常按它<b>没有在思考里说出来</b>的因素做决定。所以那段文字<b>不是它的「内心独白」</b>，别拿它当审讯记录来读。</li>
-    <li><b>你看到的那段，未必是草稿本身——这要看厂商。</b>开源模型（DeepSeek-R、Qwen3 这类）给的是<b>原文</b>；闭源 API（Anthropic、OpenAI）给你的常常是<b>摘要</b>，甚至一个字都不给。Anthropic 的原话是「任何设置都拿不到原始思考」（「what you see is never the raw chain of thought」）。<span style="color:var(--muted)">（摘要到底是谁写的，是个厂商问题：<a href="0005-reasoning-models-deep.html#q1-who">三家对照见进阶 Q1</a>。）</span></li>
+    <li><b>你看到的那段，未必是草稿本身，这要看厂商。</b>开源模型（DeepSeek-R、Qwen3 这类）给的是<b>原文</b>；闭源 API（Anthropic、OpenAI）给你的常常是<b>摘要</b>，甚至一个字都不给。Anthropic 的原话是「任何设置都拿不到原始思考」（「what you see is never the raw chain of thought」）。<span style="color:var(--muted)">（摘要到底是谁写的，是个厂商问题：<a href="0005-reasoning-models-deep.html#q1-who">三家对照见进阶 Q1</a>。）</span></li>
     <li><b>那段里也有错的。</b>原文说它「sometimes finds itself thinking some incorrect, misleading, or half-baked thoughts along the way」——一路上会想出一些不正确、有误导、半成品的念头。<b>结果对，不代表过程每一句都对。</b></li>
   </ul>
   <p>把两半合起来，就是标题那个问题的答案：<b>它学会了「打草稿」这道工序，没学会像人一样思考。</b>草稿是真的、也有用；但<b>草稿不是它的想法</b>。</p>
 
   <h2>3. 那这份草稿，凭什么让它更准</h2>
-  <p>一句话：<b>这道工序是练出来的。</b>模型的本事本来就是练出来的（<a href="0000-how-models-learn.html">第 0 课</a>），打草稿也不例外。</p>
-  <p>早先的练法是：<b>人先写出一段标准的思考过程</b>（「这道题先这么算、再那么算」），让模型照着学。<b>代价是要人标注</b>——每道题都得有人写一遍。</p>
-  <p>后来换了个练法，也是现在主流的练法：<b>只给结果打分，不给过程打分。</b>题目的答案机器自己就能查——答案对不对、代码跑不跑得过、测试过不过。<a href="https://arxiv.org/abs/2501.12948">DeepSeek-R1 那篇论文</a>的原话是：这样「<b>obviating the need for human-labeled reasoning trajectories</b>」（连人标注的思考过程都不需要了）。</p>
-  <p>神奇的地方在这儿：<b>只看结果练，它自己长出了打草稿的招式</b>——<b>招式是自己长出来的，写成什么格式是人定的</b>（<a href="0005-reasoning-models-deep.html#q5-train">练出来的到底是什么？</a>）。R1 论文列了三类自己冒出来的动作：<b>自我检查 · 自我验证 · 动态换策略</b>。你在屏幕上看到的那些「等一下我再想想」「不对，重来」「换个办法」，就是它们。</p>
-  <p>还有一条路，知道有就行：也有<b>给每一步打分</b>的做法。<a href="https://arxiv.org/abs/2305.20050">一篇对照实验的结论</a>是——在数学题上，<b>逐步打分明显好于只看最终结果</b>，那样的模型能解出测试子集的 <b>78%</b>。<b>但代价是又回到「要人标注」</b>。所以工业界选了省钱的那条。<b>两条路都真实存在，别把它们混成一条。</b></p>
+  <p>一句话：<b>这道工序是练出来的。</b>模型的本事本来就是练出来的（<a href="0000-how-models-learn.html">第 0 课</a>），打草稿也不例外。<b>它属于后训练</b>：预训练先练「接着往下写」，把语言和知识的底子练出来；后训练是底子练好之后的追加动作（行话叫 <b>post-training</b>），打草稿这类「听你的话、动手干活」都算它。后训练到底有哪几种写法、各拿什么当扣分，<a href="0009-post-training-recipes.html">第 9 课</a>专门讲；这一节先看两种，都属后训练。</p>
+  <p>早先的一种，行话叫<b>监督微调（supervised fine-tuning，缩写 SFT）</b>：<b>人先写出一段标准的思考过程</b>（「这道题先这么算、再那么算」），让模型照着学。<b>代价是要人标注</b>：每道题都得有人写一遍。</p>
+  <p>后来换的那种，也是现在最主流的，行话叫<b>强化学习（reinforcement learning，缩写 RL）</b>：<b>只给结果打分，不给过程打分。</b>题目的答案机器自己就能查：答案对不对、代码跑不跑得过、测试过不过。<a href="https://arxiv.org/abs/2501.12948">DeepSeek-R1 那篇论文</a>的原话是：这样「<b>obviating the need for human-labeled reasoning trajectories</b>」（连人标注的思考过程都不需要了）。<span style="color:var(--muted)">（第 9 课里这类「结果对错自动判」的 RL 叫<b>对错一比特</b>；R1 用的拧法是 <b>GRPO</b>。）</span></p>
+  <p>神奇的地方在这儿：<b>只看结果练，它自己长出了打草稿的招式</b>：<b>写成什么格式是人定的</b>（<a href="0005-reasoning-models-deep.html#q5-train">练出来的到底是什么？</a>）。R1 论文列了三类自己冒出来的动作：<b>自我检查 · 自我验证 · 动态换策略</b>。你在屏幕上看到的那些「等一下我再想想」「不对，重来」「换个办法」，就是它们。</p>
+  <p>还有一条路，知道有就行：也有<b>给每一步打分</b>的做法。<a href="https://arxiv.org/abs/2305.20050">一篇对照实验的结论</a>是：在数学题上，<b>逐步打分明显好于只看最终结果</b>，那样的模型能解出测试子集的 <b>78%</b>。<b>但代价是又回到「要人标注」</b>。所以工业界选了省钱的那条。<b>两条路都真实存在，别把它们混成一条。</b></p>
 
   <h2>4. 这份草稿的价钱：四笔账</h2>
-  <p>现在算账。关键前提只有一句：<b>草稿是「真的字」，跟答案走同一条流水线</b>——一样是一个字一个字往外蹦（<a href="0002-prefill-vs-decode.html">第 2 课</a>）。所以它进的是和答案<b>一模一样的账本</b>。</p>
+  <p>现在算账。关键前提只有一句：<b>草稿是「真的字」，跟答案走同一条流水线</b>：一样是一个字一个字往外蹦（<a href="0002-prefill-vs-decode.html">第 2 课</a>）。所以它进的是和答案<b>一模一样的账本</b>。</p>
 
   <figure class="figure">
     <img src="../../assets/thinking-timeline.svg" alt="时间线分成三段：读完你的问题、中间一大段思考八千个 token、最后回答八十个 token。「多久有反应」的箭头只跨过第一段，几乎没变；「多久看到答案」的箭头一直跨到第三段，暴涨">
@@ -69,22 +68,22 @@
   <h3>① 两种「慢」，别混</h3>
   <p>「开了思考会不会让首字延迟变差」这个问题，<b>没有单一答案</b>，取决于你的程序怎么显示：</p>
   <ul>
-    <li><b>把思考显示出来</b>（字一边想一边往外滚）：思考的第一个字也是<b>立刻冒出来的</b>——所以「多久有反应」几乎不变，暴涨的是「<b>多久看到答案</b>」。用户抱怨的「怎么想这么久」说的是后者。</li>
-    <li><b>不显示思考</b>（只等最终答案）：那第一个<b>可见</b>的字就是答案的第一个字——<b>首字延迟一样暴涨。</b></li>
+    <li><b>把思考显示出来</b>（字一边想一边往外滚）：思考的第一个字也是<b>立刻冒出来的</b>。所以「多久有反应」几乎不变，暴涨的是「<b>多久看到答案</b>」。用户抱怨的「怎么想这么久」说的是后者。</li>
+    <li><b>不显示思考</b>（只等最终答案）：那第一个<b>可见</b>的字就是答案的第一个字。<b>首字延迟一样暴涨。</b></li>
   </ul>
   <p><span style="color:var(--muted)">（第 2 课把延迟分成「多久有反应」和「出字有多快」两个指标，就是为这件事准备的——<a href="0002-prefill-vs-decode.html">回看第 2 课第 5 节</a>。）</span></p>
 
   <h3>② 更贵：因为它按「输出」收钱</h3>
   <p>Anthropic 文档的原话：思考花的字「<b>billed as output tokens</b>」——<b>按输出的价算钱，即使那段思考根本不返回给你</b>；而且它和答案<b>一起占</b>「一次最多写多少字」的额度（<code>max_tokens</code>）。</p>
-  <p><b>还有个更坑的</b>：思考可以只回给你一段<b>摘要</b>，但收钱按<b>原始全长</b>算——原话是「charged for the <b>full thinking tokens</b> … <b>not the summary tokens</b>」。<b>所以「它到底想了多久」，光看界面判断不出来。</b></p>
+  <p><b>还有个更坑的</b>：思考可以只回给你一段<b>摘要</b>，但收钱按<b>原始全长</b>算。原话是「charged for the <b>full thinking tokens</b> … <b>not the summary tokens</b>」。<b>所以「它到底想了多久」，光看界面判断不出来。</b></p>
 
   <h3>③ 更占上下文</h3>
-  <p>草稿会<b>留在对话里</b>。一个跑 10 步的循环，每步想 2000 字，<b>光草稿就攒下两万字</b>——而上下文是要被<b>后面每一步反复读</b>的东西（第 2 课：每写一个字都要把历史读一遍）。</p>
+  <p>草稿会<b>留在对话里</b>。一个跑 10 步的循环，每步想 2000 字，<b>光草稿就攒下两万字</b>。而上下文是要被<b>后面每一步反复读</b>的东西（第 2 课：每写一个字都要把历史读一遍）。</p>
 
   <h3>④ 最容易漏的一笔：你的代码要改</h3>
   <p>先看那段思考<b>交到你手里是什么样子</b>。开源和闭源两套做法差得很大，分开说：</p>
-  <p><b>开源模型</b>（自己部署 DeepSeek-R、Qwen3 这类）：模型吐出来的就是<b>一条字流</b>——先草稿、后答案，中间夹着它<b>自己写下的记号</b>（比如一对 <code>&lt;think&gt;</code> 标签）。跑模型的那个服务程序（术语叫<b>推理引擎</b>）<b>只照记号切一刀</b>，装进「思考／答案」两个字段。<b>你看到的思考就是原稿。</b><span style="color:var(--muted)">（<a href="0005-reasoning-models-deep.html#q2-cut">记号是谁写的、引擎为什么造不出边界？</a>）</span></p>
-  <p><b>闭源 API</b>（Anthropic、OpenAI 这类）：你拿到的已经是<b>分好的内容块</b>，按顺序排好——思考一块、答案一块。而且思考那块里装的多半是<b>摘要</b>：Anthropic 还明说，这个摘要由<b>另一个模型</b>提炼，<b>思考的模型自己都看不到它</b>——原稿只以加密形式收在块里（<a href="0005-reasoning-models-deep.html#q3-signature">进阶 Q3</a>）：</p>
+  <p><b>开源模型</b>（自己部署 DeepSeek-R、Qwen3 这类）：模型吐出来的就是<b>一条字流</b>：先草稿、后答案，中间夹着它<b>自己写下的记号</b>（比如一对 <code>&lt;think&gt;</code> 标签）。跑模型的那个服务程序（术语叫<b>推理引擎</b>）<b>只照记号切一刀</b>，装进「思考／答案」两个字段。<b>你看到的思考就是原稿。</b><span style="color:var(--muted)">（<a href="0005-reasoning-models-deep.html#q2-cut">记号是谁写的、引擎为什么造不出边界？</a>）</span></p>
+  <p><b>闭源 API</b>（Anthropic、OpenAI 这类）：你拿到的已经是<b>分好的内容块</b>，按顺序排好：思考一块、答案一块。而且思考那块里装的多半是<b>摘要</b>。Anthropic 还明说，这个摘要由<b>另一个模型</b>提炼，<b>思考的模型自己都看不到它</b>。原稿只以加密形式收在块里（<a href="0005-reasoning-models-deep.html#q3-signature">进阶 Q3</a>）：</p>
   <pre><code>"content": [
   { "type": "thinking", "thinking": "摘要…", "signature": "WaUjzkyp..." },
   { "type": "text",     "text": "答案…" }
@@ -92,26 +91,26 @@
   <p><b>块的类型，就是「思考从哪开始、到哪结束」的信号。</b>客户端不用猜、也不用读懂那段文字。<b>但它内部怎么切的、记号长什么样，两家都没公开。</b><span style="color:var(--muted)">（<a href="0005-reasoning-models-deep.html#q4-stream">流式的时候怎么认边界？</a> · <a href="0005-reasoning-models-deep.html#q3-signature">signature 里收着什么？</a>）</span></p>
   <p>也正因为块是现成的，Anthropic 的 API 有一条硬要求：<b>把每一个思考块完整、不改动地传回去</b>，挨着它当初搭配的那个工具调用块。做不到的话，这条有两种后果，看厂商：</p>
   <ul>
-    <li><b>有的直接报错</b>——请求根本发不出去（400，缺思考块）。</li>
-    <li><b>有的让缓存断掉</b>——<a href="https://docs.x.ai/developers/advanced-api-usage/prompt-caching/multi-turn">xAI 的文档</a>把它列成多轮缓存失效的<b>头号原因</b>，而<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>算过那笔账：断了就是整段重算。</li>
+    <li><b>有的直接报错</b>：请求根本发不出去（400，缺思考块）。</li>
+    <li><b>有的让缓存断掉</b>：<a href="https://docs.x.ai/developers/advanced-api-usage/prompt-caching/multi-turn">xAI 的文档</a>把它列成多轮缓存失效的<b>头号原因</b>，而<a href="0003-kv-cache-and-prompt-caching.html">第 3 课</a>算过那笔账：断了就是整段重算。</li>
   </ul>
-  <p><b>所以「让模型思考」不只是多给一个参数——上一轮的思考块，你的程序得存下来、原样送回去。</b>忘了这件事，你的循环会从「慢一点」变成「跑不起来」。</p>
-  <p>还有一个容易想当然的点：<b>思考块不一定出现</b>。问题简单时，模型可能<b>整个跳过思考</b>——响应里一个思考块都没有。所以判断「这次想没想」，只能看<b>有没有这个块</b>，请求参数里读不出来。<span style="color:var(--muted)">（上一轮的思考留不留、谁说了算，见<a href="0003-kv-cache-and-prompt-caching-deep.html#q1-thinking">第 3 课进阶 Q1</a>；块的细节在<a href="../../reference/glossary.html#thinking-block">术语表「思考块」</a>。）</span></p>
+  <p><b>所以「让模型思考」不只是多给一个参数。上一轮的思考块，你的程序得存下来、原样送回去。</b>忘了这件事，你的循环会从「慢一点」变成「跑不起来」。</p>
+  <p>还有一个容易想当然的点：<b>思考块不一定出现</b>。问题简单时，模型可能<b>整个跳过思考</b>：响应里一个思考块都没有。所以判断「这次想没想」，只能看<b>有没有这个块</b>，请求参数里读不出来。<span style="color:var(--muted)">（上一轮的思考留不留、谁说了算，见<a href="0003-kv-cache-and-prompt-caching-deep.html#q1-thinking">第 3 课进阶 Q1</a>；块的细节在<a href="../../reference/glossary.html#thinking-block">术语表「思考块」</a>。）</span></p>
 
   <h2>5. 那什么时候该开</h2>
-  <p>「多花时间换准确率」容易被读成「多花就更好」。<b>不是。</b>Anthropic 研究博客给的措辞是：数学题上的准确率随思考字数<b>呈对数级提升</b>（logarithmically）——大白话就是<b>翻一倍预算，好一点，而不是好一点半</b>。</p>
-  <p>给个具体的数好有量感：Claude 3.7 Sonnet 用<b>6.4 万</b>的思考额度（相当于 256 个独立采样的算力）拿到 GPQA <b>84.8%</b>。而顶格给预算还有工程后果——AWS 的文档建议<b>额度超过 3.2 万就走批量处理</b>，否则容易超时断连。</p>
+  <p>「多花时间换准确率」容易被读成「多花就更好」。<b>不是。</b>Anthropic 研究博客给的措辞是：数学题上的准确率随思考字数<b>呈对数级提升</b>（logarithmically）——大白话就是<b>翻一倍预算，才多一小截；再翻一倍，还是那一小截</b>。越往上越不划算。</p>
+  <p>给个具体的数好有量感：Claude 3.7 Sonnet 用<b>6.4 万</b>的思考额度（相当于 256 个独立采样的算力）拿到 GPQA <b>84.8%</b>。而顶格给预算还有工程后果：AWS 的文档建议<b>额度超过 3.2 万就走批量处理</b>，否则容易超时断连。</p>
   <p>所以怎么用它：</p>
   <ul>
-    <li><b>值得开</b>：难，而且<b>有客观对错可以查</b>的活——数学、代码、复杂分析、好几步的任务。Anthropic 文档点名的就是这几类。</li>
+    <li><b>值得开</b>：难，而且<b>有客观对错可以查</b>的活，比如数学、代码、复杂分析、好几步的任务。Anthropic 文档点名的就是这几类。</li>
     <li><b>不值得开</b>：简单任务、有人盯着秒表的即时对话、已经很熟练的常规活。<b>在这些地方开思考，等于按分钟付钱买一点用不上的准确率。</b></li>
-    <li><b>额度从最低档起步，按自己的任务实测着加</b>——这是 Anthropic 文档给的建议（额度有下限，通常 1024；而且它是<b>目标不是硬上限</b>，实际用量随任务浮动）。<b>别一上来就顶格。</b></li>
+    <li><b>额度从最低档起步，按自己的任务实测着加</b>。这是 Anthropic 文档给的建议（额度有下限，通常 1024；而且它是<b>目标不是硬上限</b>，实际用量随任务浮动）。<b>别一上来就顶格。</b></li>
   </ul>
-  <p>给要跑循环的人算一笔现实的：<b>10 步、每步想 2000 字</b>，按第 2 课那套时间模型，每步要等<b>四十多秒</b>，十步就是<b>七分钟</b>——而这类活常常是<b>按用户的耐心在计时</b>的。</p>
-  <p><span style="color:var(--muted)">（开了思考之后要不要重新测一遍你的任务？那是你自己的活：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>。）</span></p>
+  <p>给要跑循环的人算一笔现实的账：<b>10 步、每步想 2000 字</b>，按第 2 课那套时间模型，每步要等<b>四十多秒</b>，十步就是<b>七分钟</b>。而这类活常常是<b>按用户的耐心在计时</b>的。</p>
+  <p><span style="color:var(--muted)">（开了思考之后要不要重新测一遍你的任务？那是你自己的活：<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>。）</span></p>
 
   <h2>6. 动手跑一遍</h2>
-  <p>脚本在工作区：<code>exercises/llm/0005-reasoning-cost.py</code>。<b>只用 Python 标准库</b>，不联网——它<b>直接把思考的字加进第 2 课那套账里</b>（同样的时间模型和价格模型），所以结论是算出来的，不是讲出来的。</p>
+  <p>脚本在工作区：<code>exercises/llm/0005-reasoning-cost.py</code>。<b>只用 Python 标准库</b>，不联网。它<b>直接把思考的字加进第 2 课那套账里</b>（同样的时间模型和价格模型），所以结论是算出来的，不是讲出来的。</p>
   <pre><code>python exercises/llm/0005-reasoning-cost.py</code></pre>
   <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是输出摘录（跑了就有完整的）。</p>
   <pre><code>[1] 先钉死一件事：那段「思考」不是免费的旁白，它【就是输出】
@@ -156,8 +155,8 @@
   <p><b>四处要看懂</b>（方括号里的编号是脚本输出自己的段号）：</p>
   <ul>
     <li><b>[1] [2] 那两段里「多久有反应」三行都一样</b>，而「多久看到答案」涨了 111 倍。<b>慢的是同一件事，只是有两个读法。</b></li>
-    <li><b>成本涨 15 倍，时间涨 111 倍</b>——两个涨幅不一样，别拿一个推另一个。</li>
-    <li><b>[4] 那段的 41800</b>：草稿不只是钱，它还把上下文撑大了。<b>所以它对循环的伤害是双份的</b>——更慢 ＋ 每步读的东西更长。</li>
+    <li><b>成本涨 15 倍，时间涨 111 倍</b>。两个涨幅不一样，别拿一个推另一个。</li>
+    <li><b>[4] 那段的 41800</b>：草稿不只是钱，它还把上下文撑大了。<b>所以它对循环的伤害是双份的</b>：更慢 ＋ 每步读的东西更长。</li>
     <li><b>[5] 那两种后果</b>是四笔账里最容易漏的一笔：<b>不是慢一点，是报错或者缓存断。</b></li>
   </ul>
 
@@ -165,10 +164,10 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 「它真的在思考吗？」最诚实的答案是？</p>
-    <button class="quiz-option" data-correct="true">它真在打草稿试错，但草稿不是它的想法</button>
+    <button class="quiz-option">它只是把提前备好的答案念给你听一遍</button>
     <button class="quiz-option">它跟人一样在心里盘算，那段就是它的想法</button>
     <button class="quiz-option">它什么都没干，那段文字只是好看的装饰</button>
-    <button class="quiz-option">它只是把提前备好的答案念给你听一遍</button>
+    <button class="quiz-option" data-correct="true">它真在打草稿试错，但草稿不是它的想法</button>
     <p class="feedback"
        data-ok="对。草稿是真的在干活——一字一字写、真的试错；但草稿不是它的「内心独白」。"
        data-no="两头都别信过头：那段文字是真在试错的草稿，不是装饰；但它也不是它的想法，里面还会有错。"></p>
@@ -187,8 +186,8 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q3</span> 那段「思考」的字，账单怎么算？</p>
-    <button class="quiz-option" data-correct="true">按输出价算，而且不返回给你也照算</button>
     <button class="quiz-option">单独一档，比普通的输出便宜一些</button>
+    <button class="quiz-option" data-correct="true">按输出价算，而且不返回给你也照算</button>
     <button class="quiz-option">算输入价，因为它只是内部用的过程</button>
     <button class="quiz-option">不收钱，只是多占一点等待的时间</button>
     <p class="feedback"
@@ -198,9 +197,9 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q4</span> 读那段「思考」，能不能判断它在干什么？</p>
-    <button class="quiz-option" data-correct="true">不能，它常按没写出来的因素做决定</button>
-    <button class="quiz-option">能，那就是它的推理过程，读它就行</button>
     <button class="quiz-option">基本不能，但看得足够仔细就能</button>
+    <button class="quiz-option">能，那就是它的推理过程，读它就行</button>
+    <button class="quiz-option" data-correct="true">不能，它常按没写出来的因素做决定</button>
     <button class="quiz-option">能，只是里面偶尔有一两句错的</button>
     <p class="feedback"
        data-ok="对。Anthropic 自己说过，模型常按它没在思考里说出来的因素做决定。"
@@ -209,10 +208,10 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q5</span> 上一轮的思考块没原样带回去，会怎样？</p>
-    <button class="quiz-option" data-correct="true">有的直接报错，有的让前缀缓存断掉</button>
+    <button class="quiz-option">模型会自己重新想一遍，照样能跑</button>
     <button class="quiz-option">只是这一轮慢一点，没有别的影响</button>
     <button class="quiz-option">思考会被自动压缩掉，省下一点上下文</button>
-    <button class="quiz-option">模型会自己重新想一遍，照样能跑</button>
+    <button class="quiz-option" data-correct="true">有的直接报错，有的让前缀缓存断掉</button>
     <p class="feedback"
        data-ok="对。厂商不同：要么请求被拒（400），要么缓存整段失效——都比慢一点严重。"
        data-no="Anthropic 的 API 要求完整、不改动地传回去。做不到的话，有的厂商直接报错，有的让前缀缓存断掉。"></p>
@@ -230,7 +229,7 @@
   </div>
 
   <h2>8. 想深挖？进阶版在等你</h2>
-  <p>上面这些够你看懂全貌了。读的过程中如果冒出疑问，点对应的链接就行——<b>不用从头看进阶版</b>。</p>
+  <p>上面这些够你看懂全貌了。读的过程中如果冒出疑问，点对应的链接就行。<b>不用从头看进阶版</b>。</p>
   <ul>
     <li><a href="0005-reasoning-models-deep.html#q1-who">Q1 · 你看到的那段「思考」，到底是谁写的？</a></li>
     <li><a href="0005-reasoning-models-deep.html#q2-cut">Q2 · 草稿的字是怎么变成「块」的？边界是谁切的？</a></li>
@@ -256,9 +255,9 @@
     <b>同课进阶</b>：<a href="0005-reasoning-models-deep.html">进阶版 · 谁写的、怎么切的、谁收着、怎么练出来的</a><br>
     <b>前置</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · prefill 与 decode</a>（草稿为什么跟答案同一条流水线、两种「慢」的来处）· <a href="0003-kv-cache-and-prompt-caching.html">第 3 课 · 缓存命中</a>（第 4 节④「缓存断了」那笔账的来处）<br>
     <b>顺着往下</b>：<a href="0006-quantization.html">LLM 底层 · 第 6 课 · 量化</a>（另一件「拿什么换什么」的工程取舍：省字节）→ <a href="0007-distillation.html">第 7 课 · 蒸馏</a>（能力怎么从大模型搬到小模型）<br>
-    <b>相关</b>：<a href="../agent/0009-teleagent-teardown.html">Agent 篇 · 第 9 课 · 拆完怎么验</a>（开了思考要不要重新测）<br>
+    <b>相关</b>：<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>（开了思考要不要重新测）· <a href="0009-post-training-recipes.html">第 9 课 · 后训练的几种练法</a>（「思考是怎么练出来的」的展开处）<br>
     <b>这条轨道</b>：<a href="../index.html">课程目录</a><br>
-    术语表：<a href="../../reference/glossary.html#reasoning">思考 reasoning</a> · <a href="../../reference/glossary.html#thinking-block">思考块 thinking block</a> · <a href="../../reference/glossary.html#signature">签名 signature</a> · <a href="../../reference/glossary.html#ttft">TTFT</a> · <a href="../../reference/glossary.html#tpot">TPOT</a>
+    术语表：<a href="../../reference/glossary.html#post-training">预训练 / 后训练</a> · <a href="../../reference/glossary.html#sft">监督微调 SFT</a> · <a href="../../reference/glossary.html#rlhf">强化学习 RLHF / GRPO</a> · <a href="../../reference/glossary.html#reasoning">思考 reasoning</a> · <a href="../../reference/glossary.html#thinking-block">思考块 thinking block</a> · <a href="../../reference/glossary.html#signature">签名 signature</a> · <a href="../../reference/glossary.html#ttft">TTFT</a> · <a href="../../reference/glossary.html#tpot">TPOT</a>
   </p>
 
   <footer>AI Agent 原理与工程 · LLM 底层 · 第 5 课（初学版）· <a href="../index.html">课程目录</a></footer>

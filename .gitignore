@@ -14,3 +14,9 @@ Thumbs.db
 
 # DSH 沙箱诊断输出
 .dsh-acl-reports/
+
+# 改课前基线备份（2026-10-21 Agent 篇整轮改课）
+backup/
+
+# 本工作区临时产物（草稿、截图、.bak 备份）
+.temp/

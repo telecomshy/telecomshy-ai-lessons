@@ -230,6 +230,19 @@ function Audit {
   } else {
     Ok "NOTES.md $($noteLines.Count) 行（阈值 400）"
   }
+
+  # (4) COURSE-STANDARD.md 体量阈值 —— 写作标准同样防膨胀（2026-10-21 拆出，见存档 5.52）
+  $csPath = Join-Path $root 'COURSE-STANDARD.md'
+  if (-not (Test-Path $csPath)) {
+    No "COURSE-STANDARD.md 不存在（写作标准文件，拆自 NOTES 1.2～1.6，见存档 5.52）"
+  } else {
+    $csLines = @((ReadText 'COURSE-STANDARD.md') -split '\r?\n')
+    if ($csLines.Count -gt 200) {
+      No "COURSE-STANDARD.md 已 $($csLines.Count) 行（阈值 200）：新规矩先问是不是自查清单的一行，别再加正文段"
+    } else {
+      Ok "COURSE-STANDARD.md $($csLines.Count) 行（阈值 200）"
+    }
+  }
 }
 
 Load

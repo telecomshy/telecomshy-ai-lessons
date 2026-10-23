@@ -121,13 +121,9 @@ python exercises/agent/0002-build-an-agent.py
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 0001 | [Agent 是什么：循环、工具、记忆](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0001-what-is-an-agent.html) —— 纯理论：循环怎么转、什么时候停，工具从哪来，记忆按产品怎么存 |
 | 0002 | [手写一个 agent](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0002-build-an-agent.html) —— 从装包、配 key 开始，用真模型跑通循环     |
-| 0003 | [工具长出两个新形状：MCP 与 Skill](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0003-mcp-and-skills.html) —— MCP 管「怎么接」，Skill 管「怎么做」 |
-| 0004 | [写一个 skill、接一个 MCP](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-skill-and-mcp-lab.html) —— 动手版：骨架自检、配置走通「发现」 |
-| 0005 | [多 agent 协作：什么时候该上、怎么分工](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-multi-agent.html) —— 编排者-工作者、只回结论不回流水、什么时候不该上 |
-| 0006 | [编排一群 agent](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0006-orchestrate-agents.html) —— lead＋workers 跑起来：派单三件套、失败重派、上下文对账 |
-| 0007 | [安全与权限：纸条攻击、沙箱、人审](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0007-safety.html) —— 提示词注入是什么；护栏三件套：少信、少能、有人管 |
-| 0008 | [Harness：Agent = Model + Harness](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0008-harness.html) —— 把学过的东西全部装回壳里 |
-| 0009 | [拆解 TeleAgent：一个真实的 harness](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0009-teleagent-teardown.html) —— 收尾大作业：真实产品逐块拆 |
+| 0003 | [工具长出两个新形状：MCP 与 Skill](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0003-mcp-and-skills.html) —— MCP 管「怎么接」，Skill 管「怎么做」；含本地/远程、TeleAgent 配置、创建技能、国内资源广场、MCP vs Skill 怎么选 |
+| 0004 | [多 agent 与安全：什么时候该上、怎么不出事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-multi-agent-and-safety.html) —— 上篇：编排者-工作者、只回结论、审计为什么适合派子代理、TeleAgent 自动委派 vs OpenCode @点名；下篇：纸条攻击、少信/少能/有人管 |
+| 0005 | [Harness：Agent = Model + Harness](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-harness.html) —— 公式、五个子系统、长任务交接；TeleAgent / OpenCode / Hermes / WorkBuddy 四款对照与按场景选择 |
 
 ### 技巧与工程
 
@@ -162,7 +158,7 @@ python exercises/agent/0002-build-an-agent.py
 | [采样参数速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/sampling-params.html)            | temperature / top_p / top_k / seed，配模型时照着抄 |
 | [KV Cache 与「缓存命中」速查](https://telecomshy.github.io/telecomshy-ai-lessons/reference/prompt-caching.html) | LLM 底层第 3 课的压缩版                            |
 | [一次请求，从头到尾](https://telecomshy.github.io/telecomshy-ai-lessons/reference/one-request-end-to-end.html)  | 可点逐步版 —— 看货架（KV cache）怎么一点点变满              |
-| [agent 评估该问什么](https://telecomshy.github.io/telecomshy-ai-lessons/reference/agent-eval-checklist.html) | Agent 篇第 9 课「拆完怎么验」的检查单                         |
+| [agent 评估该问什么](https://telecomshy.github.io/telecomshy-ai-lessons/reference/agent-eval-checklist.html) | Agent 评估检查单（独立速查）                         |
 | [预算与排座次](https://telecomshy.github.io/telecomshy-ai-lessons/reference/context-budget.html)             | 上下文工程的对照表                                  |
 | [权威架构图 · 对照](https://telecomshy.github.io/telecomshy-ai-lessons/reference/canonical-diagrams.html)     | 认得出英文资料里那几张图对应哪一块，当对照不当教材                  |
 
@@ -180,7 +176,7 @@ docs/learning-records/  学习者已掌握的证据（teach 技能用，算 ZPD�
 docs/notes/rules/       开发操作细节（联网取材 · 标 completed 的步骤），用到才读
 docs/notes/history/     决策与教训存档（一节一篇），NOTES.md 第 5 节只有索引
 lessons/<轨道>/         课程本体，自包含 HTML
-exercises/<轨道>/       配套脚本与实际产物（如 agent/my-first-skill/）
+exercises/<轨道>/       配套脚本与实际产物
 reference/              术语表与速查（贴墙清单）
 assets/                 共享样式表、测验组件、SVG 插图、演示动画（mp4 + poster）
 ```

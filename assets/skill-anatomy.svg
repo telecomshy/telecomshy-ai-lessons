@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500" width="900" height="500" role="img" aria-label="Skill 结构：一个技能目录里有 SKILL.md、reference.md 和 scripts；SKILL.md 顶部是 name 和 description。右边是三层渐进式加载：平时只有 name 和 description 进上下文，模型决定使用后读 SKILL.md 正文，需要时再读 reference.md 或运行脚本">
+  <defs>
+    <marker id="skill-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6c675e"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="500" fill="#fdfcf8"/>
+
+  <!-- 左：目录 -->
+  <rect x="30" y="24" width="390" height="400" rx="10" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="48" y="54" font-family="sans-serif" font-size="15" fill="#1b1a17">一个 skill 就是一个目录</text>
+
+  <text x="48" y="92" font-family="monospace" font-size="14" fill="#1b1a17">weekly-report/</text>
+  <text x="68" y="118" font-family="monospace" font-size="13.5" fill="#8a2b06">SKILL.md</text>
+  <text x="88" y="144" font-family="monospace" font-size="12.5" fill="#6c675e">---</text>
+  <text x="88" y="166" font-family="monospace" font-size="12.5" fill="#1b1a17">name: weekly-report</text>
+  <text x="88" y="188" font-family="monospace" font-size="12.5" fill="#1b1a17">description: 用户说「写周报」时…</text>
+  <text x="88" y="210" font-family="monospace" font-size="12.5" fill="#6c675e">---</text>
+  <text x="88" y="232" font-family="sans-serif" font-size="12.5" fill="#1b1a17">正文：什么时候用 / 怎么做 / 输出格式</text>
+
+  <text x="68" y="270" font-family="monospace" font-size="13.5" fill="#1b1a17">reference.md</text>
+  <text x="68" y="296" font-family="monospace" font-size="13.5" fill="#1b1a17">scripts/collect.py</text>
+  <text x="48" y="336" font-family="sans-serif" font-size="12.5" fill="#6c675e">可以带脚本和资料；正文里按名字引用。</text>
+  <text x="48" y="360" font-family="sans-serif" font-size="12.5" fill="#6c675e">长内容别全塞进 SKILL.md。</text>
+
+  <!-- 右：三层 -->
+  <text x="470" y="54" font-family="sans-serif" font-size="15" fill="#1b1a17">渐进式加载：三层</text>
+
+  <rect x="470" y="76" width="380" height="76" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.4"/>
+  <text x="486" y="104" font-family="sans-serif" font-size="13.5" fill="#8a2b06">① 平时：只有 name + description</text>
+  <text x="486" y="130" font-family="sans-serif" font-size="12.5" fill="#6c675e">每个已安装技能都进系统提示；就这一句</text>
+
+  <line x1="660" y1="152" x2="660" y2="176" stroke="#6c675e" stroke-width="1.6" marker-end="url(#skill-arrow)"/>
+  <text x="674" y="170" font-family="sans-serif" font-size="12" fill="#6c675e">模型决定用</text>
+
+  <rect x="470" y="182" width="380" height="76" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.4"/>
+  <text x="486" y="210" font-family="sans-serif" font-size="13.5" fill="#1b1a17">② 触发后：读 SKILL.md 正文</text>
+  <text x="486" y="236" font-family="sans-serif" font-size="12.5" fill="#6c675e">步骤、输出格式、失败怎么救</text>
+
+  <line x1="660" y1="258" x2="660" y2="282" stroke="#6c675e" stroke-width="1.6" marker-end="url(#skill-arrow)"/>
+  <text x="674" y="276" font-family="sans-serif" font-size="12" fill="#6c675e">正文提到它</text>
+
+  <rect x="470" y="288" width="380" height="76" rx="8" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.4"/>
+  <text x="486" y="316" font-family="sans-serif" font-size="13.5" fill="#1f6b3a">③ 需要时：读 reference / 跑脚本</text>
+  <text x="486" y="342" font-family="sans-serif" font-size="12.5" fill="#6c675e">不看不用的，连打开都不打开</text>
+
+  <text x="470" y="396" font-family="sans-serif" font-size="12.5" fill="#6c675e">越往下越省上下文；上限接近无限，</text>
+  <text x="470" y="418" font-family="sans-serif" font-size="12.5" fill="#6c675e">因为模型只在需要时翻到那一页。</text>
+
+  <!-- 底注 -->
+  <text x="30" y="470" font-family="sans-serif" font-size="12.5" fill="#6c675e">关键：skill 不是「把整份说明塞进 prompt」，而是「先给目录，用到再翻页」。</text>
+</svg>

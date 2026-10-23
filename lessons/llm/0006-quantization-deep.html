@@ -12,17 +12,17 @@
 
   <div class="lesson-meta" data-alias="压法是什么、误差怎么救回来、KV 是什么精度">LLM 底层 · 第 6 课 · 进阶版</div>
   <h1>量化：压法是什么、误差怎么救回来、KV 是什么精度</h1>
-  <p class="subtitle">初学版讲「量化是什么、会造成什么影响」。这篇答三个更细的问：<b>「压法」到底是什么、AWQ 和 GPTQ 各是怎么压的</b>；<b>4 bit 那么粗，为什么还能用</b>；<b>一个 int4 的模型，KV 到底存多少位</b>。<b>按需跳读</b>——每问都能从<a href="0006-quantization.html">初学版</a>末尾那份清单直达。</p>
+  <p class="subtitle">初学版讲「量化是什么、会造成什么影响」。这篇答三个更细的问：<b>「压法」到底是什么、AWQ 和 GPTQ 各是怎么压的</b>；<b>4 bit 那么粗，为什么还能用</b>；<b>一个 int4 的模型，KV 到底存多少位</b>。<b>按需跳读</b>：每问都能从<a href="0006-quantization.html">初学版</a>末尾那份清单直达。</p>
 
   <div class="note">
     <span class="label">怎么用这篇</span>
     <p>只收<b>读完初学版仍会冒出来</b>的疑问；初学版讲过的（每个数四舍五入到最近的可挑值、<b>小数被压扁、4 bit 不止 4 bit</b>、语义和格式都会掉）这里不重复。</p>
-    <p>三问之间不连着讲，<b>每问开头都先交代它在问什么</b>——跳进任何一问都能读下去。</p>
+    <p><b>三问之间不连着讲</b>，每问开头都先交代它在问什么。跳进任何一问都能读下去。</p>
   </div>
 
   <h2 id="q1-method">Q1 · 「压法」是什么？AWQ、GPTQ 各是怎么压的？</h2>
-  <p>你在下载站上找一个模型，同一个模型常挂着好几个版本：原始版（几十 GB）和一串「压缩版」——<code>Q4_K_M</code>、<code>AWQ</code>、<code>GPTQ</code>…。<b>把原始版换成这些小版的那套做法，就叫「压法」。</b>动手压的是专门的量化工具，压出来的文件要交给跑模型的软件（<b>vLLM</b>、<b>llama.cpp</b> 这些）去读——<b>名字五花八门的根源就在这儿：做法不止一种，各家的文件还互不通用。</b></p>
-  <p>那就先分清两根轴：<b>「压法」说的是「怎么压」，不是「压到几个比特」。</b>压多狠（8 bit／4 bit／2 bit）是一根轴；下面这四件事怎么做，是另一根轴——<b>做法不同，就换一个名字</b>：</p>
+  <p>你在下载站上找一个模型，那一个版本常挂着好几个版本：原始版（几十 GB）和一串「压缩版」：<code>Q4_K_M</code>、<code>AWQ</code>、<code>GPTQ</code>…。<b>把原始版换成这些小版的那套做法，就叫「压法」。</b>动手压的是专门的量化工具，压出来的文件要交给跑模型的软件（<b>vLLM</b>、<b>llama.cpp</b> 这些）去跑。<b>名字五花八门的根源就在这儿：做法不止一种，各家的文件还互不通用。</b></p>
+  <p>那就先分清两根轴：<b>「压法」说的是「怎么压」，不是「压到几个比特」。</b>压多狠（8 bit／4 bit／2 bit）是一根轴，下面这四件事怎么做是另一根轴。<b>做法不同，就换一个名字：</b></p>
   <ul>
     <li>每个数换成<b>什么近似值</b>（直接四舍五入？还是算完再补？）；</li>
     <li><b>哪几个数共用一套可挑的值</b>（整张表一套？还是一小群一套？）；</li>
@@ -76,8 +76,8 @@
   <p><span style="color:var(--muted)">（⚠ <b>这张表是活的</b>：2026-10-10 抓的时候 GPTQ 已经支持到 Hopper，而早先的记录还写着"不支持 Ada 之后"。<b>要动手之前重新抓一次原表</b>，别信任何转述——原表在 vLLM 文档的 Quantization 一节，还有 Intel／x86／Arm 那几列。<a href="https://docs.vllm.ai/en/latest/features/quantization/">原表</a>）</span></p>
 
   <h2 id="q2-recover">Q2 · 4 bit 为什么还能用？误差是怎么被「救」回来的？</h2>
-  <p>初学版留了个口子：4 bit 只有 16 种可挑的值，每个数都被四舍五入过一遍，<b>照理该糊得没法用——可实际上 4 bit 的模型照样能干活。</b>误差是被谁救回来的？答案是两招。</p>
-  <p><b>第一招：一小群数用一小套取值。</b>如果<b>整张表共用一套可挑的值</b>，模型里少数几个天生特别大的数会把这套值的范围撑到最大，剩下的普通数全被挤在最边上的一小段里——挤没了。所以真实做法是<b>一小群数用一小套取值</b>：范围一小，16 个值就能分得更细。<b>误差掉一个数量级</b>（脚本第 4 节那张表：整表一套差 3.4%，分组之后掉到 0.2% 上下）。代价是每一小群要多存一份换算说明——这就是初学版「4 bit 不止 4 bit」的来处。</p>
+  <p>初学版留了个口子：4 bit 只有 16 种可挑的值，每个数都被四舍五入过一遍，<b>照理该糊得没法用，可实际上 4 bit 的模型照样能干活。</b>误差是被谁救回来的？答案是两招。</p>
+  <p><b>第一招：一小群数用一小套取值。</b>如果<b>整张表共用一套可挑的值</b>，模型里少数几个天生特别大的数会把这套值的范围撑到最大，剩下的普通数全被挤在最边上的一小段里，挤没了。所以真实做法是<b>一小群数用一小套取值</b>：范围一小，16 个值就能分得更细。<b>误差掉一个数量级</b>（脚本第 4 节那张表：整表一套差 3.4%，分组之后掉到 0.2% 上下）。代价是每一小群要多存一份换算说明。这就是初学版「4 bit 不止 4 bit」的来处。</p>
   <p><span style="color:var(--muted)">（顺带一个反直觉的小坑，脚本第 4 节注着：那张假表里「每列一组」反而比「每 32 个一组」更准——因为假表每列的量级本来就整齐。真实权重矩阵一列之内量级并不整齐，所以才轮到「每 32 个一组」这种折中。）</span></p>
   <p><b>第二招：挑着压。</b>差别被并掉的地方不是均匀的——有的地方几乎没伤着、有的地方伤得特别重。而各处的数<b>重要性差得很远</b>，所以<b>重点保住，别处粗一点没关系</b>。<a href="https://arxiv.org/abs/2306.00978">AWQ 那篇论文（MLSys 2024 最佳论文）</a>的原话：<b>「不是所有权重都一样重要，保护那 1% 关键的权重，就能大幅降低误差。」</b>它还补了一句很反直觉的：<b>判断哪些通道关键，要看「激活」（模型算的时候那些中间数）的分布，不是看权重本身</b>。</p>
   <p><b>这就是 4 bit 的模型还能用的全部原因</b>——不是 4 bit 够准，是这两招把力气花在了要紧的地方。<span style="color:var(--muted)">（激活是什么、为什么它比权重还难压，见<a href="../../reference/glossary.html#activation">术语表</a>；<a href="https://arxiv.org/abs/2211.10438">SmoothQuant</a> 那篇的判断很直接：<b>权重好压，激活难压</b>。）</span></p>
@@ -88,7 +88,7 @@
   </ul>
 
   <h2 id="q3-kv">Q3 · 一个 int4 的模型，KV 到底存多少位？</h2>
-  <p>第 3 课讲过 KV：模型写答案时，把每个字算出来的 Key／Value 留在显存里，免得下一轮重算。<b>它是跑起来临时算出来的数，跟权重不是一回事。</b>那问题就来了——<b>权重压到 4 bit 了，这些临时数存多少位？也跟着变 4 bit 吗？</b></p>
+  <p>第 3 课讲过 KV：模型写答案时，把每个字算出来的 Key／Value 留在显存里，免得下一轮重算。<b>它是跑起来临时算出来的数，跟权重不是一回事。</b>那问题就来了：<b>权重压到 4 bit 了，这些临时数存多少位？也跟着变 4 bit 吗？</b></p>
   <p><b>先给答案：16 bit（float16）——既不是 float32，也不是 4 bit。</b>这件事要拆成两层看，混起来就会想反。</p>
   <p><b>第一层：存的档位。</b>K/V 是「算出来再存」的中间结果，跟权重的存法是<b>两笔账</b>，它有自己的默认值：</p>
   <ul>
@@ -102,8 +102,8 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> 「压法」和「压到几个 bit」是什么关系？</p>
-    <button class="quiz-option">一回事，压法说的就是 4 bit 还是 8 bit</button>
     <button class="quiz-option" data-correct="true">两根轴：压多狠是一回事，怎么压是另一回事</button>
+    <button class="quiz-option">一回事，压法说的就是 4 bit 还是 8 bit</button>
     <button class="quiz-option">压法决定 bit 数，一种压法只有一个 bit 数</button>
     <button class="quiz-option">bit 数决定压法，4 bit 只能用一种压法</button>
     <p class="feedback"
@@ -114,8 +114,8 @@
   <div class="quiz">
     <p class="q"><span class="num">Q2</span> 4 bit 那么粗，为什么模型还能用？</p>
     <button class="quiz-option">因为 4 bit 本来就已经够准了</button>
-    <button class="quiz-option">因为压完会自动补回一部分精度</button>
     <button class="quiz-option" data-correct="true">分组压 ＋ 挑着压，把要紧的地方保住了</button>
+    <button class="quiz-option">因为压完会自动补回一部分精度</button>
     <button class="quiz-option">因为模型本来就用不上那些小数</button>
     <p class="feedback"
        data-ok="对。一小群数一套取值（救误差一个数量级），再把 1% 关键权重保住——力气花在了要紧的地方。"
@@ -124,10 +124,10 @@
 
   <div class="quiz">
     <p class="q"><span class="num">Q3</span> 一个 int4 的量化模型，默认情况下 KV 存多少位？</p>
-    <button class="quiz-option">4 bit，跟着权重一起压</button>
+    <button class="quiz-option">4 bit，跟权重一起压到 4 位</button>
     <button class="quiz-option">float32，反正是算出来的中间结果</button>
-    <button class="quiz-option" data-correct="true">16 bit，跟激活一个档</button>
-    <button class="quiz-option">看模型名字，写几就是几</button>
+    <button class="quiz-option" data-correct="true">16 bit，跟激活值一个档位</button>
+    <button class="quiz-option">看模型名字，名字写几就是几</button>
     <p class="feedback"
        data-ok="对。llama.cpp 默认 f16，vLLM 默认用模型的数据类型（W4A16 里的 A16 就是它）。"
        data-no="KV 的存法跟权重是两笔账：默认 16 bit，要压它得另开一个开关。"></p>
