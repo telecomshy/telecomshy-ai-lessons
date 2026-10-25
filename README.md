@@ -171,17 +171,20 @@ AGENTS.md               agent 入口：规矩在哪、目录怎么分
 MISSION.md              为什么做这个（这个仓库的一切都挂在它下面）
 NOTES.md                课程开发标准、约定与待办
 RESOURCES.md            全部一手资料来源，注明「用来干什么」
-docs/agents/            agent 技能的仓库配置（工单 · 分诊标签 · 领域文档）
-docs/learning-records/  学习者已掌握的证据（teach 技能用，算 ZPD）
-docs/notes/rules/       开发操作细节（联网取材 · 标 completed 的步骤），用到才读
-docs/notes/history/     决策与教训存档（一节一篇），NOTES.md 第 5 节只有索引
-lessons/<轨道>/         课程本体，自包含 HTML
+docs/                   对外文档（面向读者）——开发资料不在这层
+internal/               对内集中区：开发资料都在这层下面
+internal/standards/     写作标准：COURSE-STANDARD.md（全局）＋ tracks/（各轨）
+internal/agents/        agent 技能的仓库配置（工单 · 分诊标签 · 领域文档）
+internal/rules/         开发操作细节（联网取材 · 标 completed 的步骤），用到才读
+internal/history/       决策与教训存档（一节一篇），NOTES.md 第 5 节只有索引
+internal/learning-records/  学习者已掌握的证据（teach 技能用，算 ZPD）
+lessons/<轨道>/         课程本体（只含课件 HTML），自包含
 exercises/<轨道>/       配套脚本与实际产物
 reference/              术语表与速查（贴墙清单）
 assets/                 共享样式表、测验组件、SVG 插图、演示动画（mp4 + poster）
 ```
 
-想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 记着每条教学规矩本身，[`docs/notes/history/`](docs/notes/history/) 记着它们背后的原因 —— 包括不少「我一开始写错了，后来改对」的反面案例。
+想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 记着每条教学规矩本身，[`internal/history/`](internal/history/) 记着它们背后的原因 —— 包括不少「我一开始写错了，后来改对」的反面案例。
 
 ---
 
@@ -234,3 +237,5 @@ assets/                 共享样式表、测验组件、SVG 插图、演示动�
 本仓库的课件与脚本以 [MIT](LICENSE) 许可发布 —— 可以自由使用、改编、再分发。
 
 一个例外：[`reference/canonical-diagrams.html`](https://telecomshy.github.io/telecomshy-ai-lessons/reference/canonical-diagrams.html) 里引用的 Jay Alammar《The Illustrated Transformer》配图是 **CC BY-NC-SA 4.0**（署名 - 非商业 - 相同方式共享）—— 那张图能引用，但不能白拿、不能改了再发，转载请带上作者名和同样的许可。
+
+> AI生成

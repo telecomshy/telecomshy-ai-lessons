@@ -16,7 +16,7 @@
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
     <p>上一课的循环、工具、记忆，听着都对——但"听懂"和"跑起来"之间隔着好几步：装什么包？key 放哪？报错了先看什么？</p>
-    <p>这课从零把它跑起来。<b>你会有点意外：所谓 agent，全部核心代码其实只有十几行</b>——一个循环而已。真正费心的是外面那圈防错和护栏。</p>
+    <p>这课从零把它跑起来。<b>所谓 agent，全部核心代码其实只有十几行</b>——一个循环而已。真正费心的是外面那圈防错和护栏。</p>
     <p style="margin-top:0.7rem"><b>学完这课，你能</b>：从零把环境配好、跑通一个真 agent；看懂并改动它的完整代码；说清真模型会在哪翻车、代码里哪一行在兜。</p>
   </div>
 
@@ -47,7 +47,7 @@ python -m venv .venv
   <p><code>-Scope Process</code> 只影响这个窗口，关掉就恢复，不会改系统设置。<code>.venv/</code> 已经在 <code>.gitignore</code> 里，不会进 git。</p>
 
   <h2>3. 装两个包</h2>
-  <p>确认 <code>(.venv)</code> 还在，然后：</p>
+  <p>环境立好了，但里面还是空的——这两个包装进去，脚本才连得上模型。确认 <code>(.venv)</code> 还在，然后：</p>
   <pre><code>python -m pip install -U openai python-dotenv</code></pre>
   <p style="font-size:0.9rem;color:var(--muted)">卡在 <code>Resolving dependencies</code> 超过两三分钟，就 Ctrl+C 停掉，换本节末尾那条镜像命令重试。</p>
   <p>两个包各管一件事：</p>
@@ -61,7 +61,7 @@ python -m venv .venv
   <p style="font-size:0.9rem;color:var(--muted)">下载慢的话可以换国内 PyPI 镜像，例如清华源：<code>python -m pip install -U openai python-dotenv -i https://pypi.tuna.tsinghua.edu.cn/simple</code>。</p>
 
   <h2>4. 申请一个 API key</h2>
-  <p>这一课默认用 DeepSeek 的 <code>deepseek-flash</code>：它兼容 OpenAI 的接口格式，价格低，文档有中文。步骤：</p>
+  <p>两个包装好了，可要连模型还得先有 key。这一课默认用 DeepSeek 的 <code>deepseek-flash</code>：它兼容 OpenAI 的接口格式，价格低，文档有中文。步骤：</p>
   <ol>
     <li>打开 <a href="https://platform.deepseek.com/">platform.deepseek.com</a>，注册 / 登录。</li>
     <li>进 <b>API keys</b> 页面，点创建，把 key 复制下来——<b>它只完整显示这一次</b>。</li>

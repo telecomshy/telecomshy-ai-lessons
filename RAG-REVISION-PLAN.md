@@ -2,7 +2,7 @@
 
 > 状态：**计划定稿；四项选型已确认；机制文件（COURSE-STANDARD / RESOURCES）已修订完成（2026-10-21 晚）。课程文件未动，待新会话按批次施工。**
 > 背景：本计划产生于 RAG 课件全面修改的调研会话。同一时期另一会话正在重构 agent 轨课件，为避免共享文件冲突，本计划暂存于此独立文件。2026-10-21 晚经用户确认后已修 COURSE-STANDARD 与 RESOURCES 两份共享文件（agent 会话未触碰它们，无冲突）；课程文件与 NEXT-SESSION/NOTES/lessons 仍不动。
-> 生命周期：开工后每轮会话更新本文§进度；全部完工后将本文件要点并入 NEXT-SESSION.md、资料并入 RESOURCES.md，并在 `docs/notes/history/` 建存档，之后本文件删除。
+> 生命周期：开工后每轮会话更新本文§进度；全部完工后将本文件要点并入 NEXT-SESSION.md、资料并入 RESOURCES.md，并在 `internal/history/` 建存档，之后本文件删除。
 
 ## 0. 已定决策（后续会话不得重启讨论）
 

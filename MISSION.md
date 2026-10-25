@@ -10,7 +10,7 @@
 - 面对"单 agent 还是多 agent""要不要上 RAG / 长期记忆"这类问题，能给出**有依据、能自圆其说**的判断
 
 ## Constraints
-- **受众分两层（2026-09-30 定）**：基础课＝初学者＋业务人员（学完能听懂技术对话）；进阶版＝本人＋技术同事内训（能验算、能读一手资料）。**分层标准与细则以 [`COURSE-STANDARD.md`](COURSE-STANDARD.md) 1.4 为唯一出处**（含"给结论和直觉，不给推导和算式"等门槛细则）。LLM／RAG 两版都可有（RAG 已有 3 门进阶版）；**Agent 篇不分两版**——按**理论｜实操**分课型，深度走三条吸收渠道（2026-10-21 定，见 1.4 的「Agent 篇例外」）。
+- **受众分层（2026-09-30 定，2026-10-24 细则下放轨道标准）**：LLM 轨基础课＝初学者＋业务人员（学完能听懂技术对话）、deep＝本人＋技术同事内训（能验算、能读一手资料），受众细则以 [`internal/standards/tracks/llm.md`](internal/standards/tracks/llm.md) 为准；deep 页体例（所有 deep 页通用，含"给结论和直觉，不给推导和算式"等门槛细则）以 [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) 1.4 为唯一出处。**Agent 篇不分两版**——按**理论｜实操**分课型，深度走三条吸收渠道，见 [`internal/standards/tracks/agent.md`](internal/standards/tracks/agent.md)；**RAG 轨同改理论｜实操**，见 [`internal/standards/tracks/rag.md`](internal/standards/tracks/rag.md)。
 - **配套脚本保留但可跳过**：主线不依赖跑代码，脚本当加分项。
 - **本人画像**：已有编程基础，用过 LLM API（调接口、写 prompt），但没系统构建过 agent；**会追问机制的精确性，会自己验算**。
 - 偏好**项目驱动、边做边学**：每节课都要有一件能亲手做、且有即时反馈的事

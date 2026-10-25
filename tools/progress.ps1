@@ -1,7 +1,7 @@
 <#
   progress.ps1 —— 课程进度三处落点的唯一执行入口
 
-  背景：标 completed 要改三个文件（见 NOTES 1.7 与 docs/notes/rules/mark-completed.md），漏一处就会自相矛盾。
+  背景：标 completed 要改三个文件（见 NOTES 1.7 与 internal/rules/mark-completed.md），漏一处就会自相矛盾。
         2026-10-03 主页那个「N 门已定稿」就是这么被漏掉的，而且错了三个提交
         都没人发现 —— 因为没有任何东西会检查它。本脚本的 audit 模式就是补这个洞。
 
@@ -195,7 +195,7 @@ function Audit {
     if ($bad -eq 0) { Ok "$($c.href) = $al（带编号 Q $($nums.Count) 个）" }
   }
 
-  Write-Output "== F. NOTES 卫生：历史进 docs/notes/history/，NOTES.md 只留规矩与索引 =="
+  Write-Output "== F. NOTES 卫生：历史进 internal/history/，NOTES.md 只留规矩与索引 =="
   $notes = ReadText 'NOTES.md'
   $noteLines = @($notes -split '\r?\n')
 
@@ -206,42 +206,97 @@ function Audit {
   } else {
     $stray = @([regex]::Matches($parts[1], '(?m)^#{3,4}\s+5\.\d'))
     if ($stray.Count -gt 0) {
-      No "NOTES.md 第 5 节里有 $($stray.Count) 个历史正文标题（如「$($stray[0].Value.Trim())」），挪去 docs/notes/history/（NOTES 1.9）"
+      No "NOTES.md 第 5 节里有 $($stray.Count) 个历史正文标题（如「$($stray[0].Value.Trim())」），挪去 internal/history/（NOTES 1.9）"
     } else {
       Ok "第 5 节只有索引，没有历史正文"
     }
   }
 
-  # (2) 索引 <-> docs/notes/history/ 双向一致：新存档必须挂进索引，索引不许指空文件
-  $histDir = Join-Path $root 'docs/notes/history'
+  # (2) 索引 <-> internal/history/ 双向一致：新存档必须挂进索引，索引不许指空文件
+  $histDir = Join-Path $root 'internal/history'
   if (-not (Test-Path $histDir)) {
-    No "docs/notes/history/ 不存在（历史存档目录）"
+    No "internal/history/ 不存在（历史存档目录）"
   } else {
     $files  = @(Get-ChildItem $histDir -Filter '*.md' -Name | Sort-Object)
-    $linked = @([regex]::Matches($notes, '\((docs/notes/history/[^)]+\.md)\)') | ForEach-Object { Split-Path $_.Groups[1].Value -Leaf })
-    foreach ($f in $files)  { if ($linked -notcontains $f) { No "docs/notes/history/$f 存在，但 NOTES 第 5 节索引里没有它的链接" } }
-    foreach ($l in $linked) { if ($files -notcontains $l) { No "NOTES 第 5 节索引链到 docs/notes/history/$l，文件不存在" } }
-    if ($files.Count -gt 0 -and $linked.Count -eq $files.Count) { Ok "索引与 docs/notes/history/ 双向一致（$($files.Count) 篇）" }
+    $linked = @([regex]::Matches($notes, '\((internal/history/[^)]+\.md)\)') | ForEach-Object { Split-Path $_.Groups[1].Value -Leaf })
+    foreach ($f in $files)  { if ($linked -notcontains $f) { No "internal/history/$f 存在，但 NOTES 第 5 节索引里没有它的链接" } }
+    foreach ($l in $linked) { if ($files -notcontains $l) { No "NOTES 第 5 节索引链到 internal/history/$l，文件不存在" } }
+    if ($files.Count -gt 0 -and $linked.Count -eq $files.Count) { Ok "索引与 internal/history/ 双向一致（$($files.Count) 篇）" }
   }
 
-  # (3) 体量阈值 —— 再涨就该挪东西出去（历史→docs/notes/history/、操作细节→docs/notes/rules/）
+  # (3) 体量阈值 —— 再涨就该挪东西出去（历史→internal/history/、操作细节→internal/rules/）
   if ($noteLines.Count -gt 400) {
-    No "NOTES.md 已 $($noteLines.Count) 行（阈值 400）：历史进 docs/notes/history/、操作细节进 docs/notes/rules/（NOTES 1.9）"
+    No "NOTES.md 已 $($noteLines.Count) 行（阈值 400）：历史进 internal/history/、操作细节进 internal/rules/（NOTES 1.9）"
   } else {
     Ok "NOTES.md $($noteLines.Count) 行（阈值 400）"
   }
 
   # (4) COURSE-STANDARD.md 体量阈值 —— 写作标准同样防膨胀（2026-10-21 拆出，见存档 5.52）
-  $csPath = Join-Path $root 'COURSE-STANDARD.md'
+  $csPath = Join-Path $root 'internal/standards/COURSE-STANDARD.md'
   if (-not (Test-Path $csPath)) {
-    No "COURSE-STANDARD.md 不存在（写作标准文件，拆自 NOTES 1.2～1.6，见存档 5.52）"
+    No "internal/standards/COURSE-STANDARD.md 不存在（写作标准文件，拆自 NOTES 1.2～1.6，见存档 5.52）"
   } else {
-    $csLines = @((ReadText 'COURSE-STANDARD.md') -split '\r?\n')
+    $csLines = @((ReadText 'internal/standards/COURSE-STANDARD.md') -split '\r?\n')
     if ($csLines.Count -gt 200) {
-      No "COURSE-STANDARD.md 已 $($csLines.Count) 行（阈值 200）：新规矩先问是不是自查清单的一行，别再加正文段"
+      No "internal/standards/COURSE-STANDARD.md 已 $($csLines.Count) 行（阈值 200）：新规矩先问是不是自查清单的一行，别再加正文段"
     } else {
-      Ok "COURSE-STANDARD.md $($csLines.Count) 行（阈值 200）"
+      Ok "internal/standards/COURSE-STANDARD.md $($csLines.Count) 行（阈值 200）"
     }
+  }
+
+  # (5) 各轨 TRACK-STANDARD.md 存在与体量 —— 轨道标准防丢失/防膨胀（2026-10-24 轨道细则下放，见存档 5.60）
+  foreach ($t in 'agent','llm','rag') {
+    $tp = Join-Path $root "internal/standards/tracks/$t.md"
+    if (-not (Test-Path $tp)) {
+      No "lessons/$t/TRACK-STANDARD.md 不存在（轨道标准：分版/课型标识/受众/脚本分工，见存档 5.60）"
+    } else {
+      $tl = @((ReadText "internal/standards/tracks/$t.md") -split '\r?\n')
+      if ($tl.Count -gt 120) {
+        No "internal/standards/tracks/$t.md 已 $($tl.Count) 行（阈值 120）：轨道细则膨胀时先问哪条该回全局或进存档"
+      } else {
+        Ok "internal/standards/tracks/$t.md $($tl.Count) 行（阈值 120）"
+      }
+    }
+  }
+
+  Write-Output "== G. md 链接断链扫描：根目录＋internal/＋docs/ 的相对链接指向真实文件 =="
+  # 盲区：C 段只核 lessons/ 课卡链接，根目录与 internal/ 子树 md 里的 markdown 链接一直没人查。
+  # 目录重组（5.61）时 audit 就指出过这块是盲区，这里补上（2026-10-25 加）。
+  $mdFiles = @(Get-ChildItem (Join-Path $root 'internal') -Recurse -File -Filter *.md) +
+             @(Get-ChildItem $root -File -Filter *.md)
+  if (Test-Path (Join-Path $root 'docs')) {
+    $mdFiles += @(Get-ChildItem (Join-Path $root 'docs') -File -Filter *.md)
+  }
+  $gChecked = 0; $gBad = 0
+  foreach ($md in $mdFiles) {
+    $rel = $md.FullName.Substring($root.Length + 1).Replace('\', '/')
+    $txt = ReadText $rel
+    # 挖掉 fenced code block 与行内代码：避免把 `[x](y)` 样例当链接（README/存档里有真命令）
+    $txt = [regex]::Replace($txt, '(?s)```.*?```', '```CODE```')
+    $txt = [regex]::Replace($txt, '`[^`]*`', '')
+    $baseDir = $md.DirectoryName
+    foreach ($m in [regex]::Matches($txt, '!?\[[^\]\n]*\]\(([^)\n]+)\)')) {
+      $url = $m.Groups[1].Value.Trim()
+      # 绝对 URL / mailto / 站内锚点 / 空目标 跳过；本地相对链接才核
+      if ($url -match '^(https?://|mailto:|tel:|#)') { continue }
+      $path = ($url -split '#')[0]
+      if ($path -eq '') { continue }
+      $path = [Uri]::UnescapeDataString($path)
+      $full = [IO.Path]::GetFullPath((Join-Path $baseDir $path))
+      # 相对链接逃逸出仓库根 = 死链（仓库内 md 不该引用仓库外）。
+      # 2026-10-25 首跑抓到 41 处：internal/history/ 从 docs/history/ 平移到 internal/history/ 后
+      # 返回链接仍是「../../../NOTES.md」，解析出仓库根指向不存在的文件 —— 逃逸不是该跳过的合法外部引用。
+      if (-not $full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
+        No "死链: $($md.Name) -> $path（$rel）逃逸出仓库根（解析到 $full）"; $gBad++; continue
+      }
+      $gChecked++
+      if (Test-Path -LiteralPath $full) { } else { No "死链: $($md.Name) -> $path（$rel）"; $gBad++ }
+    }
+  }
+  if ($gChecked -eq 0) {
+    No "G 段一条 md 相对链接都没扫到（文件列表或正则变了？）"
+  } elseif ($gBad -eq 0) {
+    Ok "G 段 $gChecked 条 md 相对链接全部指向真实文件"
   }
 }
 
