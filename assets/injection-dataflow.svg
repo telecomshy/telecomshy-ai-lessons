@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" width="900" height="520" role="img" aria-label="提示词注入数据流图：攻击者把指令夹进网页、邮件或文件；agent 把这些内容取回上下文，指令和数据都是字、模型分不出谁说的；模型把藏的指令当请求照办，工具真的动手（发邮件、转账、删文件）。下方三道防线依次切断这条链：让它少信（当数据不当指令、标来源、先校验再塞回）、让它少能（最小权限、执行分档）、出了事有人管（高危动作人点头）。">
+  <defs>
+    <marker id="in-atk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#9b1c1c"/>
+    </marker>
+    <marker id="in-def" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1f6b3a"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="520" fill="#fdfcf8"/>
+
+  <!-- ① 攻击者 -->
+  <rect x="15" y="70" width="150" height="100" rx="8" fill="#f8e8e6" stroke="#9b1c1c" stroke-width="1.6"/>
+  <text x="31" y="98" font-family="sans-serif" font-size="14" fill="#9b1c1c">攻击者</text>
+  <text x="31" y="124" font-family="sans-serif" font-size="12" fill="#1b1a17">在网页、邮件、文件里</text>
+  <text x="31" y="148" font-family="sans-serif" font-size="12" fill="#1b1a17">夹一行小字指令</text>
+
+  <!-- ② 外部内容 -->
+  <rect x="275" y="70" width="160" height="100" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="291" y="98" font-family="sans-serif" font-size="14" fill="#1b1a17">网页 / 邮件 / 文件</text>
+  <text x="291" y="124" font-family="sans-serif" font-size="12" fill="#6c675e">表面是正常内容</text>
+  <text x="291" y="148" font-family="sans-serif" font-size="12" fill="#6c675e">指令藏在字缝里</text>
+
+  <!-- ③ agent 上下文 -->
+  <rect x="535" y="70" width="190" height="100" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
+  <text x="551" y="98" font-family="sans-serif" font-size="14" fill="#1b1a17">agent 的上下文</text>
+  <text x="551" y="124" font-family="sans-serif" font-size="12" fill="#6c675e">指令和数据都是字</text>
+  <text x="551" y="148" font-family="sans-serif" font-size="12" fill="#6c675e">模型分不出谁说的</text>
+
+  <!-- ④ 工具 -->
+  <rect x="800" y="70" width="85" height="100" rx="8" fill="#fff" stroke="#9b1c1c" stroke-width="1.5"/>
+  <text x="812" y="98" font-family="sans-serif" font-size="13.5" fill="#9b1c1c">工具</text>
+  <text x="812" y="124" font-family="sans-serif" font-size="11.5" fill="#1b1a17">发邮件</text>
+  <text x="812" y="146" font-family="sans-serif" font-size="11.5" fill="#1b1a17">转账、删文件</text>
+
+  <!-- 攻击链箭头 -->
+  <text x="220" y="100" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#9b1c1c">① 夹带</text>
+  <line x1="165" y1="130" x2="270" y2="130" stroke="#9b1c1c" stroke-width="1.6" marker-end="url(#in-atk)"/>
+
+  <text x="485" y="100" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#9b1c1c">② agent 取回</text>
+  <line x1="435" y1="130" x2="530" y2="130" stroke="#9b1c1c" stroke-width="1.6" marker-end="url(#in-atk)"/>
+
+  <text x="762" y="100" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#9b1c1c">③ 照办</text>
+  <line x1="725" y1="130" x2="795" y2="130" stroke="#9b1c1c" stroke-width="1.6" marker-end="url(#in-atk)"/>
+
+  <text x="450" y="212" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#9b1c1c">这条链上没有哪一步是「模型坏了」——每一步都按字面意思照办，防的就是这种照办</text>
+
+  <!-- 三道防线 -->
+  <rect x="60" y="310" width="260" height="110" rx="8" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.6"/>
+  <text x="78" y="340" font-family="sans-serif" font-size="14" fill="#1f6b3a">让它少信</text>
+  <text x="78" y="366" font-family="sans-serif" font-size="12" fill="#1b1a17">当数据不当指令、标来源</text>
+  <text x="78" y="390" font-family="sans-serif" font-size="12" fill="#1b1a17">工具返回先校验再塞回</text>
+
+  <rect x="350" y="310" width="240" height="110" rx="8" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.6"/>
+  <text x="368" y="340" font-family="sans-serif" font-size="14" fill="#1f6b3a">让它少能</text>
+  <text x="368" y="366" font-family="sans-serif" font-size="12" fill="#1b1a17">最小权限、执行分档</text>
+  <text x="368" y="390" font-family="sans-serif" font-size="12" fill="#1b1a17">被骗了，损害也有限</text>
+
+  <rect x="620" y="310" width="240" height="110" rx="8" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.6"/>
+  <text x="638" y="340" font-family="sans-serif" font-size="14" fill="#1f6b3a">出了事有人管</text>
+  <text x="638" y="366" font-family="sans-serif" font-size="12" fill="#1b1a17">高危动作人点头</text>
+  <text x="638" y="390" font-family="sans-serif" font-size="12" fill="#1b1a17">不可逆的动作留人在环</text>
+
+  <!-- 防线切进攻击链 -->
+  <line x1="190" y1="310" x2="485" y2="180" stroke="#1f6b3a" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#in-def)"/>
+  <line x1="470" y1="310" x2="712" y2="180" stroke="#1f6b3a" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#in-def)"/>
+  <line x1="740" y1="310" x2="836" y2="180" stroke="#1f6b3a" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#in-def)"/>
+
+  <!-- 底注 -->
+  <text x="28" y="470" font-family="sans-serif" font-size="11.5" fill="#6c675e">三道防线要同时上：骗过第一道，第二道把损害限住，第三道把不可逆的动作留给人。</text>
+  <text x="28" y="494" font-family="sans-serif" font-size="11.5" fill="#6c675e">间接注入的原料全从「agent 自己取回的内容」来——这是 agent 比聊天机器人多出来的攻击面。</text>
+</svg>

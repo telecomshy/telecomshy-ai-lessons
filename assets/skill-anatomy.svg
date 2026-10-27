@@ -29,7 +29,7 @@
 
   <rect x="470" y="76" width="380" height="76" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.4"/>
   <text x="486" y="104" font-family="sans-serif" font-size="13.5" fill="#8a2b06">① 平时：只有 name + description</text>
-  <text x="486" y="130" font-family="sans-serif" font-size="12.5" fill="#6c675e">每个已安装技能都进系统提示；就这一句</text>
+  <text x="486" y="130" font-family="sans-serif" font-size="12.5" fill="#6c675e">每个已安装技能都进模型能看到的目录；就这一句</text>
 
   <line x1="660" y1="152" x2="660" y2="176" stroke="#6c675e" stroke-width="1.6" marker-end="url(#skill-arrow)"/>
   <text x="674" y="170" font-family="sans-serif" font-size="12" fill="#6c675e">模型决定用</text>

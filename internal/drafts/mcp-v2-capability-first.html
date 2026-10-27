@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 3 课 · MCP：给工具定一个统一插口（草稿二·能力先行）</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 3 课 · 理论</div>
+  <h1>MCP：给工具定一个统一插口</h1>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>在技能广场里找到天气工具，点安装、启用，回到对话里说"查一下北京天气"——它查出来了。装之前你说这话，它说查不了。</p>
+    <p>会查天气的这个工具是别人写好的程序，你直接安装拿来用。模型没有学会新知识，它多了一个能用的工具。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：说清安装一个 MCP 工具的时候发生了什么；看懂配置里每一行在说什么；知道去哪找现成的工具、怎么判断它可信。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>MCP 装进去的是别人写好的工具。</b>插口统一了，装上就多一个能力。</p>
+  </div>
+
+  <h2>1. 一开始它不会查天气</h2>
+  <p>你第一次让 agent 查天气，它说查不了，它手里没有这个本事。装上天气工具，再问一遍，查出来了。中间你没教它任何东西。</p>
+  <p>变的是它手里多了一个工具。工具是别人写好的程序：天气工具知道怎么问天气服务、怎么把结果拿回来。你的 agent 接上它，就有了查天气的能力。</p>
+  <p>你在产品里做的几步，下载、点安装、启用，干的是同一件事：把工具接上。这课就讲这个"接"。</p>
+
+  <h2>2. 各家工具的接法不一样</h2>
+  <p>工具是别人写好的，直接装上就行。麻烦在每家工具的调用格式不一样。你的 agent 想用四个不同来源的工具，就要写四套对接；三个产品都接这四个工具，就是十二份对接。工具越多、产品越多，这件事越做不完。</p>
+  <p>Anthropic 在 2024 年发布 MCP 时说的就是这件事：每接一个数据源都要单独写一套对接，真正连得起来的系统根本铺不开（原话 "Every new data source requires its own custom implementation"）。</p>
+  <p>解法是给工具定一个统一插口。官方文档给的画面：<b>MCP 之于 AI 应用，就像 USB-C 之于电子设备</b>。USB-C 统一了"怎么插"，MCP 统一了"怎么接"。它的名字是 <b>MCP（Model Context Protocol，模型上下文协议）</b>，一套开放标准，也就是公开发布、谁都能照着实现的统一约定。</p>
+  <p>插口统一之后，工具写一次，任何支持 MCP 的产品都能装。你在 TeleAgent 里装的天气工具，同事换一个软件也能装它。</p>
+
+  <h2>3. 安装并启用，你创建了一条连接</h2>
+  <p>TeleAgent 有两种方法可以安装 MCP 工具：在技能广场里找到应用连接、点安装；或者在设置 → 工具设置里导入一段 JSON 配置。JSON 是一种固定格式的配置写法，照着填就行。<b>装好并启用，你就创建了一条 MCP 连接。</b>只装不启用，连接不会建立，工具清单也报不上来。</p>
+  <p>你知道底层发生了什么吗？这条连接把三样东西连在一起：</p>
+  <ul>
+    <li><b>host</b>：你用的 AI 应用，也就是 TeleAgent。</li>
+    <li><b>server</b>：你装的那个工具背后的服务程序。server 可以理解为一个服务器：它启动起来之后，等着被问"你能干什么"、等着被调用。它可能跑在你电脑上，也可能跑在服务商那边。</li>
+    <li><b>client</b>：连接件。host 给每个 server 配一个，装好就在那儿了，不用你操心。</li>
+  </ul>
+
+  <figure class="figure">
+    <img src="../../assets/mcp-host-client-server.svg" alt="MCP 架构图：左边是 MCP host（你用的 AI 应用），里面有两个 MCP client；右边分别是本地 MCP server 和远程 MCP server。host 为每个 server 建一个 client，一条连接对一条；每个 server 报出自己的工具清单。">
+    <figcaption><b>host 不直接连 server</b>：它给每个 server 建一个 client，一条连接对一条。图里右边就是两种 server：本地的跑在你电脑上，远程的跑在服务商那边，配置的区别在第 4 节。</figcaption>
+  </figure>
+
+  <p>连接建好后，先报到再干活。连接件问 server"你能干什么"，server 把工具清单交回来：每样工具的名字、说明、要填什么参数，一样一样列清。清单进了上下文（模型这一次能看到的全部内容），模型才知道自己手里有哪些工具。你说"查一下北京天气"，模型从清单里挑出天气工具、填好参数发过去，server 执行完把结果送回来。三步：<b>先问它会什么，把清单给模型，模型挑一个调</b>。</p>
+  <p>连上先问一遍"你能干什么"，这一步叫<b>发现</b>。普通 API（一家家单独对接的接口）得先把工具一个个写进提示词里；MCP 的工具是连上后自己报出来的，工具增删了，清单还会更新。</p>
+
+  <div class="note">
+    <span class="label">想深究再看，跳过不影响后文</span>
+    <p>连接件和 server 一问一答的格式叫 <b>JSON-RPC 2.0</b>（请求带方法名，回结果）；协议是<b>无状态</b>的，每个请求自带版本和能力，server 不靠"上一次连接"猜。除了工具，server 还能公布 <b>resources</b>（能读的数据，比如文件、数据库记录）和 <b>prompts</b>（现成的提示词模板）。工具清单可以订阅，增删时通知连接件刷新。</p>
+  </div>
+
+  <h2>4. 你在粘的那段 JSON</h2>
+  <p>配置是给 TeleAgent 这类应用看的：告诉它怎么启动或者连上这个 server。</p>
+  <p>server 有两种。本地 server 跑在你电脑上，由你的电脑把它启动起来；远程 server 跑在服务商的服务器上，你只要连过去。这两种的配置不一样：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">本地 server</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">远程 server</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>跑在哪</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">你电脑上，配置里的命令把它启动起来</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">服务商的服务器上</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>配置填什么</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>command</code> + <code>args</code>，key 放 <code>env</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">URL + 鉴权（证明你有权用这个服务的凭据）</td></tr>
+      <tr><td style="padding:0.45rem"><b>要 npx 吗</b></td>
+          <td style="padding:0.45rem">常见 <code>npx</code> / <code>uvx</code> 启动</td>
+          <td style="padding:0.45rem">不要</td></tr>
+    </tbody>
+  </table>
+  <p>下面是本地 server 的一份配置（例子来自 TeleAgent 手册）：</p>
+  <pre><code>{
+  "mcpServers": {
+    "math-server": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}</code></pre>
+  <p><code>math-server</code> 是服务名，自己起；<code>command</code> 是启动命令；<code>args</code> 是传给命令的参数。例子里的 <code>server-everything</code> 是官方的测试工具包，装上它是为了连上就能试。</p>
+  <p><b>在 TeleAgent 里配</b>（按它 2026-10-18 的手册）：</p>
+  <ol>
+    <li>头像浮窗 → <b>设置</b> → <b>工具设置</b> → <b>从 JSON 导入/添加</b>。</li>
+    <li>粘贴上面的 JSON（根对象要有 <code>mcpServers</code>）→ 保存。</li>
+    <li>看状态：连上的 server 会出现绿色的<b>「已连接」</b>；首页的 <b>MCP</b> 按钮能看到正在用的 server。</li>
+    <li>在工具列表里可以<b>连接 / 断开 / 编辑</b>。工具名改过之后，旧任务里记的还是旧名字。</li>
+    <li>回到对话，直接说"算一下 2+3"——它会先发现工具，再调。</li>
+  </ol>
+  <p>上面配的是本地 server。远程 server 的配置不一样：填 URL 和鉴权，没有 <code>command</code> 和 <code>args</code>，也不用 <code>npx</code>。字段的完整口径、远程配置的完整例子、配置弄错了怎么查，都收在 <a href="mcp-config-cheatsheet.html">MCP 配置速查</a>。</p>
+
+  <h2>5. 去哪找现成的</h2>
+  <p>不用自己写工具。下面是国内常用的入口（2026-10-18 看；产品会变）。广场里每个 server 会标 <b>Local</b> 或 <b>Hosted</b>：标 Local 的跑在本地，要先启动一个程序；标 Hosted 的跑在服务商那边，填 URL 就能连。这两个词说的是 server 跑在哪，和第 3 节的 host（你用的应用）不是一回事。</p>
+  <ul>
+    <li><b>腾讯云开发者 MCP 广场</b>（<a href="https://cloud.tencent.com/developer/mcp">cloud.tencent.com/developer/mcp</a>）：腾讯官方加第三方的 server，每个都标了 Local 还是 Hosted。</li>
+    <li><b>阿里云百炼 MCP 广场</b>（<a href="https://help.aliyun.com/zh/model-studio/official-and-third-party-mcp">文档</a>）：详情页能复制接入配置，用它给的 key 鉴权。</li>
+    <li><b>ModelScope 魔搭 MCP 广场</b>（<a href="https://modelscope.cn/mcp">modelscope.cn/mcp</a>）：社区 MCP，按页面给的配置接。</li>
+  </ul>
+  <p>安装前问三句：<b>格式对得上吗</b>（本地还是远程？）· <b>要什么权限</b>（API key、本地文件、云账号？）· <b>来源可信吗</b>（本地 server 以你的用户权限跑）。</p>
+
+  <h2>6. 用它的边界</h2>
+  <p>本地 server 以你的用户权限运行：你读写得到的东西，它也读写得到。接进来之前把关三条：只用可信来源的 server，不明来源的配置和命令先别粘；只给它需要的目录和数据库，不用的工具断开；key 放 <code>env</code>，不写进对话，也不留在代码里。</p>
+  <p><b>什么时候不值得用 MCP？</b>三个工具、自己用、只在一份脚本里跑，直接写函数最省事。MCP 的价值在复用和发现：多个产品要接同一个工具、或者想把工具交给别人用时，才值得多这一层。接得越多，每次要带的工具清单越长，费用和互相干扰都跟着涨。</p>
+
+  <h2>7. 技能广场里还有一种叫"技能"</h2>
+  <p>技能广场里除了应用连接（MCP 工具），还有一种叫<b>技能</b>。技能是什么、它和应用连接有什么区别，下一课详细介绍。</p>
+
+  <h2>8. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 装上天气工具后，agent "会查天气了"。这本事是哪来的？</p>
+    <button class="quiz-option">模型偷偷学会了新知识</button>
+    <button class="quiz-option">你教了它查天气的方法</button>
+    <button class="quiz-option" data-correct="true">有人把查天气写成了工具，你装上了</button>
+    <button class="quiz-option">天气服务主动找上了它</button>
+    <p class="feedback"
+       data-ok="对。工具是别人写好的，你拿来用——装 MCP 装进去的就是工具。"
+       data-no="模型不会因为安装就学会新知识；多出来的是接上的工具。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 你想用别人写好的工具，最麻烦的是什么？</p>
+    <button class="quiz-option">工具的价格太贵</button>
+    <button class="quiz-option" data-correct="true">每家调用格式不一样，接起来没完没了</button>
+    <button class="quiz-option">工具的功能太少</button>
+    <button class="quiz-option">模型看不懂中文的工具</button>
+    <p class="feedback"
+       data-ok="对。三个产品接四个工具就是十二份对接——MCP 用一个统一插口把它变成一份。"
+       data-no="麻烦在「接」：没有标准时，每个组合都要单独适配。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> MCP 里的 server 是什么？</p>
+    <button class="quiz-option">就是模型本身，换了个名字</button>
+    <button class="quiz-option">一个只负责存数据的数据库</button>
+    <button class="quiz-option">一份可复用的提示词模板</button>
+    <button class="quiz-option" data-correct="true">工具背后的服务程序，可以理解为一个服务器</button>
+    <p class="feedback"
+       data-ok="对。server 启动起来后等着被问、等着被调用；它跑在哪，配置就长什么样。"
+       data-no="server 是程序，不是模型；它报出工具清单，模型只负责挑和填参数。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 连接建好后，第一件事是什么？</p>
+    <button class="quiz-option">直接让模型开始调工具</button>
+    <button class="quiz-option" data-correct="true">报到：问它会什么，把工具清单拿回来</button>
+    <button class="quiz-option">把工具的代码读一遍</button>
+    <button class="quiz-option">把工具名一个个抄进提示词</button>
+    <p class="feedback"
+       data-ok="对。先问它会什么、清单给模型、模型挑一个调——这一步叫「发现」。"
+       data-no="清单是连上后自己报出来的，不是抄进提示词的，更不用读源码。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 远程 server 的配置是什么样的？</p>
+    <button class="quiz-option">用 <code>command</code> + <code>npx</code> 启动</button>
+    <button class="quiz-option">把 server 代码复制进提示词</button>
+    <button class="quiz-option">必须先把 server 下载到本地</button>
+    <button class="quiz-option" data-correct="true">填 URL 和鉴权，没有 command 和 args</button>
+    <p class="feedback"
+       data-ok="对。远程 server 跑在服务商那边，你只要连过去；<code>command</code>/<code>npx</code> 是本地的写法。"
+       data-no="远程不需要本地进程；<code>command</code>/<code>npx</code> 只用于本地 server。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 在 TeleAgent 里装好一个 MCP 工具并启用，这一步实际干了什么？</p>
+    <button class="quiz-option">给模型装进了一个新知识包</button>
+    <button class="quiz-option" data-correct="true">创建了一条连接：host 和工具的 server 连上了</button>
+    <button class="quiz-option">把工具的代码复制进了提示词</button>
+    <button class="quiz-option">只是把工具下载到了硬盘上</button>
+    <p class="feedback"
+       data-ok="对。下载只是第一步；启用之后连接建立、工具清单报上来，工具才真的能用。"
+       data-no="只下载不启用，连接不会建立；建了连接，模型才拿得到工具清单。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol — What is MCP</a> ／ <a href="https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture">Architecture overview</a>：USB-C 的官方比喻、按角色的好处；host／client／server 三个角色、工具的发现与调用。<br>
+    <a href="https://www.anthropic.com/news/model-context-protocol">Anthropic — Introducing the Model Context Protocol</a>（2024-11-25）："每接一个数据源都要单独写一套对接"的痛点原话、开放标准的定位（2026-10-26 抓）。<br>
+    <a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">天翼 AI — 星辰超级智能体·桌面版操作手册</a>：TeleAgent 安装与配置步骤（技能广场的应用连接；工具设置→从 JSON 导入；绿色「已连接」），2026-10-18 抓。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"普通 API 和 MCP 到底差在哪？""应用连接和技能是一回事吗？""装几个工具合适？""怎么判断一个 server 可信？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="../../lessons/agent/0002-build-an-agent.html">Agent 篇 · 第 2 课 · 手写一个 agent</a>（工具清单在那里第一次出场）<br>
+    <b>顺着往下</b>：<a href="../../lessons/agent/0004-skill.html">Agent 篇 · 第 4 课 · Skill：把做法打包成文件</a>（技能是什么、它和应用连接的区别）<br>
+    <b>速查</b>：<a href="mcp-config-cheatsheet.html">MCP 配置速查</a>（字段口径、远程例子、配置查错）<br>
+    术语表：<a href="../../reference/glossary.html#tool">工具</a> · <a href="../../reference/glossary.html#mcp">MCP</a> · <a href="../../reference/glossary.html#context">上下文</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 3 课 · 理论 · <a href="../../lessons/index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

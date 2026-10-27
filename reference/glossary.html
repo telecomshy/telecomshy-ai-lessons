@@ -79,6 +79,9 @@
     <dt id="multi-agent"><strong>Multi-agent（多智能体）</strong></dt>
     <dd>多个 agent 分工协作（如"编排者 + 工作者"）。更强也更难调试，通常不是起点。</dd>
 
+    <dt id="prompt-injection"><strong>提示词注入（prompt injection）／纸条攻击</strong></dt>
+    <dd>外部内容里藏着看起来像<b>指令</b>的字句，agent 读到就可能照办。<b>直接注入</b>是攻击者直接对 agent 说话；<b>间接注入</b>藏在 agent 自己取回的网页、邮件、文件、工具返回值里，是真正要防的。在模型眼里指令和数据都是字，所以没有"根治"，只有层层缓解（少信、少能、有人管）。OWASP 的 LLM 风险榜（2025 版）把它排第一（LLM01:2025）。</dd>
+
     <dt id="token"><strong>Token（词元）/ 分词器（tokenizer）</strong></dt>
     <dd>模型处理文字的<b>最小单位</b>，由<b>分词（tokenization）</b>切出来，干这件事的组件叫<b>分词器（tokenizer）</b>——它<b>不等于</b>自然语言的"词"。中文一个词可能切成多个 token，英文生僻词可能被切成子串（如 <code>un / happi / ness</code>），空格与标点也可能是独立 token。<b>token 是文本片段，不是数字</b>；它接着会在<b>词表</b>里拿到一个<b>编号（ID）</b>。</dd>
 

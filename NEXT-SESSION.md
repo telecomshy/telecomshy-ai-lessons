@@ -8,33 +8,35 @@
 1. `AGENTS.md`：会话规则（会话自动加载，不用手动提醒）。
 2. 本文件：当前状态与下一步。
 3. [`NOTES.md`](NOTES.md) 第 1 节（流程纪律）＋ [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md)（全局写作标准）＋**本轮要动的那一轨 [`internal/standards/tracks/<轨道>.md`](internal/standards/tracks/)**。
-4. 按下一步的事按需读：[`5.54`](internal/history/5.54-agent-model-and-0001-rework.md)（**Agent 篇 0002→0005 施工图在其 §三**）／[`5.59`](internal/history/5.59-agent-0001-dualblind-rework.md)（盲测法原始提案）／[`5.60`](internal/history/5.60-track-standard-split.md)（**标准两层化拆分＋盲测约束＋0002 文章体过**）／[`5.61`](internal/history/5.61-directory-reorg.md)（**目录重组：对内 internal/、对外 docs/——勿把内部资料放回 docs/**）／[`5.57`](internal/history/5.57-llm-track-language-rework.md)（编辑工具教训全集）。
+4. 按下一步的事按需读：[`5.66`](internal/history/5.66-concept-ladder-and-familiar-start.md)（MCP/Skill 开场法与文字返工全程）／[`5.65`](internal/history/5.65-agent-track-split-and-renumber.md)（拆课与全链重排，7 课制）／[`5.54`](internal/history/5.54-agent-model-and-0001-rework.md)（0007 Harness 施工图在其 §三「0005」行，内容照旧、课号已顺延）／[`5.57`](internal/history/5.57-llm-track-language-rework.md)（编辑工具教训全集）。
 5. 开工前跑 `pwsh tools/progress.ps1` 拿基线。
 
 ## 当前状态
 
-- **课程总盘**：31 门 / 19 基础 / 12 进阶 / 21 脚本；存档 61 篇；audit 全绿。
-- **✅ 目录重组完成（存档 5.61，2026-10-25）**：对内/对外语义分层。结构：三轨标准改名移入 `internal/standards/tracks/{agent,llm,rag}.md`＋`internal/standards/COURSE-STANDARD.md`；docs/ 四子树（history 60＋rules 4＋learning-records 5＋agents 3）整体平移 `internal/`；`docs/` 腾空为对外读者区（README.md 占位）；ADR 懒创建约定改 `internal/adr/`；lessons/ 从此只含课件 HTML（正文零改动，未碰任何 completed 课）。工作量：76 文件移动＋13 文件 40+ 处引用同步＋2 新建；改前备份 `backup/structure-reorg-20261025/`（11 件，已 gitignore）。验收（以实跑为准）：progress.ps1 两轮全绿；audit 子代理独立核验通过（结构 9/9；与 git HEAD 逐字对账 68/70 哈希一致，5 篇改动均为路径同步，5.59/5.60/5.61 属新文件无基线）；audit 查出 6 处「链接深度未重算」死链（NOTES:37、COURSE-STANDARD:3、internal/rules 三件）＋NEXT-SESSION 旧链接 5 处，均已当轮补修并复扫归零。⚠ audit 同时指出 progress C 段只核 lessons 课卡链接，**根目录 md 与 internal 子树的 markdown 链接是盲区**。
-- **✅ 写作标准两层化（存档 5.60，2026-10-24）**：全局 `internal/standards/COURSE-STANDARD.md` 只留共用规矩＋deep 体例（措辞统一「薄层课/deep」）；**分版/课型标识/受众/脚本分层/编号特例下放三轨 `internal/standards/tracks/<轨道>.md`**（行数以 audit 实跑为准，F 段第 (5) 项盯存在与体量）。同轮：语言洗练四条并入文章体「句子层」；盲测质检入 1.5（只委派一个学生子代理、定位自学教材非讲稿、**须学习者同意或主动才跑**）；拆分后审计子代理独立复核（通过 4/5，11 条问题已修 9 条、2 条审计自评可不改项未动，见 5.60 §五）。
-- **✅ `agent/0002` 文章体过完成（4 处手术）**：goal 删垫词、§3/§4 补因果承接；核验全绿（b 74/74、code 104/104、quiz 5×1、链接锚点 miss=0、双 audit 绿）。施工图内「拟补长任务体感」无学习者拍板记录，**已移除**。*改前备份 `backup/agent-track-20261024/`。*
-- **✅ `agent/0001` 自学向返工完成（存档 5.59）**：18 处手术＋术语表 API 词条；**待学习者 F5 验收**。
-- **⚠ 未提交**：`agent/0001`＋`reference/glossary.html`＋`agent/0002`＋标准拆分六文件＋三轨标准＋存档 5.60**＋本轮目录重组（76 移动＋13 同步＋docs/README＋存档 5.61＋本文件重写）**——均在工作区；git 提交时移动会被识别为 rename，历史不断。三备份目录已 gitignore。
-- **Agent 篇**：0001 三轮全过（内容/语言/自学向）；0002 文章体过完成；0003→0005 施工图在 5.54 §三待开工。
+- **课程总盘**：33 门 / 21 基础 / 12 进阶 / 21 脚本；存档 66 篇；audit 全绿（2026-10-27 实跑）。
+- **✅ 0003/0004 已用草稿替换正文（2026-10-27）**：
+  - `lessons/agent/0003-mcp.html` ← `internal/drafts/mcp-v3-problem-first.html`：问题先行、文章体；§5 补了「启用只是登记，第一次请求才把工具定义带给模型，之后每轮重带」；6 题。
+  - `lessons/agent/0004-skill.html` ← `internal/drafts/skill-from-familiar.html`：文章体重写；§4 讲「目录常驻、正文按需」，并注明 Anthropic 放系统提示／OpenCode 放 `skill` 工具说明／TeleAgent 手册未写内部位置；6 题。
+  - 配套速查 `reference/mcp-config-cheatsheet.html` 已从草稿落正式页，0003 正文与 next 都已链过去。
+  - 旧正文备份：`backup/agent-0003-0004-pre-draft-replace-20261027/0003-mcp.before.html`、`0004-skill.before.html`；文字返工前草稿备份在 `backup/agent-0003-0004-mechanism-20261027/`。
+  - `assets/skill-anatomy.svg` 图内「进系统提示」已改「进模型能看到的目录」；发布版 0003/0004 的同一句、图注、表头已同步。
+- **✅ 0003-0006 已按 5.65 拆分出版**；0007 顺延完成。两张图（编排时序→0005／注入数据流→0006）渲染**待学习者目视**。
+- **⚠ 0001/0002 仍超长**（各约 40 分钟+）：待 F5 后定压缩 vs 拆。
+- **⚠ 0007 尚缺 1 图**（压缩 vs 交接时间线）＋Verification 展开成节＋四产品对照表降薄——5.54 §三遗留项。
+- **⚠ 未提交**：Agent 轨 7 课＋两张新 SVG＋`internal/drafts/` 草稿＋备份＋glossary＋标准拆分＋目录重组＋RESOURCES＋存档 5.60～5.66——均在工作区。
+- **写作标准 1.5 已补缺口**（2026-10-27）：场景可构造但要像真的、表格不用大表替代推理、列表前后有引导/收束、标题让读者预期下一步；**5.51 的 `English（中文）` 与「软件工作场景优先、不要生活比喻」仍未引入**，别把「只补缺口」误读成翻案。
 
 ## 下一步
 
-1. **学习者 F5 验收**：`agent/0002`（§3/§4 承接句）与 0001（已验收两轮）**＋目录重组目视核对**（lessons/ 只剩 HTML、docs/ 只剩一个 README、internal/ 五子树齐全）——验收后 git 提交（0001 语言+盲测、0002 文章体、标准拆分、目录重组，建议按机制分笔，粒度待学习者定）。
-2. **开工 Agent 篇 0003→0005**（一轮一课，先读 [`internal/standards/tracks/agent.md`](internal/standards/tracks/agent.md)，改前备份 `backup/agent-track-YYYYMMDD/`）：施工图 5.54 §三——0003 广场截图降薄／0004 补 2 图＋拓扑谱系＋OWASP＋回链 0001 workflow 节／0005 补 1 图＋Verification 展开＋对照表降薄。⚠ 盲测质检须**学习者同意或主动提出**才跑（1.5 盲测规矩）。
-3. RAG 轨四门要不要纳入语言返工＋盲测（学习者拍板）。
-   ✔ 原第 4 条（补审计盲区）已于 2026-10-25 完成（progress G 段），见当前状态「审计盲区已补」。
+1. **F5 验收 0003/0004 新稿（最优先）**：读体感（20-30 分钟）、文章感、互链、速查页、图渲染；重点看 0003 §5「启用≠模型看见／每轮重带」与 0004 §4「目录常驻／正文按需」是否顺。验收后 git 提交（建议 0003/0004 分笔）。
+2. **0007 Harness 施工**：一轮一课，先读 [`internal/standards/tracks/agent.md`](internal/standards/tracks/agent.md)，改前备份；补 1 图（压缩 vs 交接时间线）＋Verification 展开成节＋四产品对照表降薄；体量压回 30 分钟内。⚠ 盲测须学习者同意才跑。
+3. **0001/0002 超长**：F5 后定压缩 vs 拆；**体量预算（5000-7000 字＋6-8 题）要不要入 `tracks/agent.md`**；RAG 轨要不要纳入语言返工＋盲测。
+4. **收尾**：`lessons/index.html` 速查区补不补三页（MCP 配置速查已落 `reference/`，目录页还没卡片）；「Agent 原理篇」旧轨道名 7 处课件＋5 处文档待拍板；GLOSSARY.md 是否约定到 `internal/`。
 
 ## 待确认
 
-- `lessons/index.html` 速查区补不补三页（原定 0005 轮一并定，尚未定）。
-- 「Agent 原理篇」旧轨道名 9 处课件＋4 处文档——内容层改名，待拍板。⚠ 0008 系 footer「AI Agent 原理与工程」同批。
-- RAG 轨是否纳入语言返工。
 - 学习者每周可投入时间（还没收集）。
 - 学员版留档的课程级观察：小测暂无「把判断用到自己业务场景」的题——全课程可能的演化方向，未动。
-- **GLOSSARY.md（仓库开发术语表，懒创建约定在根目录）**：语义上属对内，是否也约定到 `internal/`？本次未动（AGENTS.md:50 仍写根目录），待拍板。
+- 0003/0004 的草稿是否在 F5 后删除或归档（目前 `internal/drafts/` 留源稿；`reference/` 是正式速查页）。
 
 > AI生成

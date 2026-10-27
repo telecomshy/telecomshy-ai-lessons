@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 4 课 · Skill：把做法打包成文件（草稿·从见过的东西认起）</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 4 课 · 理论</div>
+  <h1>Skill：把做法打包成文件</h1>
+
+  <div class="goal">
+    <p>你一定干过这件事：把写周报的要求打成一段字，粘给它；下次开新对话，再粘一遍。粘到第十遍的时候，你有没有想过：这段话为什么不能让它自己记住？</p>
+    <p>能。把做法放进一个文件夹，agent 用的时候自己翻开照做，这就是 <b>Skill（技能）</b>。它和 MCP 在技能广场里长得几乎一样，但装完多出来的是<b>做法</b>，不是动作。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：在已经教过它的事情里认出 Skill；说清它装的是什么、为什么正文要按需加载；用 TeleAgent 创建一个技能、测它、改它；分清 MCP 和 Skill 各管哪层、什么时候该用哪个。</p>
+  </div>
+
+  <div class="note">
+    <p><b>MCP 给能力，Skill 给做法。</b>这课拆后一半：做法是怎么“装”进 agent 的。判断一件东西是哪种，看它多出来的是动作还是做法。</p>
+  </div>
+
+  <h2>1. 你其实已经教过它</h2>
+  <p>想一个你反复交代的活：写周报要先汇总完成项，再列风险，最后写下周计划；缺数据就先问，不要编。这些步骤和判断，你对它讲过不止一遍。群里流传的“神提示词”也一样，大家复制来复制去。</p>
+  <p>问题不在它记不住，是做法散落在对话里：粘一次管一次，开个新对话就没了；换个人讲，讲法还不一样，做出来的东西时好时坏。</p>
+  <p>Skill 就是把这段话变成文件：写一次，装进 agent，每次照做。</p>
+  <p>接着上一课的比方往下走：工具是厨具，Skill 是菜谱。厨具告诉你“能切能炒”，菜谱告诉你“红烧肉该怎么做、什么时候放糖、糊了怎么办”。菜谱本身不会做菜，得有人照着做；Skill 也一样，它给的是步骤，动手的还是 agent。</p>
+  <p>具体来说，Skill 的主体是几份 Markdown 文件，外加可选的脚本和资料；模型用的时候读它。</p>
+
+  <h2>2. 看起来一样，多出来的东西不一样</h2>
+  <p>在技能广场里，Skill 和 MCP 的东西长得一样：下载、装上、agent 变能干。上一课给过一个土办法，反过来用：装完看它多了什么。装了周报 Skill，agent 多的是“按你们的格式写周报”这个做法；装了天气 MCP，多的是“查天气”这个动作。</p>
+  <p>“装上”的动作像，里面装的东西不一样。MCP 装的是一个 server 的配置：启用后连上，server 报一份带参数的工具清单，模型照着清单挑动作。Skill 装的是一个文件包：产品启动时会扫到它，只把 name 和 description 放进模型能看到的技能目录，正文等模型决定用了才读。</p>
+  <p>一个是能调用的动作，一个是要不要翻开的手册。所以严格说，Skill 本身不是一个可调用的工具：它是被加载的说明书，真正执行动作的才是工具。</p>
+  <p>用同一个任务检验最清楚。你说“写周报”，Skill 决定先汇总什么、再列什么、输出长什么样、缺数据怎么办；周报里要“拉出本周的提交记录”，那一步是工具的事，工具可以在 Skill 的流程里被调用。做法里可以调用能力，但两者不是一回事。</p>
+  <p>为什么容易混？产品把入口做成了同一个样子，“配置不一样”这条线索就被盖住了。真正的分层是：MCP 站在“怎么接”那一层，对外的标准接口，谁来都能接；Skill 站在“怎么做”那一层，是给某个 agent 的说明书，换个产品不一定认得。接下来只看做法这一层。</p>
+
+  <h2>3. 做法得先变成文件</h2>
+  <p>做法能装进 agent，是因为它先变成了文件。文件才可装、可改、可传、可以按版本管理。一个 Skill 就是一个目录：</p>
+  <pre><code>weekly-report/
+  SKILL.md            ← 入口：frontmatter + 正文
+  reference.md        ← 补充资料，用到才读
+  scripts/
+    collect.py        ← 可选：确定性步骤交给脚本</code></pre>
+  <p><code>SKILL.md</code> 自己长这样：</p>
+  <pre><code>---
+name: weekly-report
+description: 当用户说「写周报」「汇总本周工作」时，按团队模板生成周报。
+---
+
+# 周报
+
+## 什么时候用
+...
+
+## 怎么做
+1. ...
+
+## 输出格式
+...
+
+## 失败怎么救
+...</code></pre>
+  <p><code>SKILL.md</code> 头部的 YAML 叫 <b>frontmatter</b>，<code>name</code> 和 <code>description</code> 是必填。<code>description</code> 写的是“做什么 + 什么时候用”，它是模型认出这个技能的第一关。正文是第二层：什么时候用、怎么做、输出什么、出错怎么办。</p>
+
+  <figure class="figure">
+    <img src="../../assets/skill-anatomy.svg" alt="Skill 结构图：左边是一个技能目录，里面有 SKILL.md、reference.md 和 scripts；SKILL.md 顶部是 YAML frontmatter 的 name 和 description，下面是正文。右边是三层渐进式加载：第一层只有 name 和 description 进模型能看到的技能目录；第二层模型决定使用后读 SKILL.md 正文；第三层需要时再读 reference.md 或运行 scripts。">
+    <figcaption><b>一个目录 + 三层加载</b>：平时只有 <code>name</code>／<code>description</code> 进模型能看到的技能目录；模型决定用，才读 <code>SKILL.md</code> 正文；正文提到别的文件，再按需打开。</figcaption>
+  </figure>
+
+  <h2>4. 它怎么被发现：目录常驻，正文按需</h2>
+  <p>Skill 不是 MCP 那种“连接时由 server 报一份工具清单”。它的发现走另一条路：会话开始时，产品扫一遍已安装的 Skill，只读每个 <code>SKILL.md</code> 头部的 <code>name</code> 和 <code>description</code>，把这一条放进模型能看到的技能目录。正文不在里面。</p>
+  <p>这份目录放在哪，各家产品不一样。Anthropic 的 Agent Skills 把它放在系统提示里；OpenCode 有一个专门加载 Skill 的 <code>skill</code> 工具，可用 Skill 的 name 和 description 就写在这个工具的说明里；TeleAgent 的手册只写到添加、启用和 <code>@</code>，没写内部放在哪。位置不同，做法是同一个：先给模型一份薄薄的目录，正文按需读。</p>
+  <p>模型觉得某个 description 和当前任务对得上，才去读 <code>SKILL.md</code> 正文。正文进来之后，才轮到它提到的 <code>reference.md</code> 或脚本。这就是渐进式加载的三层：</p>
+  <ol>
+    <li><b>平时</b>：每个已安装 Skill 的 <code>name</code>＋<code>description</code> 进技能目录，只有名字和说明这两条。</li>
+    <li><b>模型觉得用得上</b>：才打开 <code>SKILL.md</code> 正文。</li>
+    <li><b>正文提到某个文件</b>：再按需打开那个文件，或运行里面的脚本。</li>
+  </ol>
+  <p>为什么非要这样？因为上下文是稀缺资源：进上下文的东西都要花钱、占位置，还会互相干扰（<a href="../../lessons/llm/0003-kv-cache-and-prompt-caching.html">LLM 底层第 3 课</a>讲过）。渐进式加载就是“不看不用的，连打开都不打开”，和 <a href="../../lessons/rag/0001-why-retrieval.html">RAG</a> 是同一个思想：按需取资料，而不是把整份文档塞进去。这也说明 <code>description</code> 为什么是第一关：平时它只有这一句话的机会。</p>
+
+  <h2>5. 在 TeleAgent 里做一个</h2>
+  <p>TeleAgent 把创建技能做成了两个入口：技能广场右上角的【创建技能】，或者直接 <code>@</code> 技能孵化器。入口名各家产品可能不同，产物都是 <code>SKILL.md</code>。这一节按 TeleAgent 2026-10-18 的手册来。</p>
+  <p>先想清一件事和一个触发点。别一上来就“帮我做个万能助手”，先定：这个技能只干什么？用户说什么话时该用它？</p>
+  <p>然后点【创建技能】，用自然语言把需求说全。可以照这个模板：</p>
+  <pre><code>帮我创建一个技能：
+- 名字：weekly-report
+- 什么时候用：用户说「写周报」「汇总本周工作」时
+- 输入：本周的日报/任务记录/提交记录
+- 步骤：先汇总完成项，再列风险，最后写下周计划
+- 输出格式：Markdown，三段：本周完成 / 风险 / 下周计划
+- 边界：缺数据就先问，不要编；不写与工作无关的内容</code></pre>
+  <p>等它生成，去“我的技能”里启用。只有启用的技能才能被 <code>@</code> 引用；启用上限是 50 个，别把不用的都开着。</p>
+  <p>第一次测试，先手动 <code>@</code> 它，别靠自动匹配。在输入框点技能按钮，或输入 <code>@</code> 选，例如：</p>
+  <pre><code>使用 @weekly-report，把这周的日报汇总成周报。</code></pre>
+  <p>TeleAgent 的手册明确说：不指定技能时系统会自动选，但匹配不如手动指定准。第一次测试、以及技能很多时，先手动 <code>@</code>。</p>
+  <p>最后看它怎么用，再改。用 3 个真实任务测：两个“该触发”、一个“不该触发”。看它哪一步跑偏，回去改 <code>description</code> 或正文；也可以让 <code>@技能孵化器</code> 帮你迭代。TeleAgent 里还能看技能详情、评分；同一技能用满 20 次会触发“技能自进化”，改完可以更新到广场。</p>
+  <p>另一种是导入现成的 Skill。技能广场 → 导入技能，支持 <code>.zip</code>／<code>.skill</code>；根目录必须有 <code>SKILL.md</code>，头部 YAML 写 <code>name</code> 和 <code>description</code>，文件不超过 10MB。导入时会过安全审查，有风险会提示；通过后出现在“我的技能”。</p>
+  <p>走完这些，你手里就有一个能反复用的技能。接下来是怎么让它被用对。</p>
+
+  <h2>6. 建好只是开始</h2>
+  <p>技能能不能被用上、用得对不对，主要看几件事。</p>
+  <ul>
+    <li><b><code>description</code> 是第一关</b>：写“做什么 + 什么时候用”，最好带上用户真会说的词（“写周报”“汇总本周工作”）。只写“一个周报工具”等于没写。</li>
+    <li><b>一个 Skill 只干一件事</b>：既写周报又审合同，触发词会打架，正文也会互相干扰。拆成两个。</li>
+    <li><b>正文写成操作手册</b>：输入、步骤、输出格式、失败怎么救。模型不是同事，不会自己补你们团队的默认规矩。</li>
+    <li><b>长内容往外挪</b>：模板、长表格、参考资料放 <code>reference.md</code>；确定性步骤放脚本。正文保持短，才省上下文。</li>
+    <li><b>给例子</b>：一段“输入 → 期望输出”的样例，比十句形容词管用。</li>
+    <li><b>用真实任务迭代</b>：先跑几个真实任务，再改；不要凭想象一次写完。Anthropic 的建议也是“从评估开始，观察它在哪卡住，再补 Skill”。</li>
+    <li><b>安全</b>：导入的技能可以带指令和脚本，等于别人给你装了一段程序。只装可信来源，装前读一遍 <code>SKILL.md</code> 和脚本。</li>
+  </ul>
+  <p>这些功夫，都是为了让技能被反复用。只用一次的事，不值得建 Skill，直接把要求对它说清就行。</p>
+
+  <h3>用起来出毛病，先从最常见的地方查</h3>
+  <p>多数问题出在 <code>description</code> 和启用状态。先把这两处排掉，再动正文。</p>
+  <ul>
+    <li><b>技能不被触发</b>：先看 <code>description</code> 有没有写“什么时候用”；再试手动 <code>@</code>；最后看它是不是被停用了、启用数是不是到顶。</li>
+    <li><b>不该用的时候硬用</b>：<code>description</code> 写太宽（“处理文档”），把范围收窄，或拆成多个技能。</li>
+    <li><b>输出格式不对</b>：正文里没写清模板/例子；补“输出格式”一节，给一段样例。</li>
+    <li><b>导入失败</b>：对着导入的四个条件逐条查——格式、根目录 <code>SKILL.md</code>、YAML、文件大小。</li>
+    <li><b>改了没生效</b>：改完要保存/更新；旧任务可能还引用旧版本，新开一个任务再测。</li>
+    <li><b>脚本跑不起来</b>：依赖没装、路径写死、工作目录不对；先在本机手动跑通脚本，再放进 Skill。</li>
+    <li><b>技能太多互相抢</b>：只启用常用的；触发词重叠的合并或拆清。</li>
+  </ul>
+  <p>先从 description、启用状态和手动 <code>@</code> 这三处排；都没问题，再看正文和脚本。</p>
+
+  <h2>7. 去哪找现成的</h2>
+  <p>Skill 不用都自己写。国内常用的入口有三个（2026-10-18 看，产品会变）。先看格式和权限，再安装。</p>
+  <ul>
+    <li><b>TeleAgent 技能广场</b>（软件内）：官方加社区技能，创建、导入、管理都在这里。</li>
+    <li><b>ModelScope Skills 技能中心</b>（<a href="https://modelscope.cn/skills">modelscope.cn/skills</a>）：浏览技能，下载后按你的产品要求导入。</li>
+    <li><b>阿里云百炼 Skill 管理</b>（<a href="https://help.aliyun.com/zh/model-studio/introduction-to-skill">文档</a>）：官方 Skill 添加即用，自定义 Skill 传 ZIP，自动审查。</li>
+  </ul>
+  <p>三个入口都能拿到现成的包，差别在格式和审核方式；装之前先确认你的产品认哪种格式。安装前还要问三句：格式对得上吗（ZIP + <code>SKILL.md</code>？还是某个平台自己的插件？）· 要什么权限（API key、本地文件、云账号？）· 来源可信吗（技能里的指令和脚本会以你的权限跑）。</p>
+
+  <h2>8. 要动作，还是要做法</h2>
+  <p>MCP 和 Skill 都见过了，回到开头那个混淆：它们在技能广场里长得一样，装完多出来的东西不一样。判断只需要一问：我要的是一个新动作，还是一个做法？</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">场景</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">更合适</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">要教 agent“什么时候用、按什么步骤做、输出什么格式”</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Skill</b>（流程里可以调 MCP 工具）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">要模型直接看到一个可调用函数（名字/说明/参数）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>MCP 工具</b>（或产品内置工具）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">只有一个产品、一个团队，工具只跑本地脚本</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Skill + 脚本</b>（更轻）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">同一能力要给多个产品/多人用，或要让不同产品都能发现它、有稳定的参数定义</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>MCP</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">数据在远程，要鉴权/限流/隔离，凭据不想进模型上下文</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>MCP</b>（server 关着凭据）</td></tr>
+      <tr><td style="padding:0.45rem">一次性小工具，只有你一个人用</td>
+          <td style="padding:0.45rem"><b>直接写函数</b>，别上 MCP/Skill</td></tr>
+    </tbody>
+  </table>
+  <p>发现方式也不一样：MCP 是 server 在连接时报一份带参数的工具清单，模型照着清单挑；Skill 是产品扫目录，只把 name 和 description 放进技能目录，正文按需读。一个发现的是动作，一个发现的是要不要翻开的手册。</p>
+  <p>本地的 MCP 和带脚本的 Skill，功能上确实有重合。一个本地 MCP server 是“跑在本机、把能力暴露出来的程序”；一个 Skill 也能带脚本在本机跑。只服务一个产品、一个团队，很多本地 MCP 确实可以用 Skill + 脚本替掉。</p>
+  <p>但“重合”不等于“一样”：Skill 管“这件事怎么做”，MCP 管“这个能力怎么被接上”。两者常常配合：Skill 写流程，流程里调 MCP 工具；或者先用 Skill 脚本跑通，等要被多个客户端复用时再抽成 MCP server。</p>
+
+  <h2>9. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 每次都把同一段“周报格式”粘给它，最该做的改造是什么？</p>
+    <button class="quiz-option">换一个更聪明的模型</button>
+    <button class="quiz-option">把这段话写得更长更详细</button>
+    <button class="quiz-option" data-correct="true">做成 Skill，让 agent 自己记住做法</button>
+    <button class="quiz-option">把周报格式写进 MCP 工具的名字里</button>
+    <p class="feedback"
+       data-ok="对。做法反复教、还教不稳，就该落成文件——这正是 Skill 装的东西。"
+       data-no="做法不该散在对话里；工具的名字也装不下一套流程。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 装完之后 agent 多了“按格式写周报”的本事，它多出来的是什么？</p>
+    <button class="quiz-option">一个新动作</button>
+    <button class="quiz-option">一个新模型</button>
+    <button class="quiz-option" data-correct="true">一套做法——所以这是 Skill</button>
+    <button class="quiz-option">一段网络连接</button>
+    <p class="feedback"
+       data-ok="对。土办法：装完看多了什么——多做法的是 Skill，多动作的是 MCP。"
+       data-no="动作是 MCP 给的；“按格式写”是步骤和判断，是做法。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 模型决定“要不要用某个 Skill”，第一依据是什么？</p>
+    <button class="quiz-option">SKILL.md 的正文写得够不够长</button>
+    <button class="quiz-option">Skill 文件夹的命名顺序</button>
+    <button class="quiz-option" data-correct="true">description 写得清不清楚</button>
+    <button class="quiz-option">上一次用它的时候有没有成功</button>
+    <p class="feedback"
+       data-ok="对。平时只有 name 和 description 进技能目录——description 写得含糊，Skill 就等于不存在。"
+       data-no="正文要等模型决定用之后才打开；第一关是 description。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 为什么 Skill 要做“渐进式加载”？</p>
+    <button class="quiz-option">因为模型一次读不了太长的文件</button>
+    <button class="quiz-option">因为文件太大下载会比较慢</button>
+    <button class="quiz-option">因为技能多了以后会互相冲突</button>
+    <button class="quiz-option" data-correct="true">上下文是稀缺的，塞多了又贵又乱</button>
+    <p class="feedback"
+       data-ok="对。不看不用的，连打开都不打开——这就是省 token 的核心手段。"
+       data-no="根因在成本和干扰：进上下文的东西都要买单，还容易跑偏。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 导入一个别人做的 Skill，哪条要求是对的？</p>
+    <button class="quiz-option">随便什么压缩包，解压到目录就能直接用</button>
+    <button class="quiz-option" data-correct="true">根目录放 SKILL.md，头部写名字和描述</button>
+    <button class="quiz-option">只要脚本能跑，说明文件可以完全不管</button>
+    <button class="quiz-option">必须做成 exe 安装包，双击才能装</button>
+    <p class="feedback"
+       data-ok="对。技能就是文件包：根目录 SKILL.md + YAML frontmatter；还要过安全审查。"
+       data-no="它不是 exe，也不是随便的压缩包：根目录必须有 SKILL.md，头部 YAML 写清名字和描述。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 只有一个产品用、只跑本地脚本的小工具，最省事的做法是？</p>
+    <button class="quiz-option">先搭一个本地 MCP server</button>
+    <button class="quiz-option" data-correct="true">写一个 Skill，配一个脚本</button>
+    <button class="quiz-option">两个都搭上，图个双保险</button>
+    <button class="quiz-option">把模型换成更大一号的试试</button>
+    <p class="feedback"
+       data-ok="对。单产品、本地脚本，Skill 更轻；等要被多个客户端复用，再抽成 MCP server。"
+       data-no="单产品不需要先上插口标准；Skill + 脚本跑通后，需要复用再抽 MCP。"></p>
+  </div>
+
+  <p>Skill 就讲到这里。MCP 给的是能力，Skill 给的是做法；两样都装上，agent 才知道能做什么、该怎么做。下一课看多个 agent 怎么分工。</p>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills">Anthropic — Equipping agents for the real world with Agent Skills</a>（2025-10-16）：Skill 的目录结构、三层渐进式加载（名字和说明常驻、正文触发后读、引用文件按需读），以及“从评估开始、按真实任务迭代”的创建建议。<br>
+    <a href="https://opencode.ai/docs/skills/">OpenCode — Agent Skills</a>：可用技能列在 <code>skill</code> 工具的说明里、模型调用 <code>skill</code> 按需加载（2026-10-18 抓，2026-10-27 复核）。<br>
+    <a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">天翼 AI — 星辰超级智能体·桌面版操作手册</a>：本课的创建技能流程（技能广场→创建技能／@技能孵化器；导入要求与安全审查；自进化 ≥20 次；启用上限 50），2026-10-18 抓，2026-10-27 复核。手册只写到添加、启用和 <code>@</code>，没有写这些信息放在哪里。<br>
+    <a href="https://modelscope.cn/skills">ModelScope Skills 技能中心</a> · <a href="https://help.aliyun.com/zh/model-studio/introduction-to-skill">阿里云百炼 Skill 管理</a>：现成技能的国内入口与导入要求（2026-10-18 抓）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>有哪里不清楚，直接问我。</b>比如“我的技能该不该拆成两个？”“description 写到多长才够？”“技能里的脚本和 MCP 工具有什么不一样？”“广场里下的那个到底是 MCP 还是 Skill？”
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="../../lessons/agent/0003-mcp.html">Agent 篇 · 第 3 课 · MCP：给工具定一个统一插口</a>（“多动作”的那一半）· <a href="../../lessons/agent/0002-build-an-agent.html">Agent 篇 · 第 2 课 · 手写一个 agent</a><br>
+    <b>顺着往下</b>：<a href="../../lessons/agent/0005-multi-agent.html">Agent 篇 · 第 5 课 · 多 agent 协作</a>（一个 agent 干不完的活，怎么叫帮手）<br>
+    <b>LLM 底层</b>：<a href="../../lessons/llm/0003-kv-cache-and-prompt-caching.html">第 3 课 · KV Cache</a>（“按需加载”省的就是这个）<br>
+    术语表：<a href="../../reference/glossary.html#skill">Skill</a> · <a href="../../reference/glossary.html#mcp">MCP</a> · <a href="../../reference/glossary.html#progressive-disclosure">渐进式加载</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 4 课 · 理论 · <a href="../../lessons/index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

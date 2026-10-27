@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent 篇 · 第 3 课 · MCP：给工具定一个统一插口（草稿·从见过的东西认起）</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">Agent 篇 · 第 3 课 · 理论</div>
+  <h1>MCP：给工具定一个统一插口</h1>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>在技能广场里下载个东西、装上，agent 就多了一样本事。再下载一个，又多一样。<b>MCP 和 Skill 不都是这么回事吗？</b>看起来是——产品甚至把两个的入口做成了一个样子。</p>
+    <p>但装完之后多出来的东西不一样：<b>MCP 多的是"动作"，Skill 多的是"做法"</b>。这课先把前一半讲透：你装 MCP 的时候，装进去的到底是什么。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：在你已经装过的东西里认出 MCP；说清它给 agent 多的是什么；说清三个角色和一次"发现 → 调用"；分清本地/远程，填对配置、排掉最常见的错；知道什么时候不值得用 MCP。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>MCP 给能力，Skill 给做法</b>。这课只拆前一半：能力是怎么"接"进 agent 的。看到任何东西，先问它多出来的是动作还是做法。</p>
+  </div>
+
+  <h2>1. 你其实已经装过它</h2>
+  <p>回想一下你用 TeleAgent 干过的事：设置里粘过一段 JSON，或者在广场里点过"下载安装"。装完回到对话里一试——它会查天气了、能读数据库了、能帮你发消息了。</p>
+  <p>这件事干的就是 MCP。你已经用过它，只是产品没在按钮上写这三个字母。</p>
+  <p>装之前，agent 会的就两样：说话、转循环（第 1 课拆过的那个）。装之后，它多了<b>手</b>：多出来的是一批能做的<b>动作</b>。记住这个感觉，整课都从它往下长。</p>
+
+  <h2>2. 先认一认：它和「技能广场里那个」不是一回事</h2>
+  <p>你的第一感觉多半是："不都是下载一个东西、装上、agent 变能干吗？"这个感觉是对的。它们都是<b>扩展</b>：装之前不会，装之后会。产品还越来越把入口做成一样——在 TeleAgent 里，两类都在技能广场里下载装上，更像了。</p>
+  <p>但装完看<b>多出来的是什么</b>，差别就出来了。装了天气 MCP，agent 多的是"查天气"这个<b>动作</b>：你说"查一下北京天气"，它去查。装了写周报的 Skill，agent 多的是"按你们团队的格式写周报"这个<b>做法</b>：你说"写周报"，它知道先汇总什么、再列什么、缺数据先问。</p>
+  <p>一句话分开它们：<b>MCP 给能力，Skill 给做法</b>。做法那一半在第 4 课。为什么容易混？因为"配置不一样"这条线索被产品的统一体验盖住了。给你一个土办法，后面几节都会用到：<b>装完看它多了什么</b>——多动作的是 MCP，多做法的是 Skill。</p>
+
+  <h2>3. 能力是怎么"接"上的：一个接口，不是一个功能包</h2>
+  <p>装 MCP 不是下载一个功能，是<b>接上一台提供能力的设备</b>。官方文档给的画面：<b>MCP 之于 AI 应用，就像 USB-C 之于电子设备</b>——USB-C 统一了"怎么插"，MCP 统一了"怎么接"。</p>
+  <p>它的名字是 <b>MCP（Model Context Protocol，模型上下文协议）</b>：一套<b>开放标准</b>，规定"提供能力的一方"和"用能力的一方"怎么对话。</p>
+  <p>标准值钱在哪？同一个 server，你的 TeleAgent 能接，同事的 IDE 也能接——<b>工具写一次，谁来都能接</b>。对照没有标准时的样子就清楚了：想用别人写好的天气、搜索、数据库工具，每家调用格式不一样，N 个应用接 M 个工具最笨要写 N×M 份适配。Anthropic 在 2024 年发布 MCP 时说的正是这件事（原话）："Every new data source requires its own custom implementation, making truly connected systems difficult to scale."——每接一个数据源都要单独写一套对接，真正连得起来的系统根本铺不开。</p>
+
+  <h2>4. 接上以后：三个角色和一次「发现 → 调用」</h2>
+  <h3>三个角色：host、client、server</h3>
+  <ul>
+    <li><b>MCP host</b>：你用的 AI 应用 / harness（TeleAgent、Claude Desktop、IDE 插件都算）。它负责管连接、把工具交给模型。</li>
+    <li><b>MCP client</b>：host 内部的一个连接器。<b>host 给每个 server 建一个 client</b>，各管一条连接。</li>
+    <li><b>MCP server</b>：真正提供能力的<b>程序</b>。它可以在你本机跑（本地），也可以在别人的服务器上跑（远程）。</li>
+  </ul>
+  <p><b>server 不是模型</b>。它不负责"想"，只负责"提供"——它提供什么，连上它第一眼就能看到。<b>client 是 harness 内置的</b>：你要做的只是给它一份 server 配置，不用自己写 client。</p>
+
+  <figure class="figure">
+    <img src="../../assets/mcp-host-client-server.svg" alt="MCP 架构图：左边是 MCP host（你的 harness），里面有两个 MCP client；右边分别是本地 MCP server（stdio）和远程 MCP server（Streamable HTTP）。host 为每个 server 建一个 client，client 与 server 之间用 JSON-RPC 2.0 通信；每个 server 可以公布 tools、resources、prompts。">
+    <figcaption><b>host 不直接连 server</b>：它给每个 server 建一个 client，一条连接对一条。本地 server 走 stdio，远程 server 走 Streamable HTTP；两边说的是同一套 JSON-RPC。</figcaption>
+  </figure>
+
+  <h3>一次「发现 → 调用」长什么样</h3>
+  <p>MCP 的底层是 <b>JSON-RPC 2.0</b>：客户端发一个带方法名的请求，server 回结果。新版协议还是<b>无状态</b>的——每个请求自己带版本和能力，server 不靠"上一次连接"猜。</p>
+  <p>连上之后，第一件事不是让模型调工具，而是<b>发现</b>：</p>
+  <pre><code>client → server:  server/discover          # 你支持什么版本、有哪些能力
+client → server:  tools/list               # 有哪些工具
+server → client:  tools: [名字 + 说明 + 参数 schema, ...]
+client → server:  tools/call {name, arguments}
+server → client:  content: [...]           # 执行结果</code></pre>
+  <p>工具不是硬编码进 prompt 的：客户端连上先问"你能干什么"，把工具清单拿回来，再交给模型。这一步叫<b>发现（discovery）</b>，是 MCP 和普通 API 最不一样的地方。server 公布的三样东西各管一件事：</p>
+  <ul>
+    <li><b>tools</b>：能执行的动作（查天气、发邮件、跑 SQL）；模型选的是它。</li>
+    <li><b>resources</b>：能读的数据（文件、数据库记录、接口返回）；更像"资料"，不是"动作"。</li>
+    <li><b>prompts</b>：可复用的提示词模板；让 server 把"该怎么问"也一起提供。</li>
+  </ul>
+  <p>工具清单还可能变：server 可以开一个订阅，工具增删时通知客户端刷新。所以客户端不能只在启动时抄一次清单。</p>
+
+  <h2>5. 装它的那几分钟：配置</h2>
+  <p>你在设置里粘的那段 JSON，现在可以看懂它了。配置不是给模型看的，是给<b>客户端</b>看的：它告诉 harness"怎么启动/连上这个 server"。</p>
+  <h3>先分清：本地 server，还是远程 server</h3>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">本地 server</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">远程 server</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>跑在哪</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">你电脑上的一个进程</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">服务商的服务器</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>传输</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">stdio（标准输入/输出）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">Streamable HTTP</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>配置</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>command</code> + <code>args</code>（+ <code>env</code>）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">URL + 鉴权（字段看客户端）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>要 npx 吗</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">常见：<code>npx</code> / <code>uvx</code> 启动</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">不需要</td></tr>
+      <tr><td style="padding:0.45rem"><b>例子</b></td>
+          <td style="padding:0.45rem">文件系统、数据库、数学运算</td>
+          <td style="padding:0.45rem">腾讯云 Hosted、阿里云 One Key</td></tr>
+    </tbody>
+  </table>
+  <p>所以"远程也是这么配"是误会：<b><code>command</code>/<code>args</code> 是本地 stdio 的写法</b>；远程 server 给的是 URL/鉴权，不需要 <code>npx</code>。具体字段以你用的客户端文档为准。</p>
+
+  <h3>本地这份 JSON</h3>
+  <pre><code>{
+  "mcpServers": {
+    "math-server": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}</code></pre>
+  <p>这份例子来自 TeleAgent 的手册：<code>math-server</code> 是服务名，<code>command</code> 是启动命令，<code>args</code> 是传给命令的参数。<b>字段口径</b>：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">字段</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">类型</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">必填</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">说明</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>mcpServers</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">对象</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">所有 MCP 服务的入口；里面每个键是一个服务</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">服务名（键）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">字符串</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">服务的唯一标识；建议小写字母、数字、连字符</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>command</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">字符串</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">启动 server 的可执行命令（<code>npx</code> / <code>python</code> / <code>node</code>）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>args</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">数组</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">传给 command 的参数列表</td></tr>
+      <tr><td style="padding:0.45rem"><code>env</code></td>
+          <td style="padding:0.45rem">对象</td>
+          <td style="padding:0.45rem">否</td>
+          <td style="padding:0.45rem">注入 server 进程的环境变量，例如 API key</td></tr>
+    </tbody>
+  </table>
+
+  <p><b>在 TeleAgent 里配</b>（按它 2026-10-18 的手册）：</p>
+  <ol>
+    <li>头像浮窗 → <b>设置</b> → <b>工具设置</b> → <b>从 JSON 导入/添加</b>。</li>
+    <li>粘贴上面的 JSON（根对象要有 <code>mcpServers</code>）→ 保存。</li>
+    <li>看状态：连上的 server 会出现绿色的<b>「已连接」</b>；首页的 <b>MCP</b> 按钮能看到正在用的 server。</li>
+    <li>在工具列表里可以<b>连接 / 断开 / 编辑</b>；改完保存会重新验证。⚠ 工具名改过之后，历史任务可能引用不到旧名字。</li>
+    <li>回到对话，直接说"算一下 2+3"——它会先发现工具，再调。</li>
+  </ol>
+
+  <h3>远程 server：只配 URL 和鉴权</h3>
+  <p>远程 server 不启动本地进程，配置里没有 <code>command</code>/<code>args</code>。下面是腾讯云 CloudBase 的 <b>Hosted 模式</b>示例（<a href="https://docs.cloudbase.net/en/ai/cloudbase-ai-toolkit/connection-modes">官方文档</a>）：</p>
+  <pre><code>{
+  "mcpServers": {
+    "cloudbase": {
+      "type": "http",
+      "url": "https://tcb-api.cloud.tencent.com/mcp/v1?env_id=YOUR_ENV_ID",
+      "headers": {
+        "X-TencentCloud-SecretId": "YOUR_SECRET_ID",
+        "X-TencentCloud-SecretKey": "YOUR_SECRET_KEY"
+      }
+    }
+  }
+}</code></pre>
+  <p>看三样：<code>type</code> 是 <code>http</code>；<code>url</code> 是服务地址；<code>headers</code> 放鉴权。<b>没有 <code>command</code>，也没有 <code>npx</code>。</b>不同客户端的字段名不一样，以客户端文档为准。</p>
+
+  <h3>配置最常见的问题</h3>
+  <ul>
+    <li><b><code>command</code> 找不到</b>：<code>npx</code> 要先装 Node.js；<code>python</code> 不在 PATH 也一样。先在终端手动跑一遍 <code>command</code> + <code>args</code>，能跑通再填。</li>
+    <li><b>JSON 语法错</b>：多一个逗号、少一个引号、<code>args</code> 写成字符串——这几种最常把整份配置弄挂。粘贴后先用格式化工具过一眼。</li>
+    <li><b>路径是相对的</b>：本地 server 的参数里要塞<b>绝对路径</b>，尤其 Windows 的反斜杠。</li>
+    <li><b>key 没进 <code>env</code></b>：需要鉴权的 server，把 key 放 <code>env</code>，别写进 <code>args</code> 或对话里。</li>
+    <li><b>连上但模型不调</b>：先看工具清单有没有发现成功；再看工具说明写没写全（下面会讲）。</li>
+    <li><b>改名/换配置后旧对话失效</b>：工具名变了，历史任务里的引用就对不上——改名前想清楚。</li>
+  </ul>
+
+  <h2>6. 用它的边界：安全和"什么时候不值得"</h2>
+  <p>本地 MCP server 是<b>以你的用户权限</b>运行的：它能读写你读写得到的东西。接进来之前自己把关三条：只用<b>可信来源</b>的 server，不明来源的 JSON/命令先别粘；给<b>最小权限</b>，只挂需要的目录/数据库，不用的工具断开；密钥放 <code>env</code>，不写进对话、不提交到 git。</p>
+  <p><b>什么时候不值得用 MCP？</b>三个工具、自己用、只在一份脚本里跑——直接写函数最省事。MCP 的价值在<b>复用和发现</b>：多个客户端要接同一个能力、或者想把工具交给别人用时，才值得多这一层。接得越多，清单越长、上下文越贵，也要给每个 server 一份信任。</p>
+  <p><b>工具说明要写全五样。</b>不管工具是你自己写的、还是 MCP 接来的，模型看到的只有名字和说明。第 2 课写了三件：<b>名字</b>（动词＋名词）、<b>说明</b>（干什么＋什么时候用）、<b>参数</b>（类型、必填、示例）。要让它调完还看得懂，再加两样：<b>返回什么</b>（结构、单位）、<b>出错怎么说</b>（错误信息要能让模型看懂并改）。</p>
+
+  <h2>7. 回到广场：怎么认出你装的是哪个</h2>
+  <p>现在回头看开头那个感觉——"两个不都一样吗"。可以收口了：产品的入口可以一样，装完多出来的东西不一样。<b>多动作的是 MCP，多做法的是 Skill。</b>再给两个不会看走眼的线索：</p>
+  <ul>
+    <li><b>看配置</b>：让你填 <code>mcpServers</code> JSON、连上显示"已连接"的，是 MCP；给你一个 <code>SKILL.md</code>、靠触发词或 <code>@</code> 唤起的，是 Skill。</li>
+    <li><b>看它跟谁说话</b>：MCP 的 server 是外部程序，可以给好几个产品接；Skill 是装在某个 agent 里的文件，换个产品不一定认得。</li>
+  </ul>
+  <p>两者不打架，还常配合：Skill 写"周报怎么做"的流程，流程里"拉提交记录"那一步可以调 MCP 工具。分不清的时候问一句：<b>我要的是一个新动作，还是一个新做法？</b>——要动作找 MCP，要做法找 Skill，下一课就讲它。</p>
+
+  <h2>8. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 你装了一个扩展，agent 从此多了"查天气"这个动作。装的是什么？</p>
+    <button class="quiz-option">Skill，因为它让 agent 会了新东西</button>
+    <button class="quiz-option" data-correct="true">MCP，因为多出来的是动作</button>
+    <button class="quiz-option">两个都算，反正都是下载安装</button>
+    <button class="quiz-option">都不是，这是模型自己学会的</button>
+    <p class="feedback"
+       data-ok="对。土办法第一条：装完看多了什么——多动作的是 MCP。"
+       data-no="广场下载只是入口；分辨靠「多出来的是动作还是做法」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> MCP 和 Skill 在产品里入口差不多，为什么说它们本质不同？</p>
+    <button class="quiz-option">一个免费一个收费</button>
+    <button class="quiz-option">一个本地跑一个云端跑</button>
+    <button class="quiz-option" data-correct="true">装完多出来的不同：MCP 给能力，Skill 给做法</button>
+    <button class="quiz-option">配置文件的格式不一样而已</button>
+    <p class="feedback"
+       data-ok="对。入口一样是产品体验；「配置不一样」只是本质不同漏出来的线索。"
+       data-no="本地还是云端是 server 的跑法，不区分 MCP 和 Skill。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 官方用 USB-C 比喻 MCP，比的是哪一点？</p>
+    <button class="quiz-option">传输速度快慢</button>
+    <button class="quiz-option" data-correct="true">统一了「怎么插」——谁来都能接</button>
+    <button class="quiz-option">接口可以正反插</button>
+    <button class="quiz-option">只支持一家的设备</button>
+    <p class="feedback"
+       data-ok="对。USB-C 统一怎么插，MCP 统一怎么接：工具写一次，任何支持它的产品都能接。"
+       data-no="比的是「标准化的接口」，不是速度，也不限一家。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> MCP 里的 server 是什么？</p>
+    <button class="quiz-option">就是模型本身，换了个名字</button>
+    <button class="quiz-option">一个只负责存数据的数据库</button>
+    <button class="quiz-option">一份可复用的提示词模板</button>
+    <button class="quiz-option" data-correct="true">一个提供工具、资源或提示词的程序</button>
+    <p class="feedback"
+       data-ok="对。server 负责提供能力，不负责「想」；它可以是本地程序，也可以是远程服务。"
+       data-no="server 是程序，不是模型；它公布 tools／resources／prompts，模型只负责挑和填参数。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 连上 server 之后，第一件事是什么？</p>
+    <button class="quiz-option">直接让模型开始调工具</button>
+    <button class="quiz-option" data-correct="true">发现：问它有哪些工具，把清单拿回来</button>
+    <button class="quiz-option">把 server 的代码读一遍</button>
+    <button class="quiz-option">把工具名一个个抄进提示词</button>
+    <p class="feedback"
+       data-ok="对。先 tools/list 拿清单再交给模型——这是 MCP 和普通 API 最不一样的地方。"
+       data-no="清单是「发现」拿回来的，不是抄进 prompt 的，更不用读源码。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 远程 MCP server 一般怎么配？</p>
+    <button class="quiz-option">用 <code>command</code> + <code>npx</code> 启动</button>
+    <button class="quiz-option">把 server 代码复制进提示词</button>
+    <button class="quiz-option">必须先把 server 下载到本地</button>
+    <button class="quiz-option" data-correct="true">填 URL 和鉴权信息，不用 npx</button>
+    <p class="feedback"
+       data-ok="对。远程 server 走 HTTP，给 URL/鉴权；<code>command</code>/<code>npx</code> 是本地 stdio 的写法。"
+       data-no="远程不需要本地进程；<code>command</code>/<code>npx</code> 只用于本地 stdio。"></p>
+  </div>
+
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://modelcontextprotocol.io/docs/getting-started/intro">Model Context Protocol — What is MCP</a> ／ <a href="https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture">Architecture overview</a>：USB-C 的官方比喻、按角色的好处；host／client／server 三个角色、stdio／Streamable HTTP 两种传输、JSON-RPC 与 tools／resources／prompts、发现与调用。<br>
+    <a href="https://www.anthropic.com/news/model-context-protocol">Anthropic — Introducing the Model Context Protocol</a>（2024-11-25）："每接一个数据源都要单独写一套对接"的痛点原话、开放标准的定位（2026-10-26 抓）。<br>
+    <a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">天翼 AI — 星辰超级智能体·桌面版操作手册</a>：本课的 TeleAgent 配置步骤（工具设置→从 JSON 导入；绿色「已连接」；连接/断开/编辑），2026-10-18 抓。"两类扩展入口趋同（都在技能广场装）"为 2026-10-26 学习者口径。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>比如"MCP server 和普通 API 到底差在哪？""技能广场里下的到底是哪种？""为什么本地 server 要 stdio，远程要 HTTP？""接多少个 server 才合适？"——直接问我。搞不懂就往下学，是最贵的学费。
+  </div>
+
+  <p class="next">
+    <b>前置</b>：<a href="../../lessons/agent/0002-build-an-agent.html">Agent 篇 · 第 2 课 · 手写一个 agent</a>（工具清单在那里第一次出场）<br>
+    <b>顺着往下</b>：<a href="../../lessons/agent/0004-skill.html">Agent 篇 · 第 4 课 · Skill：把做法打包成文件</a>（"多做法"的那一半）<br>
+    术语表：<a href="../../reference/glossary.html#tool">工具</a> · <a href="../../reference/glossary.html#mcp">MCP</a> · <a href="../../reference/glossary.html#function-calling">Function calling</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · Agent 篇 · 第 3 课 · 理论 · <a href="../../lessons/index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

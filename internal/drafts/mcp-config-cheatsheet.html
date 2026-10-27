@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MCP 配置速查（草稿）</title>
+<link rel="stylesheet" href="../../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <h1>MCP 配置速查</h1>
+  <p class="subtitle">照着填、照着查。想懂为什么这么填，回 <a href="mcp-v2-capability-first.html">第 3 课 · MCP</a>。</p>
+
+  <h2>1. 本地 server：完整例子和字段</h2>
+  <pre><code>{
+  "mcpServers": {
+    "math-server": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    }
+  }
+}</code></pre>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">字段</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">必填</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">说明</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>mcpServers</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">整份配置的入口，所有 MCP 服务都写在它里面</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">服务名（第一层的名字）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">自己起，建议小写字母、数字、连字符；<code>math-server</code> 就是手册例子里起的名</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>command</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">启动这个 server 用的命令（<code>npx</code>、<code>python</code>、<code>node</code> 这几种常见）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><code>args</code></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">是</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">传给命令的参数。例子里的 <code>-y</code> 是"安装时不逐个确认"；<code>server-everything</code> 是官方的测试工具包，里面带一批示例工具</td></tr>
+      <tr><td style="padding:0.45rem"><code>env</code></td>
+          <td style="padding:0.45rem">否</td>
+          <td style="padding:0.45rem">要给这个 server 的环境变量，比如 API key。放这里，别写进 <code>args</code> 或对话里</td></tr>
+    </tbody>
+  </table>
+  <p>本地入口各家不一样：Claude Desktop 读的是 <code>claude_desktop_config.json</code>；TeleAgent 在设置 → 工具设置里粘贴。</p>
+
+  <h2>2. 远程 server：完整例子</h2>
+  <p>远程 server 跑在服务商那边，配置里没有 <code>command</code> 和 <code>args</code>。下面是腾讯云 CloudBase 的 Hosted 模式例子（<a href="https://docs.cloudbase.net/en/ai/cloudbase-ai-toolkit/connection-modes">官方文档</a>）：</p>
+  <pre><code>{
+  "mcpServers": {
+    "cloudbase": {
+      "type": "http",
+      "url": "https://tcb-api.cloud.tencent.com/mcp/v1?env_id=YOUR_ENV_ID",
+      "headers": {
+        "X-TencentCloud-SecretId": "YOUR_SECRET_ID",
+        "X-TencentCloud-SecretKey": "YOUR_SECRET_KEY"
+      }
+    }
+  }
+}</code></pre>
+  <p><code>type</code> 是 <code>http</code>；<code>url</code> 是服务地址；<code>headers</code> 里放身份凭据（证明你有权用这个服务）。不同产品字段名不一样：有的写 <code>streamable-http</code>，有的把凭据放别的字段。以产品文档为准。</p>
+
+  <h2>3. 配置弄错了，按这个顺序查</h2>
+  <p>先查不用命令行的：</p>
+  <ol>
+    <li><b>JSON 语法</b>：多一个逗号、少一个引号、<code>args</code> 写成了文字而不是列表——这三种最常见。粘贴后用任意一个在线"JSON 校验"工具过一眼。</li>
+    <li><b>名字改没改过</b>：服务名改了，旧任务里记的还是旧名字。改名前先想清楚。</li>
+    <li><b>连上了但模型不调</b>：先确认工具清单已经报上来了，再看工具说明写没写全。</li>
+    <li><b>key 放对没</b>：需要凭据的 server，key 写在 <code>env</code>（或远程配置的 <code>headers</code>）里，不要写进参数、不要发在对话里。</li>
+  </ol>
+  <p>要动命令行才查得清的（需要有人带你做一次）：</p>
+  <ol>
+    <li><b><code>command</code> 找不到</b>：<code>npx</code> 属于 Node.js（一个常见的运行环境，装了它才有 <code>npx</code> 命令）；<code>python</code> 不在 PATH（系统找命令的目录清单）里也一样报找不到。</li>
+    <li><b>先手动跑一遍</b>：在终端（Windows 上叫"命令提示符"或"PowerShell"的窗口）里把 <code>command</code> 加 <code>args</code> 原样跑一次，能跑通再填进配置。</li>
+    <li><b>路径写的是相对路径</b>：换成绝对路径（从盘符开头写完整，比如 <code>C:\work\tools\x.py</code>），尤其注意 Windows 的反斜杠。</li>
+  </ol>
+
+  <h2>4. 自己写工具的人：工具说明写全五样</h2>
+  <p>模型看到的只有名字和说明，五样写全，它才调得对、看得懂结果：</p>
+  <ul>
+    <li><b>名字</b>：动词加名词，一眼看懂干什么。</li>
+    <li><b>说明</b>：干什么加什么时候用。</li>
+    <li><b>参数</b>：类型、必填、给个示例。</li>
+    <li><b>返回什么</b>：结果的结构和单位。</li>
+    <li><b>出错怎么说</b>：错误信息要让模型看懂，并且能照着改。</li>
+  </ul>
+
+  <p class="next">
+    <b>讲理由的课</b>：<a href="mcp-v2-capability-first.html">Agent 篇 · 第 3 课 · MCP：给工具定一个统一插口</a>（连接是怎么建立的、为什么要有这套标准）<br>
+    <b>相关</b>：<a href="../../lessons/agent/0002-build-an-agent.html">Agent 篇 · 第 2 课 · 手写一个 agent</a>（工具清单第一次出场的地方）
+  </p>
+
+  <footer>AI Agent 原理与工程 · MCP 配置速查 · <a href="../../lessons/index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

@@ -10,9 +10,11 @@
 |---|---|
 | `agent/0001`（是什么·循环·workflow 谱系·三柱·记忆） | Knowledge 通用段（Anthropic Building effective agents · Dify Workflow · Lilian Weng 三支柱 · Anthropic context engineering · ReAct）＋「记忆」小节 |
 | `agent/0002`（实操·真模型接入） | 「Agent 篇 0002 实操」小节（全部当场抓）＋ OpenAI Function calling · Anthropic advanced tool use |
-| `agent/0003`（MCP 与 Skill） | MCP 系条目（MCP 官方文档 · 腾讯云 · 阿里云百炼 · ModelScope · npx · Anthropic Agent Skills）＋「TeleAgent 案例」小节的操作手册 |
-| `agent/0004`（多 agent 与安全） | Anthropic Building effective agents · multi-agent research system · Orchestrator-workers · OpenAI 实践指南 · TeleAgent 操作手册（任务委派） |
-| `agent/0005`（Harness） | 「TeleAgent 案例」小节（TeleAgent／OpenCode／Hermes／WorkBuddy 四款）＋ harness 系（Fowler · LangChain · Databricks · Learn Harness Engineering · Anthropic long-running） |
+| `agent/0003`（MCP） | MCP 系条目（MCP 官方文档 What is/Architecture · Anthropic 发布文 · 腾讯云 · 阿里云百炼 · ModelScope · npx）＋「TeleAgent 案例」小节的操作手册 |
+| `agent/0004`（Skill） | Anthropic Agent Skills ＋ 阿里云百炼 Skill · ModelScope Skills ＋「TeleAgent 案例」小节的操作手册（创建技能/导入） |
+| `agent/0005`（多 agent） | multi-agent research system · Orchestrator-workers Cookbook · TeleAgent 操作手册（任务委派）· OpenCode Agents ＋（workflow 谱系对照）Building effective agents |
+| `agent/0006`（提示词注入与护栏） | OWASP LLM Top 10（LLM01/03/05/06）· Anthropic memory 工具文档 · TeleAgent 操作手册（授权/YOLO/执行分档/工作空间） |
+| `agent/0007`（Harness） | 「TeleAgent 案例」小节（TeleAgent／OpenCode／Hermes／WorkBuddy 四款）＋ harness 系（Fowler · LangChain · Databricks · Learn Harness Engineering · Anthropic long-running） |
 | `llm/0000`（模型怎么学） | 注意力原始论文系（Vaswani · Formal Algorithms · CS224n）＋ Karpathy 系＋图解系（Jay Alammar · Transformer Explainer · Brandon Rohrer） |
 | `llm/0001`（token→下一 token） | Tokenizer 系（HF Tokenizers · Redis · Raschka BPE · fast.ai · Mikolov）＋采样系（HF how-to-generate · Holtzman · Transformer Explainer） |
 | `llm/0002`（prefill vs decode） | prefill／decode 系（Redis · Weka）＋延迟指标系（ClickHouse · Anyscale） |
@@ -54,7 +56,7 @@
 - [ReAct: Synergizing Reasoning and Acting in Language Models (Yao et al., ICLR 2023)](https://arxiv.org/abs/2210.03629)
   现代 agent 循环范式的原始论文：交替产生"推理轨迹"与"动作"。**用来**：讲清循环的理论来源。
 - [Anthropic — "Effective context engineering for AI agents"](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
-  讲上下文是稀缺资源、如何管理。**用来**：讲记忆与上下文窗口的取舍。**2026-10-13 复抓（`agent/0007` 记忆课用，直连 200，五处原话）**：① **context rot**——"as the number of tokens in the context window increases, the model's ability to accurately recall information from that context decreases"，且 "this characteristic emerges across all models"；② **attention budget**——"LLMs have an 'attention budget' … Every new token introduced depletes this budget by some amount"（上下文是有限资源、边际递减）；③ **结构化笔记＝agentic memory**——"Structured note-taking, or agentic memory, is a technique where the agent regularly writes notes **persisted to memory outside of the context window**. These notes get **pulled back into the context window at later times**"（存外面、用时取回——`agent/0007` §3 的出处）；④ **compaction**——"taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary"；⑤ 长上下文是"梯度、不是断崖"（"performance gradient rather than a hard cliff … reduced precision for information retrieval and long-range reasoning"）。
+  讲上下文是稀缺资源、如何管理。**用来**：讲记忆与上下文窗口的取舍。**2026-10-13 复抓（`agent/0001` §9 记忆节用，直连 200，五处原话）**：① **context rot**——"as the number of tokens in the context window increases, the model's ability to accurately recall information from that context decreases"，且 "this characteristic emerges across all models"；② **attention budget**——"LLMs have an 'attention budget' … Every new token introduced depletes this budget by some amount"（上下文是有限资源、边际递减）；③ **结构化笔记＝agentic memory**——"Structured note-taking, or agentic memory, is a technique where the agent regularly writes notes **persisted to memory outside of the context window**. These notes get **pulled back into the context window at later times**"（存外面、用时取回——`agent/0001` §9 记忆节的出处）；④ **compaction**——"taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary"；⑤ 长上下文是"梯度、不是断崖"（"performance gradient rather than a hard cliff … reduced precision for information retrieval and long-range reasoning"）。
 - [Anthropic — Claude Platform Docs："Context windows"](https://platform.claude.com/docs/en/build-with-claude/context-windows)
   官方行为口径：**输入本身超过上下文窗口时，API 返回 400 `invalid_request_error`（"prompt is too long"）**——是把请求拒掉，不是截断、不是丢掉前面的。**用来**：回答"一次请求超了窗口会怎么处理"（`0001-deep` Q9）。
 - [DeepLearning.AI — "Agentic AI"（Andrew Ng）](https://www.deeplearning.ai/courses/agentic-ai)
@@ -338,24 +340,28 @@
 - [Anthropic — "Introducing advanced tool use"](https://www.anthropic.com/engineering/advanced-tool-use)
   Anthropic 官方工程文：模型返回 <code>tool_use</code> 块（工具名 + 输入），你的代码执行后把结果以 <code>tool_result</code> 送回，模型接着走。**用来**：讲 tool_use / tool_result 这一对来回。
 
+- [Model Context Protocol — What is MCP（入门）](https://modelcontextprotocol.io/docs/getting-started/intro)（2026-10-26 抓）
+  **0003 铺垫的官方画面**：USB-C 比喻原话——"Think of MCP like a USB-C port for AI applications"（USB-C 统一"怎么插"，MCP 统一"怎么接"）；按角色的好处（开发者省对接时间／应用拿到生态／用户得到更能干的助手）。**用来**：0003 §2「先画面、后名字」的比喻与"统一之后省掉什么"。
+- [Anthropic — "Introducing the Model Context Protocol"](https://www.anthropic.com/news/model-context-protocol)（2024-11-25 发布；2026-10-26 抓）
+  **0003 铺垫的痛点原话**："Every new data source requires its own custom implementation, making truly connected systems difficult to scale."（每接一个数据源都要单独写一套对接，真正连得起来的系统根本铺不开）；MCP 定位是"universal, open standard… replacing fragmented integrations with a single protocol"；发布时带规范/SDK、Claude Desktop 本地 server 支持、开源 server 仓库三件。**用来**：0003 §1「工具写不完」的出处与"没有标准"的定性。
 - [Model Context Protocol — 官方文档（Architecture + Connect to local servers）](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture)（2026-10-18 抓；配置页 [connect-local-servers](https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers)）
-  **角色**：MCP host（AI 应用）给每个 server 建一个 MCP client；本地 stdio server 通常单客户端，远程 Streamable HTTP server 可服务多个客户端。**传输**：stdio（本机进程标准输入/输出）／Streamable HTTP（远程，支持 Bearer/API key/OAuth）。**数据层**：JSON-RPC 2.0、**无状态**（每个请求自带版本与能力）；发现 `server/discover`、`tools/list`，执行 `tools/call`；server 公布 **tools / resources / prompts**；工具清单变化可通知。**配置**：本地 server 的 JSON 形状是 `mcpServers` → 服务名 → `command` / `args` / `env`（env 放 key）；官方示例是 filesystem server。**安全**：本地 server 以你的用户权限运行，只给需要的目录。**用来**：0003 MCP 三个角色、传输、发现/调用、配置字段与安全；0003「MCP 还是 Skill」里"标准接口/多客户端/发现"那一列；0003 的"发现"。
+  **角色**：MCP host（AI 应用）给每个 server 建一个 MCP client；本地 stdio server 通常单客户端，远程 Streamable HTTP server 可服务多个客户端。**传输**：stdio（本机进程标准输入/输出）／Streamable HTTP（远程，支持 Bearer/API key/OAuth）。**数据层**：JSON-RPC 2.0、**无状态**（每个请求自带版本与能力）；发现 `server/discover`、`tools/list`，执行 `tools/call`；server 公布 **tools / resources / prompts**；工具清单变化可通知。**配置**：本地 server 的 JSON 形状是 `mcpServers` → 服务名 → `command` / `args` / `env`（env 放 key）；官方示例是 filesystem server。**安全**：本地 server 以你的用户权限运行，只给需要的目录。**用来**：0003 三个角色、传输、发现/调用、配置字段与安全；0004「MCP 还是 Skill」里"标准接口/多客户端/发现"那一列。
 - [腾讯云开发者 — MCP 广场介绍（官方文档）](https://cloud.tencent.cn/document/product/1212/123193)（2026-10-18 抓）
   **本地 vs 托管的一手口径**：MCP 广场提供 **Local 模式**（部署在本地设备，适合依赖本地文件/服务的 server，如文件系统；配置是 `mcpServers` 里的 `command`/`args`/`env`，示例用 `uvx` 启动）和 **Hosted 模式**（部署在广场的免费云资源上，远程连接、跨端友好，是主推模式）。广场还提供安全扫描、免费托管、远程连接。**用来**：0003「本地 server / 远程 server」对照、`npx`/`uvx` 只属于本地、资源广场一例。
 - [腾讯云 — MCP 广场（入口）](https://cloud.tencent.com/developer/mcp)（2026-10-18 抓）
-  官方 + 第三方 MCP 目录；分类（腾讯产品/搜索/数据库/支付/位置/文档…）与卡片，可直接看每个 server 的接法。**用来**：0003 §4 资源入口；截图 `mcp-square-tencent.png` 的来源。
+  官方 + 第三方 MCP 目录；分类（腾讯产品/搜索/数据库/支付/位置/文档…）与卡片，可直接看每个 server 的接法。**用来**：0003 §3 资源入口（Local/Hosted 标注）。~~截图 `mcp-square-tencent.png` 的来源~~（2026-10-26 学习者拍板删两张广场截图，PNG 已随图删除，快照见 `backup/agent-track-20261026/`）。
 - [腾讯云 CloudBase — Connection Modes: Local vs Hosted（官方文档）](https://docs.cloudbase.net/en/ai/cloudbase-ai-toolkit/connection-modes)（2026-10-18 抓）
   **远程配置的实际形状**：Local Mode 用 `npx` 跑本地 server；Hosted Mode 跑在腾讯云，IDE 通过 HTTP 连，**不用本地 Node**。Hosted 配置示例：`type: "http"` + `url` + `headers`（`X-TencentCloud-SecretId` / `X-TencentCloud-SecretKey`），没有 `command`/`args`。**用来**：0003 远程示例（与本地 `mcpServers` 对照）；也解释"npx 是本地，远程只要 URL/鉴权"。
 - [阿里云百炼 — 官方 MCP 服务（官方文档）](https://help.aliyun.com/zh/model-studio/official-and-third-party-mcp)（2026-10-18 抓）
   **One Key MCP**：首次调用自动生效；在 MCP 广场选服务 → 服务详情页复制接入配置或一键配置到客户端，用 `DASHSCOPE_API_KEY` 鉴权。**云部署**：MCP 服务跑在云端；敏感数据用 KMS 加密。**用来**：0003 远程/托管 MCP 的第二个例子、资源入口。
 - [阿里云百炼 — Skill（官方文档）](https://help.aliyun.com/zh/model-studio/introduction-to-skill)（2026-10-18 抓）
-  **Skill 的通用格式**：ZIP 根目录必须有 `SKILL.md`，YAML frontmatter 写 `name`/`description`，≤10MB；官方 Skill 添加即用，自定义 Skill 上传后自动审查；描述建议包含输入类型、操作、触发关键词、不适用场景。**用来**：0003 §4 技能资源、导入/创建要求；`npx` 不是 Skill 的事。
+  **Skill 的通用格式**：ZIP 根目录必须有 `SKILL.md`，YAML frontmatter 写 `name`/`description`，≤10MB；官方 Skill 添加即用，自定义 Skill 上传后自动审查；描述建议包含输入类型、操作、触发关键词、不适用场景。**用来**：0004 §6 技能资源、导入/创建要求；`npx` 不是 Skill 的事。
 - [ModelScope — MCP 广场](https://modelscope.cn/mcp) · [Skills 技能中心](https://modelscope.cn/skills)（2026-10-18 抓）
-  国内的浏览入口：MCP 服务和技能分别有目录页（只核到页面标题与入口，具体条目按页面为准）。**用来**：0003 §4 资源入口。
+  国内的浏览入口：MCP 服务和技能分别有目录页（只核到页面标题与入口，具体条目按页面为准）。**用来**：0003 §3（MCP 广场）／0004 §6（技能中心）的资源入口。
 - [npm — npx（官方文档）](https://docs.npmjs.com/cli/v10/commands/npx)（2026-10-18 抓）
   `npx` 是 npm 的包运行器：运行包里的命令；包不在本地时先取下来。**用来**：0003「npx 到底干了什么」；`-y` 跳过安装确认。
 - [Anthropic — "Equipping agents for the real world with Agent Skills"](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills)
-  Skill 的设计理念：**目录 + SKILL.md（YAML frontmatter 的 name/description + 正文）+ 可选脚本/资料**；**渐进式加载三层**（metadata 常驻 → 触发后读正文 → 按需读引用文件），"像一本组织良好的手册"。**创建建议**：从评估开始（先看 agent 在哪卡住再补 skill）、结构可扩展（正文太长就拆文件）、站在模型视角盯 name/description、用真实任务迭代；**安全**：只装可信来源，装前读指令和脚本。**用来**：0003 Skill 结构、渐进加载、创建技巧与安全；0003「MCP 还是 Skill」里"技能可带脚本、但不是带 schema 的 callable"那一句；0003 的 skill 骨架。
+  Skill 的设计理念：**目录 + SKILL.md（YAML frontmatter 的 name/description + 正文）+ 可选脚本/资料**；**渐进式加载三层**（metadata 常驻 → 触发后读正文 → 按需读引用文件），"像一本组织良好的手册"。**创建建议**：从评估开始（先看 agent 在哪卡住再补 skill）、结构可扩展（正文太长就拆文件）、站在模型视角盯 name/description、用真实任务迭代；**安全**：只装可信来源，装前读指令和脚本。**用来**：0004 Skill 结构、渐进加载、创建技巧与安全；0004「MCP 还是 Skill」里"技能可带脚本、但不是带 schema 的 callable"那一句；0004 的 skill 骨架。
 
 - [Martin Fowler — "Harness engineering for coding agent users"](https://martinfowler.com/articles/harness-engineering.html)
   那个关键公式的出处："harness 指 agent 里除模型本身之外的一切 —— **Agent = Model + Harness**"。**用来**：讲 harness 与 agent 的术语区别。
@@ -364,11 +370,11 @@
 - [Databricks — "What is an AI Agent Harness?"](https://www.databricks.com/blog/ai-harness)
   白话定义："围在语言模型外面的**软件脚手架**——工具、记忆、沙箱、反馈回路——**把模型变成 agent**"。**用来**：给初学者的定义。
 - [LangChain — "How to Build a Custom Agent Harness"](https://www.langchain.com/blog/how-to-build-a-custom-agent-harness)（2026-10-18 抓）
-  **task-harness fit**：壳要和任务需要的上下文、失败模式、策略、环境匹配；harness 能力表（上下文防溢出、记忆、执行环境、子任务、重试/降级、策略、人审、成本）；middleware 在 loop 的模型调用/工具调用前后挂钩。**用来**：0005「没有最好的 harness，只有任务-壳匹配」和五个子系统的补充。
+  **task-harness fit**：壳要和任务需要的上下文、失败模式、策略、环境匹配；harness 能力表（上下文防溢出、记忆、执行环境、子任务、重试/降级、策略、人审、成本）；middleware 在 loop 的模型调用/工具调用前后挂钩。**用来**：0007「没有最好的 harness，只有任务-壳匹配」和五个子系统的补充。
 - [Learn Harness Engineering（开源课程）](https://github.com/walkinglabs/learn-harness-engineering) · [文档站](https://walkinglabs.github.io/learn-harness-engineering/)（2026-10-18 抓）
-  **五个子系统**：Instructions（按需加载的指令结构）· State（进度/feature list/磁盘状态）· Verification（测试通过才算完成）· Scope（一次一个 feature）· Session Lifecycle（开始初始化、结束留干净状态）。**用来**：0005 §3 五个子系统、长任务交接。
+  **五个子系统**：Instructions（按需加载的指令结构）· State（进度/feature list/磁盘状态）· Verification（测试通过才算完成）· Scope（一次一个 feature）· Session Lifecycle（开始初始化、结束留干净状态）。**用来**：0007 §3 五个子系统、长任务交接。
 - [Anthropic — "Effective harnesses for long-running agents"](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)（2026-10-18 抓）
-  **长任务 harness 的实证**：initializer agent 先写 feature list/init.sh/progress/git commit；coding agent 每次读状态、只推一个 feature、端到端测试、提交并更新进度；四类翻车（一口吃成、过早宣布完成、留烂摊子、没测就说完成）。**用来**：0005 §4 长任务跨会话、状态/验证/范围/收尾。
+  **长任务 harness 的实证**：initializer agent 先写 feature list/init.sh/progress/git commit；coding agent 每次读状态、只推一个 feature、端到端测试、提交并更新进度；四类翻车（一口吃成、过早宣布完成、留烂摊子、没测就说完成）。**用来**：0007 §4 长任务跨会话、状态/验证/范围/收尾。
 
 - [Anthropic — Extended thinking（官方文档）](https://platform.claude.com/docs/en/build-with-claude/extended-thinking)
   **2026-10-06 补核**：其「Prompt caching in manual mode」一节给了一个**三步实测**（思考块 + 系统提示共 1370 token）——第 1 次 `cache_creation_input_tokens=1370, cache_read_input_tokens=0`；第 2 次（**thinking 参数不动**）`cache_creation=0, cache_read=1370`（命中）；第 3 次（**改了 budget**）`cache_creation=1370, cache_read=0`（不命中，**前缀作废重算并重写**）。同一节还给出两个参数名：**`budget_tokens`**（旧模式，给一个 token 目标，**是目标不是硬上限**）与 **`output_config: {effort: ...}`**（新模式，low/medium/high 分档，原话"用它代替 token 预算来控制推理深度"），并明说**在新模式里 effort 扮演 budget_tokens 在这里的角色**。**用来**：讲"改 thinking 配置会让缓存连系统提示和工具定义一起作废"，也是第 3 课进阶 Q1 那张表的出处。⚠ 注意**这一页不是 prompt-caching 那页**，讲缓存计费/命中规则要去 Prompt caching。
@@ -500,23 +506,28 @@
 ### Agent 篇重构素材：TeleAgent 案例（2026-10-18 新增）
 
 - [天翼 AI — 星辰超级智能体 TeleAgent《快速上手指南》](https://www.teleai.com.cn/doc/bKrLmQNepNQpUHjWEfqX/pUxSKj00HB5artzpBdgZ)（2026-10-18 抓）
-  **0005 对照表的官方引源之一**：安装/工作空间（任务跑在指定文件夹）、`@文件`/`@技能` 引用、任务与历史。**用来**：讲"一个真实 harness 的用户面"。
+  **0007 对照表的官方引源之一**：安装/工作空间（任务跑在指定文件夹）、`@文件`/`@技能` 引用、任务与历史。**用来**：讲"一个真实 harness 的用户面"。
 - [天翼 AI — 《星辰超级智能体·桌面版操作手册》](https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7)（2026-10-18 抓）
-  **0005 对照表的 TeleAgent 素材主源**：技能系统——技能广场/导入（`.zip`／`.skill`；根目录必须有 `SKILL.md`；头部 YAML 写 name/description；≤10MB；导入过安全审查）／**自然语言创建**（技能广场右上角【创建技能】：描述需求、流程、场景，自动生成进"我的技能"）／**「技能孵化器」**（手把手引导从零创建/迭代，见 1.2.2 常用技能）／我的技能（启用/停用、`@` 引用、启用上限 50、上架广场）／**同一技能用 ≥20 次触发自进化** · **授权三选项（允许一次/一直允许/拒绝）＋YOLO 模式** · **MCP 工具管理**（设置→工具设置→从 JSON 导入/添加；`mcpServers` 根对象；服务名、`command`、`args`、`env` 字段；绿色"已连接"；连接/断开/编辑；改工具名后历史任务可能引用不到；示例 `math-server` 用 `npx @modelcontextprotocol/server-everything`）· 代码执行三模式与安全沙箱 · **任务监控区（深度思考/操作执行/任务委派（子智能体））** · 上下文用量查看与清理 · 自定义模型（OpenAI 兼容 Base URL＋Key）· 任务排查五类（文件/技能/工具/模型/网络）。**用来**：0003 MCP 配置与创建技能跟做、0004 安全篇的授权实证、0005 对照表的授权/技能/MCP/消息列。
+  **0007 对照表的 TeleAgent 素材主源**：技能系统——技能广场/导入（`.zip`／`.skill`；根目录必须有 `SKILL.md`；头部 YAML 写 name/description；≤10MB；导入过安全审查）／**自然语言创建**（技能广场右上角【创建技能】：描述需求、流程、场景，自动生成进"我的技能"）／**「技能孵化器」**（手把手引导从零创建/迭代，见 1.2.2 常用技能）／我的技能（启用/停用、`@` 引用、启用上限 50、上架广场）／**同一技能用 ≥20 次触发自进化** · **授权三选项（允许一次/一直允许/拒绝）＋YOLO 模式** · **MCP 工具管理**（设置→工具设置→从 JSON 导入/添加；`mcpServers` 根对象；服务名、`command`、`args`、`env` 字段；绿色"已连接"；连接/断开/编辑；改工具名后历史任务可能引用不到；示例 `math-server` 用 `npx @modelcontextprotocol/server-everything`）· 代码执行三模式与安全沙箱 · **任务监控区（深度思考/操作执行/任务委派（子智能体））** · 上下文用量查看与清理 · 自定义模型（OpenAI 兼容 Base URL＋Key）· 任务排查五类（文件/技能/工具/模型/网络）。**用来**：0003 的 MCP 配置、0004 的创建技能跟做、0006 的授权实证、0007 对照表的授权/技能/MCP/消息列。
+- **TeleAgent 入口趋同自述**（2026-10-26 学习者口径；手册 2026-10-18 版未记此变化）：技能广场里 MCP 与 Skill 都能下载/安装，**入口几乎一样**；手册记的 MCP 配置入口（设置→工具设置→从 JSON 导入）并存。**用来**：0003/0004 草稿「产品抹平入口」现象——初学者感知两者相同的原因，也是课里辨认法（多动作 vs 多做法）的出发点。
+- **harness 接 MCP 的通用接法是配置**（2026-10-27 学习者口径）：**大多数 harness 软件只有配置这一种接法**，TeleAgent 技能广场的「点安装」是替用户走完这一步的便捷层。佐证：OpenCode 的 `mcp` 配置字段（2026-10-27 抓，见下条）／Claude Desktop 的 `claude_desktop_config.json`（公开文档多处记载，未抓一手页）／MCP 官方教程教的也是配置 JSON。**用来**：0003 §7 开头「配置是通用接法」的定位句。
 - **TeleAgent 记忆子系统自述**（2026-10-18 学习者转述，手册无此节，引源标"自述"）：按**来源＋时间尺度**归档（`USER.md`＝用户明说记住的 / `MEMORY.md`＝系统推断的稳定事实 / `daily-log/YYYY-MM-DD.md`＝每日流水）；底层**纯 Markdown 文件**；检索＝**关键词/正则**（`memory_search`）＋按名读取（`memory_get`）；三种载入：USER.md+MEMORY.md **每次自动注入系统提示**、日志**按需检索**、`LATEST_DAILY_MEMORY.md` **滚动摘录**。**用来**：推翻"内容三分法是标准分法"“取回=相似度"两处旧口径（见 `internal/rules/agent-track-redesign.md` §3）。
 - [OpenCode — Docs](https://opencode.ai/docs/) · [Agents](https://opencode.ai/docs/agents/) · [Permissions](https://opencode.ai/docs/permissions/) · [MCP servers](https://opencode.ai/docs/mcp-servers/) · [Agent Skills](https://opencode.ai/docs/skills/)（2026-10-18 抓）
-  **0005 对照表的 OpenCode 来源**：开源 AI coding agent，终端 TUI/桌面/IDE；任意 provider/API key（含 OpenCode Zen）；Plan/Build primary agents + General/Explore/Scout subagents；按 agent 配 ask/allow/deny；Agent Skills/MCP/插件/自定义工具；AGENTS.md 项目规则；CLI/Server/SDK、GitHub/GitLab。**用来**：四款对照、按场景选。
+  **0007 对照表的 OpenCode 来源**：开源 AI coding agent，终端 TUI/桌面/IDE；任意 provider/API key（含 OpenCode Zen）；Plan/Build primary agents + General/Explore/Scout subagents；按 agent 配 ask/allow/deny；Agent Skills/MCP/插件/自定义工具；AGENTS.md 项目规则；CLI/Server/SDK、GitHub/GitLab。**用来**：四款对照、按场景选。
+  **MCP 全走配置**（2026-10-27 抓 `mcp-servers` 页）：MCP 定义在 `opencode.jsonc` 的 `mcp` 字段下——local 是 `type:"local"` ＋ `command` 数组 ＋ `environment`，remote 是 `type:"remote"` ＋ `url` ＋ `headers`（OAuth 自动处理），**没有「点安装」这一步**；官方同页提醒 server 会加进上下文、工具一多 token 很容易超限（点名 GitHub MCP server）。**用来**：0003 §7「配置是通用接法、字段名各家不同（TeleAgent 用 `mcpServers`、OpenCode 用 `mcp`）」；0003 §8 成本提醒的旁证。
 - [Hermes Agent — Docs](https://hermes-agent.nousresearch.com/docs) · [Security](https://hermes-agent.nousresearch.com/docs/user-guide/security) · [MCP](https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp)（2026-10-18 抓）
-  **0005 对照表的 Hermes 来源**：Nous Research 的自主 agent，MIT；CLI/Desktop/服务器；Nous Portal/OpenRouter/OpenAI/任意 endpoint；60+ 工具、7 种终端后端（本机/Docker/SSH/Daytona/Singularity/Modal/Vercel Sandbox）；Skills/MCP/插件/Bot Mode；approval smart/manual/off + 容器隔离 + 硬黑名单；跨会话记忆/技能自改进；cron + 20+ 消息平台 + 语音。**用来**：四款对照、按场景选。
+  **0007 对照表的 Hermes 来源**：Nous Research 的自主 agent，MIT；CLI/Desktop/服务器；Nous Portal/OpenRouter/OpenAI/任意 endpoint；60+ 工具、7 种终端后端（本机/Docker/SSH/Daytona/Singularity/Modal/Vercel Sandbox）；Skills/MCP/插件/Bot Mode；approval smart/manual/off + 容器隔离 + 硬黑名单；跨会话记忆/技能自改进；cron + 20+ 消息平台 + 语音。**用来**：四款对照、按场景选。
 - [Tencent WorkBuddy — Overview](https://www.workbuddy.ai/docs/workbuddy/Overview) · [Permission Modes](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Permission-Modes) · [Skills](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Skills-Market) · [Connectors](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Connector) · [MCP](https://www.workbuddy.ai/docs/zh/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/MCP-Guide) · [Model](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model) · [Automation](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Automation-Guide) · [Memory](https://www.workbuddy.ai/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Memory)（2026-10-18 抓）
-  **0005 对照表的 WorkBuddy 来源**：腾讯办公桌面工作站（Windows/macOS）；内置+自定义模型（provider 预设/自定义 API/Ollama 本地）；本地文件/文档/表格/PPT/数据；Skill Marketplace/Connectors/MCP；Default Permissions/Full Access + 工作空间/沙箱；对话记忆+夜间摘要；定时/周期任务 + Slack/Telegram/Discord/企微/飞书/钉钉/QQ/微信。**用来**：四款对照、按场景选。
+  **0007 对照表的 WorkBuddy 来源**：腾讯办公桌面工作站（Windows/macOS）；内置+自定义模型（provider 预设/自定义 API/Ollama 本地）；本地文件/文档/表格/PPT/数据；Skill Marketplace/Connectors/MCP；Default Permissions/Full Access + 工作空间/沙箱；对话记忆+夜间摘要；定时/周期任务 + Slack/Telegram/Discord/企微/飞书/钉钉/QQ/微信。**用来**：四款对照、按场景选。
 - [Microsoft — AI Agents for Beginners（GitHub）](https://github.com/microsoft/ai-agents-for-beginners)
   18 讲课表（tool use／planning／multi-agent／context engineering／agent memory／protocols／production／securing…）。**用来**：重构课表的对表清单，判"还缺什么"。
 
 - [Anthropic — "How we built our multi-agent research system"](https://www.anthropic.com/engineering/multi-agent-research-system)
-  **多 agent 篇（0004 上篇）的主源**：编排者-工作者形状、派单要写清（目标/输出格式/边界，"调研一下 X"这种含糊指令会重复劳动）、只回结论不回流水、失败模式（spawn 50 workers、无限搜寻、互相干扰）；量级全部是**他们自报口径**（简单查证 1 agent 3～10 次调用／对比 2～4 workers·10～15 次／复杂 10+ workers；token 单 agent ×4、多 agent ×15；复杂调研"强编排＋worker"比单强模型 +90.2%）。**用来**：讲"什么时候该上多 agent、怎么分工、账怎么算"。
+  **多 agent 课（0005）的主源**：编排者-工作者形状、派单要写清、只回结论不回流水、失败模式（spawn 50 workers、无限搜寻、互相干扰）；量级全部是**他们自报口径**（简单查证 1 agent 3～10 次调用／对比 2～4 workers·10～15 次／复杂 10+ workers；token 单 agent ×4、多 agent ×15；复杂调研"强编排＋worker"比单强模型 +90.2%）。**2026-10-26 复抓**：派单口径核为**四件**（objective／output format／guidance on the tools and sources to use／task boundaries）——旧摘要把"工具与来源指引"漏了，0005 已从"三件套"改口；补收收尾工序 CitationAgent、同步执行瓶颈与异步扩编方向（写在未来方向）、并行 3～5 个 subagents 省时至多 90%。**用来**：讲"什么时候该上多 agent、怎么分工、账怎么算"（0005 §1/§2/§5）＋拓扑谱系的收尾接力与同步/异步（0005 §3）。
 - [Anthropic — Orchestrator-workers 模式（Cookbook）](https://platform.claude.com/cookbook/patterns-agents-orchestrator-workers)
-  编排者动态拆活、worker 各拿一段任务的标准形状与最小实现。**用来**：0004 多 agent 篇的形状依据。
+  编排者动态拆活、worker 各拿一段任务的标准形状与最小实现。**2026-10-26 复抓**：动态派单与预定义并行的分界原话（"Subtasks are predictable and can be pre-defined (use simpler parallelization)"）、每次 N+1 次模型调用（1 编排者 + N worker）。**用来**：0005 的形状依据＋拓扑谱系"并行分身 vs 编排者-工作者"的分界（0005 §2/§3）。
+- [OWASP — LLM Top 10（2025）](https://genai.owasp.org/llm-top-10/) ／ [LLM01:2025 Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)（2026-10-26 抓）
+  Gen AI 安全项目的风险榜（2025 版十项：LLM01 提示词注入／LLM02 敏感信息泄露／LLM03 供应链／LLM04 数据与模型投毒／LLM05 输出处理不当／LLM06 过度授权／LLM07 系统提示泄露／LLM08 向量与嵌入弱点／LLM09 错误信息／LLM10 无界消耗）。**LLM01 居首**，分直接/间接注入，缓解清单含"权限裁到最小""高危动作要人批""把外部内容隔离并标出来"。**LLM06 过度授权**根因三件：excessive functionality／permissions／autonomy（功能、权限、自主三个"过头"）。**LLM05 输出处理不当**：模型输出未校验就进下游（shell／SQL／网页），可引远程代码执行、XSS，缓解口径是把模型当普通用户、零信任。**用来**：0006 §1 翻车案例、§2 头号风险出处、§4「OWASP 头部风险映射」、§3/§5 缓解清单（隔离标注、最小权限、高危人批、监控留痕、对抗测试）与三个"少"对表。
 
 ### Agent 篇 0002 实操：真模型接入（2026-10-18 新增，全部当场抓取）
 
@@ -545,6 +556,6 @@
 ## Gaps（尚缺的资源）
 - ~~缺一份可靠的、跨框架的 agent 评估资料~~ **已补（2026-09）**：见上面 **Knowledge** 里的四条，首选 Anthropic《Demystifying evals for AI agents》
 - 缺中文的高质量一手资料（目前几乎全是英文）
-- ~~缺 **多 agent 协作**的高可信工程资料~~ **已补（2026-10-18）**：Anthropic《How we built our multi-agent research system》（带实测量级、派单与失败教训）＋Orchestrator-workers Cookbook——`agent/0004` 已开课。
+- ~~缺 **多 agent 协作**的高可信工程资料~~ **已补（2026-10-18）**：Anthropic《How we built our multi-agent research system》（带实测量级、派单与失败教训）＋Orchestrator-workers Cookbook——`agent/0005` 已开课（2026-10-26 拆分后课号）。
 
 > AI生成

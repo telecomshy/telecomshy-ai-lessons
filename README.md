@@ -121,9 +121,11 @@ python exercises/agent/0002-build-an-agent.py
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 0001 | [Agent 是什么：循环、工具、记忆](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0001-what-is-an-agent.html) —— 纯理论：循环怎么转、什么时候停，工具从哪来，记忆按产品怎么存 |
 | 0002 | [手写一个 agent](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0002-build-an-agent.html) —— 从装包、配 key 开始，用真模型跑通循环     |
-| 0003 | [工具长出两个新形状：MCP 与 Skill](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0003-mcp-and-skills.html) —— MCP 管「怎么接」，Skill 管「怎么做」；含本地/远程、TeleAgent 配置、创建技能、国内资源广场、MCP vs Skill 怎么选 |
-| 0004 | [多 agent 与安全：什么时候该上、怎么不出事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-multi-agent-and-safety.html) —— 上篇：编排者-工作者、只回结论、审计为什么适合派子代理、TeleAgent 自动委派 vs OpenCode @点名；下篇：纸条攻击、少信/少能/有人管 |
-| 0005 | [Harness：Agent = Model + Harness](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-harness.html) —— 公式、五个子系统、长任务交接；TeleAgent / OpenCode / Hermes / WorkBuddy 四款对照与按场景选择 |
+| 0003 | [MCP：给工具定一个统一插口](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0003-mcp.html) —— 工具写不完那堵墙怎么破；三个角色、发现 → 调用、本地/远程配置与排错、什么时候不该用 |
+| 0004 | [Skill：把做法打包成文件](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0004-skill.html) —— 做法教不会那堵墙怎么破；目录结构、渐进式加载、TeleAgent 创建技能跟做、MCP vs Skill 怎么选 |
+| 0005 | [多 agent 协作：什么时候叫帮手、怎么分工](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0005-multi-agent.html) —— 拓扑谱系、编排者-工作者、派单四件、审计为什么适合派子代理、TeleAgent 自动委派 vs OpenCode @点名、这笔 token 账 |
+| 0006 | [提示词注入与护栏：怎么不出事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0006-injection-and-guardrails.html) —— 纸条攻击（直接/间接注入）、三个「少」：少信/少能/有人管、OWASP 风险榜映射 |
+| 0007 | [Harness：Agent = Model + Harness](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/agent/0007-harness.html) —— 公式、五个子系统、长任务交接；TeleAgent / OpenCode / Hermes / WorkBuddy 四款对照与按场景选择 |
 
 ### 技巧与工程
 
