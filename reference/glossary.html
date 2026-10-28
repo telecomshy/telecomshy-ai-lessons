@@ -59,10 +59,10 @@
     <dd>一种让模型交替产生"推理轨迹"和"动作"的范式（Reason + Act）。现代 agent 循环的理论来源。<a href="https://arxiv.org/abs/2210.03629">原论文</a>。</dd>
 
     <dt id="planning"><strong>Planning（规划）</strong></dt>
-    <dd>把一个大目标拆成可执行的子步骤，并且<b>失败后会改主意</b>的能力（Lilian Weng 分的两半：<b>拆子目标</b>（task decomposition）· <b>自我反思</b>（self-reflection）——不一条路走到黑）。agent 三大支柱之一。</dd>
+    <dd>把一个大目标拆成可执行的子步骤，并且<b>失败后会改主意</b>的能力（Lilian Weng 分的两半：<b>拆子目标</b>（task decomposition）· <b>自我反思</b>（self-reflection）——不一条路走到黑）。这是模型生成出来的一种行为——计划就是它写下的一段文字，不是独立的“规划模块”。agent 常说的三块能力（规划／记忆／工具）之一。</dd>
 
     <dt id="memory"><strong>Memory（记忆）</strong></dt>
-    <dd>短时记忆＝当前上下文窗口里的内容（行话叫<b>工作记忆</b>）；长时记忆＝跨会话存下来、用到再取回的东西。<b>怎么存没有统一标准</b>，是设计选择：有按内容分三种的（<b>经历</b>／<b>事实</b>／<b>做法</b>，即 episodic／semantic／procedural），有按<b>来源＋时间尺度</b>归档的（用户明说的／系统推断的／每日流水）；底层可以是几个 Markdown 文件，<b>不一定是向量库</b>。取法也是一族：常驻注入、关键词查、按名读取、相似度检索。存和取都是<b>程序</b>（或模型调记忆工具）干的；新话进来怎么处理，Mem0 <b>论文</b>的四个动作（ADD／UPDATE／DELETE／NOOP）是<b>一家的做法</b>，不是通用机制（现产品文档改成 ADD-only 为主）。agent 三大支柱之一。</dd>
+    <dd>短时记忆＝当前上下文窗口里的内容（行话叫<b>工作记忆</b>）；长时记忆＝跨会话存下来、用到再取回的东西。<b>怎么存没有统一标准</b>，是设计选择：有按内容分三种的（<b>经历</b>／<b>事实</b>／<b>做法</b>，即 episodic／semantic／procedural），有按<b>来源＋时间尺度</b>归档的（用户明说的／系统推断的／每日流水）；底层可以是几个 Markdown 文件，<b>不一定是向量库</b>。取法也是一族：常驻注入、关键词查、按名读取、相似度检索。存和取都是<b>程序</b>（或模型调记忆工具）干的；新话进来怎么处理，Mem0 <b>论文</b>的四个动作（ADD／UPDATE／DELETE／NOOP）是<b>一家的做法</b>，不是通用机制（现产品文档改成 ADD-only 为主）。agent 常说的三块能力（规划／记忆／工具）之一。</dd>
 
     <dt id="context"><strong>Context / 上下文工程</strong></dt>
     <dd>模型这一次能看到的所有内容。它有硬上限，叫<b>上下文窗口（context window）</b>：<b>输入的 token + 已写出来的 token</b> 加起来不能超过它。它是<b>稀缺且昂贵</b>的资源，往里塞什么、丢掉什么，直接决定 agent 表现。</dd>
