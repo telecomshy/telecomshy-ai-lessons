@@ -24,7 +24,7 @@
 
   <h2 id="q1-thinking">Q1 · 上一轮的思考内容会不会被丢掉？谁说了算？</h2>
   <p>用会思考的模型（会输出"思考过程"的那种，见 <a href="0005-reasoning-models.html">第 5 课 · 它真的在思考吗？</a>）时，思考块（<b>thinking block</b>）算不算进你的前缀，<b>要看两边配合</b>：客户端和模型各管一半。</p>
-  <p><b>客户端那一侧：必须原样带回去。</b>Anthropic 官方文档的规则写得很硬：<b>把 thinking block 完整、不改动地带回来</b>。而且要<b>原样回传那条助手消息</b>——文档原话是：重建了它、或者过滤掉里面的块，会直接 <b>400 报错</b>，请求根本发不出去。</p>
+  <p><b>客户端那一侧：必须原样带回去。</b>Anthropic 官方文档的规则写得很硬：<b>把 thinking block 完整、不改动地带回来</b>。而且要<b>原样回传那条助手消息</b>：<b>按文档要求</b>，助手消息重建、或者过滤掉里面的 thinking 块，都会直接 <b>400 报错</b>，请求根本发不出去。</p>
   <p>那"网页版聊天和 harness 软件会不会自动带回去"？<b>能正常用，就说明它已经做了</b>。<span style="color:var(--muted)">（这是从"不带就报错"推出来的结论，不是对某个产品的实测。）</span></p>
   <p><b>模型那一侧：留不留，取决于版本。</b>Anthropic 文档按模型版本列得很清楚：</p>
   <ul>
@@ -33,8 +33,8 @@
   </ul>
   <p>被保留下来的 thinking block <b>算输入 token</b>。从缓存里读出来时也一样计入你的 usage。<span style="color:var(--muted)">（为什么会思考、那笔账怎么算？<a href="0005-reasoning-models.html">→ 看 LLM 第 5 课</a>；<a href="../../reference/glossary.html#reasoning">术语表「思考 reasoning」</a>）</span></p>
   <p><b>比"带不带回去"更容易踩的坑，是改配置。</b>Anthropic 官方文档<a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking">《Extended thinking》</a>里的「Prompt caching in manual mode」一节明确写：<b>改 thinking 的配置会让缓存作废，而且是连着系统提示和工具定义一起作废</b>，因为<b>这份配置是被渲染进 prompt 的</b>。所以"我只是想把思考深度调低一点"，代价可能是<b>整段前缀全部重算</b>。</p>
-  <p>这里的"配置"是两个旋钮。<b>旧模式</b>用 <code>budget_tokens</code> 给思考定 token 目标（拿多少 token 用来想，文档特别说明<b>这是目标、不是硬上限</b>）；<b>新模式</b>改用 <code>output_config: {effort: ...}</code> 分档（low / medium / high），同一份文档的原话是"<b>用它代替 token 预算来控制推理深度</b>"，也就是<b>深度由模型自己定</b>。<b>两个都会被渲染进 prompt，所以动任何一个都要重建缓存。</b><span style="color:var(--muted)">（这两个是 Anthropic 的参数名，别的厂商不叫这个。它们属于思考模型本身，见 <a href="0005-reasoning-models.html">LLM 第 5 课</a>）</span></p>
-  <p>那三行数字可以直接摆成一张表看。<b>三个字段先看懂</b>：<b>cache_creation</b> ＝ 这一轮<b>新算出来、存进缓存</b>的 token 数；<b>cache_read</b> ＝ 这一轮<b>从缓存读回来</b>的 token 数；<b>input</b> ＝ <b>断点之后的那一截</b>。它进不了缓存，每次都重算、按原价计价（<a href="#q3-not-free">这三个字段在 Q3 细讲</a>）。</p>
+  <p>这里的"配置"是两个旋钮。<b>旧模式</b>用 <code>budget_tokens</code> 给思考定 token 目标（拿多少 token 用来想，文档特别说明<b>这是目标、不是硬上限</b>）；<b>新模式</b>改用 <code>output_config: {effort: ...}</code> 分档（low / medium / high）：<b>档位你选，每一档想多久由模型自己把握</b>。<b>两个都会被渲染进 prompt，所以动任何一个都要重建缓存。</b><span style="color:var(--muted)">（这两个是 Anthropic 的参数名，别的厂商不叫这个。它们属于思考模型本身，见 <a href="0005-reasoning-models.html">LLM 第 5 课</a>）</span></p>
+  <p>文档里那组对照可以摆成一张表。先把<b>三个字段</b>看懂：<b>cache_creation</b> ＝ 这一轮<b>新算出来、存进缓存</b>的 token 数；<b>cache_read</b> ＝ 这一轮<b>从缓存读回来</b>的 token 数；<b>input</b> ＝ <b>断点之后的那一截</b>。它进不了缓存，每次都重算、按原价计价（<a href="#q3-not-free">这三个字段在 Q3 细讲</a>）。</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">请求</th>
@@ -145,16 +145,16 @@
           <td style="padding:0.4rem">由它们自己定</td></tr>
     </tbody>
   </table>
-  <p style="font-size:0.82rem;color:var(--muted)">OpenAI 那两个参数只在 <b>Responses API</b> ＋ <b>GPT-5.6 及以后</b>有，更早的模型和 Chat Completions 只有<b>隐式缓存</b>（不打标记，服务商自己按前缀来）；Claude 两种都有。共同的那层只有三样：前缀一字不差才复用、往回找且范围有限、写进去要钱。<b>窗口多大，照抄别家的没有意义。</b></p>
+  <p style="font-size:0.82rem;color:var(--muted)">OpenAI 那两个参数只在 <b>Responses API</b> ＋ <b>GPT-5.6 及以后</b>有，更早的模型和 Chat Completions 只有<b>隐式缓存</b>（不打标记，服务商自己按前缀来）；Claude 两种都有。共同的那层只有三样：前缀一字不差才复用、往回找且范围有限、写进去要钱。<b>各家往回找的范围多大不一样，照抄别家的没有意义。</b></p>
 
   <p><b>这些标记是 Claude 网页版、Claude Code、OpenCode 这类工具替你写进每个请求的</b>——自己手写代码就得自己写。<span style="color:var(--muted)">不打就没有缓存，所以一定有人在打，只是没有任何产品文档说明它们具体怎么写。</span></p>
 
   <h2 id="q3-not-free">Q3 · 命中到底能省多少？怎么确认自己真命中了？</h2>
 
-  <p><b>命中是打折，不是免费。</b>它省掉的是"重新算 K/V"那份工作，<b>不是"不用把内容送过去"</b>——读缓存那一次<b>照样按 0.1× 付钱</b>，只是比原价便宜十倍。而且<b>缓存不保证还在</b>：可能被淘汰也可能你的请求被路由到另一台机器上。</p>
-  <p>所以两条都要记住：<b>命中是"打折"不是"免费"，是"尽量"不是"保证"。</b></p>
+  <p><b>命中是打折，不是免费。</b>它省掉的是"重新算 K/V"那份工作，<b>不是"不用把内容送过去"</b>——读缓存那一次<b>照样收钱，按原价的 0.1× 付</b>。而且<b>缓存不保证还在</b>：可能被淘汰也可能你的请求被路由到另一台机器上。</p>
+  <p>所以另一条也要记住：<b>命中是"尽量"不是"保证"。</b></p>
 
-  <p><b>怎么知道自己真命中了？看响应里的 <code>usage</code>。</b><b>怎么知道自己真命中了？看响应里的 <code>usage</code>。</b>Anthropic 官方文档给的核对方法就是它。三个字段各管一件事：</p>
+  <p><b>怎么知道自己真命中了？看响应里的 <code>usage</code>。</b>Anthropic 官方文档给的核对方法就是它。三个字段各管一件事：</p>
   <ul>
     <li><b><code>cache_read_input_tokens</code></b>：<b>命中</b>了多少（这次省了多少）</li>
     <li><b><code>cache_creation_input_tokens</code></b>：<b>写进</b>去多少（这次为缓存多付了多少）</li>
@@ -163,7 +163,7 @@
   <p><b>这三条不是"命中／没命中／第三种结果"，是提示词被断点切成的三段。</b>断点之前那一段，要么以前存过（<code>cache_read</code>），要么这次新算（<code>cache_creation</code>）；断点之后的那截不在这一份里，所以永远是 <code>input_tokens</code>。文档特意强调过：<b><code>input_tokens</code> 不代表你送进去的全部输入</b>，只代表最后一个断点后面那一截。</p>
   <p>三个加起来就是这次的总输入。<a href="#q1-thinking">Q1 那张表</a>就是照这三个字段列的——第 1 次 1370 全记在"存"那栏、第 2 次 1370 全变成"读"，一眼看出省没省。</p>
   <p><b>OpenAI 那边字段名不一样</b>：<code>usage.input_tokens_details.cached_tokens</code>（命中）和 <code>cache_write_tokens</code>（写入），断点之后那一截照旧在 <code>input_tokens</code> 里。<b>命中率就是"累计命中的 ÷ 累计输入"</b>，自己按请求累加。</p>
-  <p><b>不命中不会报错。</b>Anthropic 文档的原话是——如果 <code>cache_creation</code> 和 <code>cache_read</code> <b>都是 0</b>，这个 prompt 就<b>没有被缓存</b>。请求照常跑完、照常给你答案。<b>所以别拿"没报错"当"命中了"</b>，一定要看那两个字段是不是 0。</p>
+  <p><b>不命中不会报错。</b>按 Anthropic 文档的说法，如果 <code>cache_creation</code> 和 <code>cache_read</code> <b>都是 0</b>，这个 prompt 就<b>没有被缓存</b>。请求照常跑完、照常给你答案。<b>所以别拿"没报错"当"命中了"</b>，一定要看那两个字段是不是 0。</p>
 
   <p>这两个字段为 0，最常见的原因是<b>前缀太短</b>。各家都设了<b>最小可缓存长度</b>（Anthropic 按模型分 512 / 1024 / 2048 / 4096，OpenAI 是 1024）。<b>不到这个长度，一点缓存都不建</b>——请求正常处理、不报错、不提示。所以"我怎么一次都没命中过"，先别查代码，<b>先看那两个字段是不是 0</b>。</p>
 

@@ -16,8 +16,8 @@
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
     <p>你发一个请求，等几秒，字就一个一个出来了。可那台机器只有一张显卡，<b>它同一时刻还在给别的几十上百个人回消息</b>。</p>
-    <p>它到底怎么做到的？<b>你并不是在跟一大堆人抢同一台机器</b>。你排着队，轮到你了，就跟同一批挑出来的几个人一起被算。</p>
-    <p style="margin-top:0.7rem">拆穿了就是一句大白话：<b>它不是「同时」，是「排队 ＋ 拼车」。</b>一趟车坐的人越多，每个人分摊的车钱就越少。这也是模型 API 能卖得便宜的原因之一。</p>
+    <p>它到底怎么做到的？<b>你并不是在跟一大堆人抢同一台机器</b>。你排着队，轮到你了，就从排队里挑一批人，你和他们凑成一批一起被算。</p>
+    <p style="margin-top:0.7rem"><b>它不是「同时」，是「排队 ＋ 拼车」。</b>一趟车坐的人越多，每个人分摊的车钱就越少。这也是模型 API 能卖得便宜的原因之一。</p>
     <p><b>学完这课，你能</b>：把「一张卡怎么同时服务几十上百个人」讲明白；看懂「多」和「快」这笔账；并且知道它的天花板卡在哪。</p>
   </div>
 
@@ -31,12 +31,12 @@
   <p>先接上<a href="0002-prefill-vs-decode.html">第 2 课</a>：你发过去的那一整段输入，第 1 轮一次算完（术语叫 <b>prefill</b>）。<b>之后每轮只往外蹦一个字，每蹦一个字整条流水线都要重走一遍</b>（术语叫 <b>decode</b>）。<b>本课讲的就是后面这一段。</b></p>
   <p>这段话里有两个词后面一直用，先说清它们是什么：</p>
   <ul>
-    <li><b>权重（weights）</b>　＝　模型里那些<b>训练学出来的参数</b>，第 1 课叫它「同一把尺子」（<a href="../../reference/glossary.html#weights">术语表</a>）。<b>所有请求用的是同一份</b>，它不会因为人多而变多。</li>
+    <li><b>权重（weights）</b>　＝　模型里那些<b>训练学出来的参数</b>，本课里好比「同一把尺子」（<a href="../../reference/glossary.html#weights">术语表</a>）。<b>所有请求用的是同一份</b>，它不会因为人多而变多。</li>
     <li><b>KV cache</b>　＝　<b>每个人自己攒下的那份历史</b>，第 2、3 课那个「货架」。一个人一份，<b>互相不通用</b>。</li>
   </ul>
   <p>这两样东西<b>不是一回事</b>（权重是尺子，KV 是量出来的数），<b>但有一个共同点：写答案的每一轮，它们都得从显存里搬到计算单元一遍。</b>本课讲的就是这一趟搬运。</p>
   <p>你的请求到了服务商，<b>先排进一条队</b>。（<a href="0008-who-does-what.html">这一整套动作有个名字</a>）<b>排在同一个队里的，不会全跟你一起算</b>。轮到你了，服务商从当时排队的请求里挑一批（能挑多少是它自己定的），凑成一批一起上机器。忙的时候队排得长，这段等待就长，<b>它也算进「你等第一个字等了多久」</b>（<a href="0002-prefill-vs-decode.html">第 2 课</a>那条时间线里的第二段就是它）。</p>
-  <p>这一批人<b>共用同一份权重</b>。写答案的时候，<b>每走一轮，这一批每人往外蹦一个字</b>。你蹦你的，他蹦他的，<b>各算各的、谁也串不到谁</b>；可机器只被喂了一次权重。<b>这一批一起被算的请求有几个，就叫「批大小」（batch size）。</b></p>
+  <p>这一批人<b>共用同一份权重</b>。写答案的时候，<b>每走一轮，这一批每人往外蹦一个字</b>。你蹦你的，他蹦他的，<b>互不干扰</b>；可机器只被喂了一次权重。<b>这一批一起被算的请求有几个，就叫「批大小」（batch size）。</b></p>
 
   <figure class="figure">
     <img src="../../assets/batching-one-trip.svg" alt="请求先排队，轮到谁就从排队的人里挑一批，共用同一份模型权重的搬运：甲乙丙丁四个人的 KV 并排坐在同一批里，写答案的第 1 到第 5 轮，每轮每人各往外蹦一个字，往右是时间">
@@ -45,7 +45,7 @@
 
   <p>那么「同时」到底是什么意思？<b>同一批人是同一时刻、同一台机器上一起被算的</b>，不是每人分到一张卡各自并行。只是这台机器一次只推一个字，推完一个再推下一个，<b>一轮一轮地往前挪</b>。</p>
   <p>要凑的人多，批就大；深夜没什么人，批就小。那时候你很可能<b>独自一批</b>。</p>
-  <p style="color:var(--muted)">（agent 慢的时候，先把它的耗时按步量开，那是你自己的活：<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>）</p>
+  <p style="color:var(--muted)">（agent 慢的时候，先按每一步量出它的耗时，那是你自己的活：<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>）</p>
 
   <h2>2. 为什么这样能省钱：那趟车大部分是空的</h2>
   <p>第 2 课有个结论：写答案那一段<b>卡在「搬数据」上，不在「算」上</b>：要算的只有 1 个字，要搬的却是<b>模型权重</b>加上这一批每个人的 KV。搬数据的传送带就那么宽，所以计算单元大半在干等。</p>
@@ -191,7 +191,7 @@
   <p class="next">
     <b>同课进阶</b>：<a href="0004-batching-deep.html">进阶版 · 批从哪来、拐点、工业界的招</a><br>
     <b>相关</b>：<a href="0002-prefill-vs-decode.html">LLM 底层 · 第 2 课 · 为什么「读长文」快、「写长文」慢？</a>（这节的前置）· <a href="0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a> · <a href="0008-who-does-what.html">LLM 底层 · 第 8 课 · 这件事到底是谁干的</a>（排队拼车在四层里归谁管）<br>
-    <b>你会用到</b>：<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>（agent 慢的时候，先把它的耗时按步量开）<br>
+    <b>你会用到</b>：<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>（agent 慢的时候，先按每一步量出它的耗时）<br>
     <b>主线</b>：<a href="../agent/0001-what-is-an-agent.html">Agent 原理篇 · 第 1 课 · Agent 到底是什么</a> → 下一步 工具调用（Tool Use）。<br>
     术语表：<a href="../../reference/glossary.html#batching">批处理</a> · <a href="../../reference/glossary.html#batch-size">批大小</a> · <a href="../../reference/glossary.html#queueing">排队</a> · <a href="../../reference/glossary.html#throughput">吞吐</a> · <a href="../../reference/glossary.html#continuous-batching">连续批处理</a>。
   </p>

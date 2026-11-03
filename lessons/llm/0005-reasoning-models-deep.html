@@ -22,7 +22,7 @@
 
   <h2 id="q1-who">Q1 · 你看到的那段「思考」，到底是谁写的？</h2>
   <p><b>思考是你对话的那个模型做的</b>，草稿是它一个字一个字写出来的。容易混的是<b>后面那一步</b>：</p>
-  <p><b>闭源 API 给你的那段字是摘要，不是草稿</b>（开源给的是原文，见下表）。Anthropic 的文档明说，这个摘要是<b>另一个模型</b>提炼的：原话「<b>Summarization is processed by a different model from the one you target in your requests. The thinking model does not see the summarized output</b>」。也就是说：<b>思考的模型只管想，它自己都看不到摘要</b>。而且摘要不必等全部想完：「summaries can <b>stream as they arrive</b>」，随想随往外冒。</p>
+  <p><b>闭源 API 给你的那段字是摘要，不是草稿</b>（开源给的是原文，见下表）。Anthropic 的文档明说，这个摘要是<b>另一个模型</b>提炼的：原话「<b>Summarization is processed by a different model from the one you target in your requests. The thinking model does not see the summarized output</b>」。<b>思考的模型只管想，它自己都看不到摘要</b>。而且摘要不必等全部想完：「summaries can <b>stream as they arrive</b>」，随想随往外冒。</p>
   <p><b>原始草稿谁都拿不到</b>：「<b>No display setting returns the raw chain of thought</b>」，怎么设置都一样。可计费还是按草稿的全长收（「full thinking tokens … not the summary tokens」）。<b>草稿没消失</b>：它被加密收进了块上的 <code>signature</code> 字段（<a href="#q3-signature">Q3</a>）。</p>
   <p>把三家摆在一起看最清楚。<b>同一句「你看到的思考」，三个意思</b>：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
@@ -49,11 +49,11 @@
   <p><b>开源那套：模型只吐一条字流，记号是它自己写的。</b>这条流里先草稿、后答案，中间夹着<b>边界记号</b>：Qwen3 和 DeepSeek-R 系就是一对 <code>&lt;think&gt;</code> / <code>&lt;/think&gt;</code> 标签。记号本身就是<b>模型词表里的 token</b>：vLLM 里 DeepSeek-R 的解析器源码写着 <code>start_token = "&lt;think&gt;"</code>、<code>end_token = "&lt;/think&gt;"</code>，还要先查出它们的 token 编号。</p>
   <p><b>推理引擎</b>（跑模型的服务程序，vLLM 是其中一个）拿到这条流之后，<b>不理解内容，只认记号切一刀</b>，装进「思考／答案」两个字段。vLLM 文档的说法是「extracting reasoning content <b>from the model output</b>」。<b>切分，不是理解。</b></p>
   <p><b>为什么引擎不能自己插记号？因为它不知道该切在哪。</b>切点是模型自己的决定（它觉得想完了就转去写答案），引擎只看得见一串 token、看不懂字。实证有一条很硬：vLLM 想提前收掉草稿（思考额度用尽）时，做法是<b>逼模型把结束记号自己吐出来</b>：原话「vLLM <b>forces the model to produce <code>reasoning_end_str</code></b>, effectively terminating the reasoning block」。<b>能自己插，何必逼模型？</b></p>
-  <p><b>闭源那套：接口直接给你已经分好的块</b>（思考一块、答案一块），<b>内部怎么切、记号长什么样，Anthropic 和 OpenAI 都没公开</b>。能确认的只有：边界精确到 token 的位置，Anthropic 能把草稿那一段一个 token 不差地数出来（用量字段里的 <code>thinking_tokens</code>）。<span style="color:var(--muted)">（「切不是懂」跟<a href="../agent/0001-what-is-an-agent.html">Agent 第 1 课的工具调用</a>是同一招：模型不声明「我在调工具」，程序只认形状。）</span></p>
+  <p><b>闭源那套：接口直接给你已经分好的块</b>（思考一块、答案一块），<b>内部怎么切、记号长什么样，Anthropic 和 OpenAI 都没公开</b>。能确认的只有：边界精确到 token 的位置，Anthropic 能把草稿那一段一个 token 不差地数出来（用量字段里的 <code>thinking_tokens</code>）。<span style="color:var(--muted)">（"只认记号切、不理解内容"跟<a href="../agent/0001-what-is-an-agent.html">Agent 第 1 课的工具调用</a>是同一招：模型不声明「我在调工具」，程序只认形状。）</span></p>
 
   <h2 id="q3-signature">Q3 · 闭源 API 的 signature 里装的是什么？为什么必须原样带回？</h2>
   <p><b>这是闭源 API 的机制</b>：Anthropic 叫 <code>signature</code>，OpenAI 的同类设计叫 <code>encrypted_content</code>。<b>开源模型没有这一套</b>：思考是明文，多轮把原文拼回去就行（Qwen3 官方的建议就是「passing the content as it is」，聊天模板自己会处理）。</p>
-  <p>闭源这套里，每个思考块都带一个 <code>signature</code> 字段：<b>加密的完整草稿</b>：原话是「an encrypted copy of the <b>full reasoning</b>」。注意它盖的是模型当初吐出的<b>那一段 token</b>，<b>不是显示给你看的那段摘要</b>。</p>
+  <p>闭源这套里，每个思考块都带一个 <code>signature</code> 字段，装的是<b>加密的完整草稿</b>。原话是「an encrypted copy of the <b>full reasoning</b>」。注意它盖的是模型当初吐出的<b>那一段 token</b>，<b>不是显示给你看的那段摘要</b>。</p>
   <p>由此推出两件容易想反的事：</p>
   <ul>
     <li><b>文字清空了也能送回。</b><code>display</code> 让厂商只回空字段时，块照样能原样传回去。因为<b>签名盖的是那段 token，空字段填点字属于「被忽略」，不属于「被改动」</b>。服务端收到后把签名解开、重建草稿塞回提示词（「The server decrypts the signature to reconstruct the original thinking for prompt construction」）。</li>
@@ -82,7 +82,7 @@ content_block_delta    text_delta ×N</code></pre>
   <p><span style="color:var(--muted)">（这一问答的是<b>开源这边</b>：DeepSeek-R1、Qwen3 的训练配方是公开的，才有下文这些原文。闭源厂商不公开训练配方，「它们怎么练出来的」没有公开资料，不猜。）</span></p>
   <p><b>整套工序都发生在后训练阶段</b>：预训练把语言、知识这些底子练好，后训练再教它怎么思考。</p>
   <p><b>「怎么想」是练出来的，「写成什么格式」是设计好的。</b>这两件事常被并成一句「思考是涌现的」，拆开就清楚了。</p>
-  <p><b>涌现的是招式。</b>R1 的练法是<b>只给结果打分</b>（答案对不对、代码跑不跑得过、测试过不过），练着练着，模型自己长出了三类动作：<b>自我检查、验证、动态换策略</b>。论文原话：「facilitates the <b>emergent development</b> of advanced reasoning patterns, such as self-reflection, verification, and dynamic strategy adaptation」。训练中途还有个出名的「aha moment」：它开始写「Wait, wait. Wait. That's an aha moment I can flag here」。<b>学会中途回头，没人教它这句。</b></p>
+  <p><b>涌现的是招式。</b>R1 的练法是<b>只给结果打分</b>（答案对不对、代码跑不跑得过、测试过不过），练着练着，模型自己长出了三类动作：<b>自我检查、验证、动态换策略</b>。论文原话：「facilitates the <b>emergent development</b> of advanced reasoning patterns, such as self-reflection, verification, and dynamic strategy adaptation」。训练中途还有个出名的「aha moment」：它开始写「Wait, wait. Wait. That's an aha moment I can flag here」。<b>它学会了中途回头再想——这一步没人教过它。</b></p>
   <p><b>但格式从头到尾是人定的。</b>R1-Zero 的模板是工程师写的：「we <b>design a straightforward template</b>, to require DeepSeek-R1-Zero to first produce a reasoning process, followed by the final answer」——<b>「先思考、后答案」这个结构，是开练之前就规定好的</b>。模板原文还把标签写死了：思考装在 <code>&lt;think&gt;…&lt;/think&gt;</code> 里、答案装在 <code>&lt;answer&gt;…&lt;/answer&gt;</code> 里。</p>
   <p><b>标签不光是约定，还是奖励逼出来的。</b>奖励里有一项专门管格式：「the model is <b>incentivized to encapsulate its reasoning process within designated tags</b>」——把思考装进那对标签才给分。所以模型「会写」这对标签，是<b>模板 ＋ 格式奖励反复教</b>的结果，<b>不是它自己发明的</b>。</p>
   <p>标签本身也只是<b>词表里的普通字</b>（token）：Qwen3 官方示例直接拿<b>结束标签的 token 编号（151668）</b>来切分思考和答案。<b>连开始标签都未必是模型写的</b>：Qwen3 官方 Note 说，默认聊天模板会自动把 <code>&lt;think&gt;</code> 塞进提示以强制思考，所以「模型输出里只有 <code>&lt;/think&gt;</code>、没有开始标签，是正常的」。<b>模型负责的，是写到结束标签收尾。</b></p>

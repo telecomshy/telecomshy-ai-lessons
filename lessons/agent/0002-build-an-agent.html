@@ -59,7 +59,7 @@ python -m venv .venv
   <p style="font-size:0.9rem;color:var(--muted)">下载慢的话可以换国内 PyPI 镜像，例如清华源：<code>python -m pip install -U openai python-dotenv -i https://pypi.tuna.tsinghua.edu.cn/simple</code>。</p>
 
   <h2>4. 申请一个 API key</h2>
-  <p>两个包装好了，可要连模型还得先有 key。这一课默认用 DeepSeek 的 <code>deepseek-flash</code>：它兼容 OpenAI 的接口格式，价格低，文档有中文。步骤：</p>
+  <p>两个包装好了，但要连模型，还得先有 key。这一课默认用 DeepSeek 的 <code>deepseek-flash</code>：它兼容 OpenAI 的接口格式，价格低，文档有中文。步骤：</p>
   <ol>
     <li>打开 <a href="https://platform.deepseek.com/">platform.deepseek.com</a>，注册 / 登录。</li>
     <li>进 <b>API keys</b> 页面，点创建，把 key 复制下来——<b>它只完整显示这一次</b>。</li>
@@ -87,7 +87,14 @@ python -m venv .venv
 回复：收到
 用掉 token：输入 9 / 输出 1，耗时 1.2 秒
 通路正常，可以跑正式的了：python exercises/agent/0002-build-an-agent.py</code></pre>
-  <p>看到"通路正常"再往下（耗时会随着网络和模型负载变，差一两秒正常）。报错的话照这几种查（DeepSeek 官方错误码）：<b>401 认证失败</b>——key 不对或已失效，先查 <code>.env</code> 里有没有引号、空格，再确认这个 key 没被删；<b>402 余额不足</b>——去平台充值；<b>429 限流</b>——等一会儿，或看余额与并发；<b>500 / 503</b>——服务端的事，等一会儿重试；<b>连不上</b>——检查网络或代理，<code>DEEPSEEK_BASE_URL</code> 别多写斜杠。</p>
+  <p>看到"通路正常"再往下（耗时会随着网络和模型负载变，差一两秒正常）。报错的话照下面几种查（DeepSeek 官方错误码）：</p>
+  <ul>
+    <li><b>401 认证失败</b>：key 不对或已失效，先查 <code>.env</code> 里有没有引号、空格，再确认这个 key 没被删。</li>
+    <li><b>402 余额不足</b>：去平台充值。</li>
+    <li><b>429 限流</b>：等一会儿，或看余额与并发。</li>
+    <li><b>500 / 503</b>：服务端的事，等一会儿重试。</li>
+    <li><b>连不上</b>：检查网络或代理，<code>DEEPSEEK_BASE_URL</code> 别多写斜杠。</li>
+  </ul>
   <p>还有一个最常见的坑：<b><code>.env</code> 放错了地方</b>。脚本会从自己所在目录（<code>exercises/agent/</code>）逐级往上找 <code>.env</code>，所以放在仓库根目录能读到；放到别的盘或别的项目里就读不到了。</p>
 
   <h2>7. 跑起来</h2>
@@ -176,7 +183,7 @@ python -m venv .venv
   <p>注意外面多包了一层 <code>{"type": "function", "function": {...}}</code>——这是接口要求的信封，名字、说明、参数装在里面。真正执行时用的是另一个字典 <code>TOOLS</code>：名字 → 函数。两张表要同步改，漏一个就多一种出错方式（第 10 节有练习）。</p>
 
   <h3>第二块：model_fn——把接口适配成循环要的形状</h3>
-  <p>循环不关心 OpenAI 还是 DeepSeek。它只认两种回话：<code>text</code>（说完了）或 <code>tool_use</code>（要调工具）。把所有接口细节翻译成这两形状的，就是 <code>model_fn</code>：</p>
+  <p>循环不关心 OpenAI 还是 DeepSeek。它只认两种回话：<code>text</code>（说完了）或 <code>tool_use</code>（要调工具）。把所有接口细节翻译成这两种形状的，就是 <code>model_fn</code>：</p>
   <pre><code>def model_fn(messages, tools):
     m = call_model(messages, tools)
 
@@ -197,7 +204,7 @@ python -m venv .venv
     <li><b><code>history</code> 把模型说的那句话原样放回对话</b>。<code>model_dump(exclude_none=True)</code> 把 SDK 对象转成字典，顺手去掉空字段。这条助手消息里带着 <code>tool_calls</code>，下一轮必须原样出现——接口靠它把结果和请求对上。</li>
     <li><b>结果必须带 <code>tool_call_id</code> 挂回去</b>。少了它，接口不知道这条结果是回答哪一次调用的，直接 400。</li>
   </ul>
-  <p>还有一处藏在 <code>call_model</code> 里：请求带了 <code>extra_body={"thinking": {"type": "disabled"}}</code>。<b>DeepSeek 的思考模式默认是开的</b>，而带工具时它要求把历次思考内容原样传回，否则 400。本课只看循环，关掉最省事——想了解思考模式，见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>。</p>
+  <p>还有一处藏在 <code>call_model</code> 里：请求带了 <code>extra_body={"thinking": {"type": "disabled"}}</code>。<b>DeepSeek 的思考模式默认是开的</b>，而带工具时，接口要求把历次思考内容原样传回，否则 400。本课只看循环，关掉最省事——想了解思考模式，见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>。</p>
 
   <h3>第三块：run_agent——agent 的全部核心代码</h3>
   <pre><code>def run_agent(question, model_fn, max_steps=6):
@@ -252,7 +259,7 @@ python -m venv .venv
   <p><b>真 agent 的代码，很多是在防模型出错。</b>这不是不信任模型，是承认它按概率说话——概率偶尔会给你一个你没写过的形状。</p>
 
   <h2>10. 改一改：亲手制造三次失败</h2>
-  <p>光看它跑通学不到太多，这三步最值钱。<b>每跑一次不到一分钱</b>，改完记得改回去。</p>
+  <p>光看它跑通学不到太多，这三步最有用。<b>每跑一次不到一分钱</b>，改完记得改回去。</p>
   <ol>
     <li><b>把护栏拧到 1 步</b>，再跑同样的四个问题：
       <pre><code>python exercises/agent/0002-build-an-agent.py --max-steps 1</code></pre>
@@ -261,7 +268,7 @@ python -m venv .venv
 ──────────────────────────────────────────────────────────
   [1] 调工具：get_weather({'city': '北京'}) -&gt; {"city": "北京", "temp_c": 26, "cond": "晴"}
   &gt;&gt; hit_max_steps，共走 1 步，耗时 1.1 秒</code></pre>
-      <p>工具调到了、结果也拿到了，就是没机会说人话——这就是"死循环被拦下"的现场。<b>顺手想一下</b>：生产里这个数字设多大，是钱和安全的取舍。</p>
+      <p>工具调到了、结果也拿到了，就是没机会说人话——这就是护栏强制收工的现场。<b>顺手想一下</b>：生产里这个数字设多大，是钱和安全的取舍。</p>
     </li>
     <li><b>删掉一个城市再问</b>：把 <code>WEATHER_DB</code> 里的 <code>"北京"</code> 整个删掉，再问"北京今天多少度"。工具会返回 <code>{"error": "查不到「北京」的天气"}</code>，观察它接下来怎么处理这条错误——如实说查不到，还是换个城市硬答？</li>
     <li><b>加一个“只写了一半”的工具</b>：在 <code>TOOL_LIST</code> 里加一条 <code>get_air_quality</code>（名字、说明、参数都写），但<b>不</b>往 <code>TOOLS</code> 里加实现。再问“北京空气质量怎么样”。模型很可能真去调它，然后触发 <code>没有这个工具</code> 的兜底——这就是“清单和实现不同步”的现场。</li>
@@ -274,7 +281,7 @@ python -m venv .venv
 输入（缓存命中）        ¥0.02 / 百万    ¥0.04 / 百万
 输出                    ¥4 / 百万       ¥8 / 百万</code></pre>
   <p>按全价估：<code>2969 ÷ 1,000,000 × 1 ＋ 279 ÷ 1,000,000 × 4 ≈ 0.0041 元</code>。所以脚本打出来"约 0.00409 元"——<b>四个问题不到半分钱</b>。高峰时段翻倍；缓存命中还会更便宜。</p>
-  <p><b>但便宜不等于无脑跑。</b>每一步都要把<b>之前的全部对话</b>再送一遍，问题越长、工具清单越大，输入 token 涨得越快。这就是 LLM 底层第 3 课讲的缓存为什么在 agent 里特别值钱（<a href="../llm/0003-kv-cache-and-prompt-caching.html">KV Cache 与「缓存命中」</a>）。工程上三样护栏一个都不能少：<b>最大步数</b>、<b>超时</b>、<b>预算上限</b>。</p>
+  <p><b>但便宜不等于无脑跑。</b>每一步都要把<b>之前的全部对话</b>再送一遍，问题越长、工具清单越大，输入 token 涨得越快。这也是为什么缓存在 agent 里特别值钱，机制见 <a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层第 3 课 · KV Cache 与「缓存命中」</a>。工程上三样护栏一个都不能少：<b>最大步数</b>、<b>超时</b>、<b>预算上限</b>。</p>
 
   <h2>12. 检查一下你懂了没</h2>
 
