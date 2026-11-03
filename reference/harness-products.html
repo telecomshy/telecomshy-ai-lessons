@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速查 · harness 四产品对照</title>
+<link rel="stylesheet" href="../assets/base.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="lesson-meta">速查 / Reference</div>
+  <h1>harness 四产品对照</h1>
+  <p class="subtitle">照着查就行。这张表只回答「它有什么」；为什么没有最好的 harness、怎么按场景挑，回 <a href="../lessons/agent/0007-harness.html">Agent 篇 · 第 7 课 · Harness</a>。</p>
+
+  <h2>① 读表前先知道三件事</h2>
+  <ul>
+    <li><b>这不是排名</b>：四款是四条不同的取舍路线（办公、代码、常驻、办公全场景），功能多少不说明好坏。</li>
+    <li><b>快照会过时</b>：下表按官方文档抓取（2026-10-18），产品更新快，具体以你装的版本为准；TeleAgent 的记忆细节来自产品自述，官方手册未载。</li>
+    <li><b>功能表只能初筛</b>：它能筛「有没有这个能力」，筛不了「用起来顺不顺」——默认权限、数据边界、迁移成本这三样，表里没有，但长期用最要紧。</li>
+  </ul>
+
+  <h2>② 一张表：十行对照</h2>
+  <div style="overflow-x:auto">
+  <table style="border-collapse:collapse;width:100%;min-width:820px;font-size:0.78rem;table-layout:fixed">
+    <colgroup><col style="width:11%"><col style="width:22.25%"><col style="width:22.25%"><col style="width:22.25%"><col style="width:22.25%"></colgroup>
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">维度</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">TeleAgent</a></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://opencode.ai/docs/">OpenCode</a></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://hermes-agent.nousresearch.com/docs">Hermes</a></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://www.workbuddy.ai/docs/workbuddy/Overview">WorkBuddy</a></th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>定位</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">办公任务</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">写代码</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">通用 / 常驻</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">办公全场景</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>形态</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">桌面</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">终端 / 桌面 / IDE</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">CLI / Desktop / 服务器</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Windows / macOS 桌面</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>模型</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">内置＋自定义（OpenAI 兼容）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">任意 provider / API key；Zen</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Nous Portal / OpenRouter / OpenAI / 任意 endpoint</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">内置＋自定义；可接 Ollama 本地</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>工具</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">工作空间文件、代码执行三档、MCP</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">文件编辑、bash、LSP、MCP、自定义工具</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">60+ 工具、浏览器</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">本地文件、文档/表格/PPT/数据、脚本</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>执行环境</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">工作空间、代码执行三档</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">本机终端（按权限限制）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">7 种终端后端（本机/Docker/SSH/云沙箱）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">工作空间、沙箱</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>扩展</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">技能广场/导入、MCP</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Agent Skills、MCP、插件、自定义工具</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Skills、MCP、插件、Bot Mode</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Skill Marketplace、Connectors、MCP</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>权限</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">允许一次/一直允许/拒绝；YOLO</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Plan/Build；按 agent 配 ask/allow/deny</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">smart/manual/off；容器隔离；硬黑名单</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Default/Full Access；工作空间；沙箱</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>记忆</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">USER/MEMORY/daily-log（自述）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">AGENTS.md 项目规则；会话压缩</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">跨会话记忆；技能自改进</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">对话记忆；夜间摘要</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>自动化</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">定时任务；微信/企微/飞书</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">CLI/Server/SDK；GitHub/GitLab</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">cron；20+ 消息平台；语音</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">定时/周期；Slack/Telegram/Discord/企微/飞书/钉钉/QQ/微信</td></tr>
+      <tr><td style="padding:0.4rem"><b>开放性</b></td>
+          <td style="padding:0.4rem">闭源商业</td>
+          <td style="padding:0.4rem">开源</td>
+          <td style="padding:0.4rem">MIT 开源</td>
+          <td style="padding:0.4rem">闭源商业</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>三个表里看不到的隐性成本（工具多则上下文贵、默认权限即产品态度、迁移成本），以及怎么按场景挑，都在 <a href="../lessons/agent/0007-harness.html">第 7 课</a>正文里展开；这张表只做初筛，真正合不合手，还是拿你每天那类任务试。</p>
+
+  <p class="next">
+    <b>相关课</b>：<a href="../lessons/agent/0007-harness.html">Agent 篇 · 第 7 课 · Harness</a>（公式、子系统、task-harness fit 与按场景选）<br>
+    <b>试用检查单</b>：<a href="agent-eval-checklist.html">试一个 agent 该问什么</a><br>
+    <b>其他速查</b>：<a href="memory-products.html">长期记忆产品对照</a> · <a href="context-budget.html">上下文预算</a> · <a href="glossary.html">术语表</a><br>
+    产品官方文档：<a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">TeleAgent</a> · <a href="https://opencode.ai/docs/">OpenCode</a> · <a href="https://hermes-agent.nousresearch.com/docs">Hermes</a> · <a href="https://www.workbuddy.ai/docs/workbuddy/Overview">WorkBuddy</a>（均 2026-10-18 抓）
+  </p>
+
+  <footer>AI Agent 原理与工程 · 速查 · harness 四产品对照</footer>
+</div>
+</body>
+</html>

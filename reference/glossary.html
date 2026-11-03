@@ -43,6 +43,12 @@
     <dt id="harness"><strong>Harness（运行外壳 / 脚手架）</strong></dt>
     <dd>套在模型外面的<b>那套软件</b>（也叫<b>客户端软件</b>）：拼 prompt、执行工具、管上下文、施加护栏、加载 skill、接 MCP、做界面、存状态。<b>Agent ＝ Model ＋ Harness</b>（Martin Fowler / LangChain 的说法）。<br><b>注意</b>：agent 是「<b>行为</b>」，harness 是「<b>软件</b>」——你下载安装的其实是 harness，agent 是它跑起来后表现出的能力。<b>同一个模型换 harness，表现会差很多</b>。</dd>
 
+    <dt id="harness-subsystems"><strong>harness 的五个子系统</strong></dt>
+    <dd>把 harness 拆开的通用分法（出自开源课程 Learn Harness Engineering）：<b>Instructions</b>（告诉 agent 做什么、按什么顺序）· <b>State</b>（记录做到哪、下一步）· <b>Verification</b>（怎么证明"做完了"——测试、浏览器、检查单，不是它说 done 就算）· <b>Scope</b>（一次做多大、什么时候停）· <b>Session Lifecycle</b>（开始怎么初始化、结束怎么留干净状态）。不同产品叫法不同，但要做的事绕不开这五样。</dd>
+
+    <dt id="task-harness-fit"><strong>task-harness fit（任务-壳匹配）</strong></dt>
+    <dd>LangChain 的说法：壳要和任务真正需要的东西匹配——需要什么上下文、会遇到什么失败、必须执行什么策略、在什么环境里跑。所以<b>没有"对所有人都最好"的 harness</b>：客服、写代码、长任务、常驻助理，要的壳不是同一套。</dd>
+
     <dt id="observation"><strong>Observation（观察）</strong></dt>
     <dd>工具执行后返回的结果。它被喂回给模型，成为下一轮推理的输入——这是循环得以"感知环境"的方式。</dd>
 

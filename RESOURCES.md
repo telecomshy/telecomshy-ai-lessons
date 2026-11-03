@@ -14,7 +14,7 @@
 | `agent/0004`（Skill） | Anthropic Agent Skills ＋ 阿里云百炼 Skill · ModelScope Skills ＋「TeleAgent 案例」小节的操作手册（创建技能/导入） |
 | `agent/0005`（多 agent） | multi-agent research system · Orchestrator-workers Cookbook · TeleAgent 操作手册（任务委派）· OpenCode Agents ＋（workflow 谱系对照）Building effective agents |
 | `agent/0006`（提示词注入与护栏） | OWASP LLM Top 10（LLM01/03/05/06）· Anthropic memory 工具文档 · TeleAgent 操作手册（授权/YOLO/执行分档/工作空间） |
-| `agent/0007`（Harness） | 「TeleAgent 案例」小节（TeleAgent／OpenCode／Hermes／WorkBuddy 四款）＋ harness 系（Fowler · LangChain · Databricks · Learn Harness Engineering · Anthropic long-running） |
+| `agent/0007`（Harness） | 「TeleAgent 案例」小节（TeleAgent／OpenCode／Hermes／WorkBuddy 四款，十行对照表已落 `reference/harness-products.html`，2026-10-28 迁）＋ harness 系（Fowler · LangChain · Databricks · Learn Harness Engineering · Anthropic long-running）＋ Verification 节四条提醒（Anthropic Demystifying evals，速查版在 `reference/agent-eval-checklist.html`） |
 | `llm/0000`（模型怎么学） | 注意力原始论文系（Vaswani · Formal Algorithms · CS224n）＋ Karpathy 系＋图解系（Jay Alammar · Transformer Explainer · Brandon Rohrer） |
 | `llm/0001`（token→下一 token） | Tokenizer 系（HF Tokenizers · Redis · Raschka BPE · fast.ai · Mikolov）＋采样系（HF how-to-generate · Holtzman · Transformer Explainer） |
 | `llm/0002`（prefill vs decode） | prefill／decode 系（Redis · Weka）＋延迟指标系（ClickHouse · Anyscale） |

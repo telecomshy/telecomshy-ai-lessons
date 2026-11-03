@@ -15,16 +15,15 @@
 
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
-    <p>0001 说过：模型只会吐字，agent 是跑起来的行为，中间那层壳是 harness。这一课先把公式讲透，再看它由哪几个子系统撑起来、上下文快满时怎么处理、四个产品怎么选。</p>
+    <p>第 1 课说过：模型只会吐字，agent 是跑起来的行为，中间那层壳是 harness。这一课先把公式讲透，再看它由哪几个子系统撑起来、怎么验证它真做完了、上下文快满时怎么处理、四个产品怎么选。</p>
     <p>你平时比较的"哪个 agent 好用"，比的其实不是模型，是<b>模型外面这层壳</b>；但壳又没法脱离模型单独谈。公式把这两件事绑在一起。</p>
-    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：说清为什么 Agent = Model + Harness；说出 harness 的五个子系统；看懂压缩和交接的区别；按场景在四个产品里挑一个。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：说清为什么 Agent = Model + Harness；说出 harness 的五个子系统；知道怎么验证 agent 说的"做完了"；看懂压缩和交接的区别；按场景在四个产品里挑一个。</p>
   </div>
 
   <div class="note">
     <span class="label">记住一条主线，后面就不会晕</span>
     <p style="text-align:center;font-size:1.15rem"><b>Agent ＝ Model（LLM）＋ Harness</b></p>
-    <p>模型负责"想"（下一个字吐什么），壳负责"能"——给它什么上下文、什么工具、什么权限、什么记忆、怎么验证、怎么恢复。</p>
-    <p>下面的对照只依据官方文档（2026-10-18），不是跑分；产品会变，版本以官方为准。</p>
+    <p>模型负责"想"（下一个字吐什么）；壳负责让它能做：给它什么上下文、什么工具、什么权限、什么记忆、怎么验证、怎么恢复。</p>
   </div>
 
   <h2>1. 公式：Agent = Model + Harness</h2>
@@ -129,11 +128,34 @@
     </tbody>
   </table>
 
-  <p>这五个子系统，功能表上不一定都写。但一个 harness 好不好用，往往就差在这里：<b>Instructions 写得清不清、State 接不接得上、Verification 认不认账、Scope 管不管得住、Session 收不收得干净。</b></p>
+  <p>这五个子系统，功能表上不一定都写。但一个 harness 好不好用，往往就差在这里：<b>Instructions 写得清不清、State 接不接得上、Verification 认不认账、Scope 管不管得住、Session 收不收得干净。</b>其中 Verification 最容易被跳过——它说 done 就算 done 了吗？下一节专门讲它。</p>
 
-    <h2>4. 上下文快满时：压缩、清空，还是交接</h2>
+  <h2>4. Verification：怎么证明"做完了"</h2>
+  <p>agent 判断"做完了"，看的是工具返回了什么字。工具返回"成功"，它就认为成功——但工具可能只干成了一半，返回的"成功"指的是前一半；界面也照样显示成功。它说成了，不等于成了。</p>
+  <p>所以 Verification 子系统干的事，是给"完成"配一个不依赖 agent 自述的证据：测试跑通了、浏览器里点得到、文件真的变了、系统里真有这条记录。harness 把这些做成自动关卡——测试工具、浏览器操作，agent 说 done 之前必须先过这一关。</p>
+  <p>没有自动关卡的任务呢？落回你自己头上：动手抽查。验什么、验多严，是笔账，不是越多越好：</p>
+  <ul>
+    <li><b>每一步都验</b>：最稳，但慢——每步都跑一遍完整流程，小任务会被拖死。</li>
+    <li><b>只验最后一步</b>：快，但中间跑偏了要到最后才发现，返工更贵。</li>
+    <li><b>按代价挑着验</b>：收不回的动作（删数据、发邮件、下单）每步都验；写草稿这类错了随时能改的，抽查就够。</li>
+  </ul>
+  <p>怎么抽查、重点查哪，这份清单已经整理成速查：<a href="../../reference/agent-eval-checklist.html">试一个 agent 该问什么</a>。其中四条永远适用：</p>
+  <ul>
+    <li><b>跑一次不算数</b>：同样的任务，两次跑出来的结果可能不一样。多跑几遍，看它稳不稳。</li>
+    <li><b>它说成了，去查真实状态</b>：文件变了没、系统里有没有这条记录，自己看一眼。</li>
+    <li><b>别只问对不对，也问绕了多大圈</b>：同样的结果，步数和成本能差好几倍。</li>
+    <li><b>别信宣传里的分数</b>：基准测试的题和你的活不是一回事；信你自己试出来的。</li>
+  </ul>
+  <p>验证就讲到这。下一个问题是：任务长到一个窗口装不下时，怎么让它接着做——那是 State 和 Session Lifecycle 的地盘。</p>
+
+    <h2>5. 上下文快满时：压缩、清空，还是交接</h2>
   <p>大多数人真正见到的不是"长任务"这个功能，而是：任务跑着跑着，界面提示上下文快满了，然后 harness 自动压缩/摘要，或者让你清空。<b>压缩是主流做法</b>。</p>
   <p><b>压缩解决"装得下"</b>：把旧对话、旧工具结果摘要成一段，腾出窗口继续跑。<b>它不解决"接得上"</b>：摘要会丢细节，下一段可能忘了为什么改、改到哪、什么算完成。任务越长，这个差别越明显。</p>
+
+  <figure class="figure">
+    <img src="../../assets/compaction-vs-handoff.svg" alt="两条时间线对比压缩与交接。上一条只靠压缩：会话1跑了几十轮，压成一段摘要，会话2从摘要继续；摘要只留大意，为什么改、改到哪、什么算完成三问答不清。下一条压缩加交接：会话1做完一步就写盘，落盘清单、进度、提交，新会话读回状态接着干；三问都有答案，要的东西在磁盘上不在窗口里。">
+    <figcaption>压缩改写窗口里的历史，交接往磁盘上写状态——前者让任务跑得下去，后者让下次接得上来。</figcaption>
+  </figure>
 
   <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
     <thead><tr>
@@ -162,9 +184,9 @@
     </tbody>
   </table>
 
-  <p>你用的 harness 如果只显示"上下文快满"然后自动摘要，那就是第一行；TeleAgent 手册里还有上下文用量查看与清理；OpenCode / Claude Code 这类 coding harness 有 compaction。<b>压缩是默认动作；"交接"是任务跨很多个窗口时才要加的码。</b></p>
+  <p>你用的 harness 如果只显示"上下文快满"然后自动摘要，那就是第一行；TeleAgent 手册里还有上下文用量查看与清理；OpenCode / Claude Code 这类 coding harness 有 compaction。<b>压缩是默认动作；"交接"是任务跨很多个窗口时才需要额外加上的一步。</b></p>
 
-  <p>Anthropic 在长任务 harness 里讲的，就是后一种：</p>
+  <p>Anthropic 讲长任务 harness 的文章里，说的就是后一种：</p>
 
   <div class="pillars">
     <div class="pillar">
@@ -177,7 +199,7 @@
     </div>
   </div>
 
-  <p>它要留的不只是摘要，还有四样东西：<b>feature list</b>（哪些功能、哪些已通过）、<b>init 脚本</b>、<b>progress 记录</b>、<b>git 提交</b>。这四样让下一次会话能快速回答：做到哪、下一步做什么、环境有没有坏。</p>
+  <p>它要留的不只是摘要，还有上面那四样——它们让下一次会话能快速回答：做到哪、下一步做什么、环境有没有坏。</p>
 
   <p>只靠压缩时，常见翻车：</p>
   <ul>
@@ -187,7 +209,7 @@
     <li><b>没测就说完成</b>：单元测试过了，端到端没跑；用户一用就露馅。</li>
   </ul>
   <p>这套做法来自 Claude Agent SDK / Claude Code 的长任务实践，<b>不是所有 harness 都提供</b>；你的 harness 只做压缩也很正常。区别只在：任务跨很多个窗口时，压缩够不够用。</p>
-<h2>5. 没有"最好的 harness"，只有"任务-壳匹配"</h2>
+<h2>6. 没有"最好的 harness"，只有"任务-壳匹配"</h2>
   <p>LangChain 把这件事叫 <b>task-harness fit</b>：壳要和任务真正需要的东西匹配——需要什么上下文、会遇到什么失败、必须执行什么策略、在什么环境里跑。客服 agent 和长任务 coding agent 的壳，不可能是同一套。</p>
 
   <table style="border-collapse:collapse;width:100%;font-size:0.85rem">
@@ -219,78 +241,10 @@
 
   <p>所以"哪个 harness 最好"这个问题，得先换成：<b>我这类任务，最需要哪几个子系统？</b>答案不同，产品就不同。</p>
 
-  <h2>6. 四个产品，四条路线</h2>
-  <p>下面四款不是"谁更强"的排名，是四种不同取舍。产品名链到官方文档。</p>
+  <h2>7. 四条路线，按你的场景挑</h2>
+  <p>市面上的 harness 主流产品可以分成四条路线，各有取舍，不是谁更强的排名：<b>TeleAgent</b> 走国内办公桌面路线，技能广场加三选一授权；<b>OpenCode</b> 走开源代码路线，provider 和工具随便换；<b>Hermes</b> 走常驻多平台路线，服务器、cron、二十多个消息平台；<b>WorkBuddy</b> 走办公全场景路线，连接器和定时任务齐。形态、模型、工具、权限、记忆等十行对照，整理在<a href="../../reference/harness-products.html">速查：harness 四产品对照</a>——产品更新快，那张表按四家各自的官方文档抓取（2026-10-18），用前核对。</p>
 
-  <div style="overflow-x:auto">
-  <table style="border-collapse:collapse;width:100%;min-width:820px;font-size:0.78rem;table-layout:fixed">
-    <colgroup><col style="width:11%"><col style="width:22.25%"><col style="width:22.25%"><col style="width:22.25%"><col style="width:22.25%"></colgroup>
-    <thead><tr>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">维度</th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">TeleAgent</a></th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://opencode.ai/docs/">OpenCode</a></th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://hermes-agent.nousresearch.com/docs">Hermes</a></th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem"><a href="https://www.workbuddy.ai/docs/workbuddy/Overview">WorkBuddy</a></th>
-    </tr></thead>
-    <tbody>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>定位</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">办公任务</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">写代码</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">通用 / 常驻</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">办公全场景</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>形态</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">桌面</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">终端 / 桌面 / IDE</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">CLI / Desktop / 服务器</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Windows / macOS 桌面</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>模型</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">内置＋自定义（OpenAI 兼容）</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">任意 provider / API key；Zen</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Nous Portal / OpenRouter / OpenAI / 任意 endpoint</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">内置＋自定义；可接 Ollama 本地</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>工具</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">工作空间文件、代码执行三档、MCP</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">文件编辑、bash、LSP、MCP、自定义工具</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">60+ 工具、浏览器</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">本地文件、文档/表格/PPT/数据、脚本</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>执行环境</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">工作空间、代码执行三档</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">本机终端（按权限限制）</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">7 种终端后端（本机/Docker/SSH/云沙箱）</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">工作空间、沙箱</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>扩展</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">技能广场/导入、MCP</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Agent Skills、MCP、插件、自定义工具</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Skills、MCP、插件、Bot Mode</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Skill Marketplace、Connectors、MCP</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>权限</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">允许一次/一直允许/拒绝；YOLO</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Plan/Build；按 agent 配 ask/allow/deny</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">smart/manual/off；容器隔离；硬黑名单</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">Default/Full Access；工作空间；沙箱</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>记忆</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">USER/MEMORY/daily-log（自述）</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">AGENTS.md 项目规则；会话压缩</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">跨会话记忆；技能自改进</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">对话记忆；夜间摘要</td></tr>
-      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>自动化</b></td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">定时任务；微信/企微/飞书</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">CLI/Server/SDK；GitHub/GitLab</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">cron；20+ 消息平台；语音</td>
-          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">定时/周期；Slack/Telegram/Discord/企微/飞书/钉钉/QQ/微信</td></tr>
-      <tr><td style="padding:0.4rem"><b>开放性</b></td>
-          <td style="padding:0.4rem">闭源商业</td>
-          <td style="padding:0.4rem">开源</td>
-          <td style="padding:0.4rem">MIT 开源</td>
-          <td style="padding:0.4rem">闭源商业</td></tr>
-    </tbody>
-  </table>
-  </div>
-
-  <p style="font-size:0.85rem;color:var(--muted)">注：TeleAgent 的记忆细节来自产品自述，官方手册未载；其余按官方文档。产品更新快，具体以你装的版本为准。</p>
-
-  <h2>7. 按场景选，不按功能多少选</h2>
-  <p>功能表只能告诉你"它有什么"，不能告诉你"你用起来顺不顺"。更实用的问法是：我大部分时间在干什么？</p>
+  <p>挑的时候，功能表只能做初筛——它能筛"有没有这个能力"，筛不了"用起来顺不顺"。更实用的问法是：我大部分时间在干什么？</p>
 
   <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
     <thead><tr>
@@ -312,12 +266,13 @@
   <p>不是绝对：OpenCode 也能写文档，WorkBuddy 也能跑脚本；这里看的是<b>默认值</b>——你打开它时，它已经替你选好了哪条路。</p>
 
   <h2>8. 功能表之外的三个隐性成本</h2>
+  <p>默认值之外，还有三样东西功能表上永远看不到，但用半年后差别最大：</p>
   <ul>
     <li><b>工具越多，上下文越贵</b>：每个工具的名字和说明都进 prompt；30 个工具不只多花钱，还会让模型更容易选错。功能多不等于好用。</li>
-    <li><b>默认权限就是产品态度</b>：默认全自动、默认审批、默认只碰工作区——出事时差别最大。看产品先看默认值，不要只看"能不能全自动"。</li>
+    <li><b>默认权限就是产品态度</b>：默认全自动、默认审批、默认只碰工作空间——出事时差别最大。看产品先看默认值，不要只看"能不能全自动"。</li>
     <li><b>迁移成本</b>：技能、规则、记忆能不能导出？换一个 harness，是不是要从头教一遍？开源/闭源、云/本地，决定的不是今天，是半年后。</li>
   </ul>
-  <p>所以"功能表/榜单"只能做初筛；真正合不合手，还是拿你每天那类任务试。别人说好，不等于你的活好。</p>
+  <p>光看文字说不动你；真正合不合手，得拿你每天那类任务试。</p>
 
   <h2>9. 检查一下你懂了没</h2>
 
@@ -399,51 +354,7 @@
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q8</span> 想让它长期在线、从 Telegram/Slack/微信指挥、跑在服务器上，先看哪个？</p>
-    <button class="quiz-option">TeleAgent</button>
-    <button class="quiz-option">OpenCode</button>
-    <button class="quiz-option">WorkBuddy</button>
-    <button class="quiz-option" data-correct="true">Hermes</button>
-    <p class="feedback"
-       data-ok="对。Hermes 的默认形态就是 CLI/Desktop/服务器＋20+ 消息平台＋cron。"
-       data-no="另外三个更偏桌面或代码；常驻多平台是 Hermes 的定位。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q9</span> 国内办公、想用技能广场、授权想细一点，先看哪个？</p>
-    <button class="quiz-option" data-correct="true">TeleAgent</button>
-    <button class="quiz-option">OpenCode</button>
-    <button class="quiz-option">Hermes</button>
-    <button class="quiz-option">WorkBuddy</button>
-    <p class="feedback"
-       data-ok="对。TeleAgent 的技能广场、MCP、三选一授权是它的默认组合。"
-       data-no="OpenCode 偏代码；Hermes 偏常驻；WorkBuddy 也做办公，但技能/授权的默认组合不同。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q10</span> 官方功能表能说明什么、不能说明什么？</p>
-    <button class="quiz-option">能说明谁的实际体验最好、用起来最顺手</button>
-    <button class="quiz-option" data-correct="true">能筛「有没有这个能力」，不能说明用起来顺不顺</button>
-    <button class="quiz-option">能替代你自己动手做的那些任务测试</button>
-    <button class="quiz-option">功能越多，体验就一定越好，不会更差</button>
-    <p class="feedback"
-       data-ok="对。功能表是初筛；体验要看默认值、工具设计、权限和你的任务类型。"
-       data-no="功能表不是跑分；功能多还可能让上下文更贵、模型更容易选错。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q11</span> 选 harness 时，下面哪一项最该先看？</p>
-    <button class="quiz-option">功能列表最长的那一列</button>
-    <button class="quiz-option">宣传页上的模型名字最多</button>
-    <button class="quiz-option" data-correct="true">默认权限、数据边界、迁移成本</button>
-    <button class="quiz-option">界面颜色好不好看</button>
-    <p class="feedback"
-       data-ok="对。这三个决定你半年后还敢不敢用、换不换得走。"
-       data-no="功能数量是初筛；长期使用看默认权限、数据去哪、技能/记忆能不能带走。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q12</span> "Harness 能把弱模型变强"这句话对不对？</p>
+    <p class="q"><span class="num">Q8</span> "Harness 能把弱模型变强"这句话对不对？</p>
     <button class="quiz-option">对，换个壳就能直接提升模型本身的能力</button>
     <button class="quiz-option">对，壳会自动训练模型，把弱模型练强</button>
     <button class="quiz-option">不对，模型和壳的能力其实完全无关</button>
@@ -457,7 +368,8 @@
     <b>这节课的一手资料</b>：<br>
     <a href="https://martinfowler.com/articles/harness-engineering.html">Martin Fowler — Harness engineering</a> · <a href="https://www.langchain.com/blog/how-to-build-a-custom-agent-harness">LangChain — How to Build a Custom Agent Harness</a> · <a href="https://github.com/walkinglabs/learn-harness-engineering">Learn Harness Engineering（五个子系统）</a>：公式、task-harness fit、Instructions/State/Verification/Scope/Session Lifecycle。<br>
     <a href="https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents">Anthropic — Effective harnesses for long-running agents</a>：initializer/coding agent、feature list、progress、git、端到端验证，以及四类长任务翻车。<br>
-    产品对照的官方文档：<a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">TeleAgent</a> · <a href="https://opencode.ai/docs/">OpenCode</a> · <a href="https://hermes-agent.nousresearch.com/docs">Hermes</a> · <a href="https://www.workbuddy.ai/docs/workbuddy/Overview">WorkBuddy</a>（均 2026-10-18 抓）。
+    <a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic — Demystifying evals for AI agents</a> 与 <a href="https://arxiv.org/abs/2406.12045">τ-bench</a>：Verification 一节四条提醒的出处（完整检查单在 <a href="../../reference/agent-eval-checklist.html">速查页</a>）。<br>
+    产品对照的官方文档：<a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">TeleAgent</a> · <a href="https://opencode.ai/docs/">OpenCode</a> · <a href="https://hermes-agent.nousresearch.com/docs">Hermes</a> · <a href="https://www.workbuddy.ai/docs/workbuddy/Overview">WorkBuddy</a>（均 2026-10-18 抓，十行对照见<a href="../../reference/harness-products.html">速查</a>）。
   </div>
 
   <div class="ask-teacher">
@@ -467,8 +379,8 @@
   <p class="next">
     <b>前置</b>：前六课的零件这课全用上了——缺哪块回哪课<br>
     <b>想懂每个零件的细节</b>：回 <a href="0001-what-is-an-agent.html">第 1 课</a>（循环、工具、记忆）· <a href="0003-mcp.html">第 3 课</a>（MCP 怎么接）· <a href="0004-skill.html">第 4 课</a>（Skill 怎么做）· <a href="0005-multi-agent.html">第 5 课</a>（多 agent）· <a href="0006-injection-and-guardrails.html">第 6 课</a>（提示词注入与护栏）<br>
-    <b>速查</b>：<a href="../../reference/memory-products.html">长期记忆产品对照</a> · <a href="../../reference/context-budget.html">上下文预算</a><br>
-    术语表：<a href="../../reference/glossary.html#harness">Harness</a> · <a href="../../reference/glossary.html#agent">Agent</a> · <a href="../../reference/glossary.html#context">上下文</a>
+    <b>速查</b>：<a href="../../reference/harness-products.html">harness 四产品对照</a> · <a href="../../reference/agent-eval-checklist.html">试一个 agent 该问什么</a> · <a href="../../reference/memory-products.html">长期记忆产品对照</a> · <a href="../../reference/context-budget.html">上下文预算</a><br>
+    术语表：<a href="../../reference/glossary.html#harness">Harness</a> · <a href="../../reference/glossary.html#harness-subsystems">五个子系统</a> · <a href="../../reference/glossary.html#task-harness-fit">task-harness fit</a> · <a href="../../reference/glossary.html#agent">Agent</a> · <a href="../../reference/glossary.html#context">上下文</a>
   </p>
 
   <footer>AI Agent 原理与工程 · Agent 篇 · 第 7 课 · 理论 · <a href="../index.html">课程目录</a></footer>

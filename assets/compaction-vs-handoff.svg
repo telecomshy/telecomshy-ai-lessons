@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 262" width="720" height="262" role="img" aria-label="两条时间线对比压缩与交接。上一条只靠压缩：会话1跑了几十轮，压成一段摘要，会话2从摘要继续；摘要只留大意，为什么改、改到哪、什么算完成三问答不清。下一条压缩加交接：会话1做完一步就写盘，落盘清单、进度、提交，新会话读回状态接着干；三问都有答案，要的东西在磁盘上不在窗口里。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="720" height="262" fill="#fdfcf8"/>
+
+  <text x="24" y="26" font-family="sans-serif" font-size="13" fill="#1b1a17">上下文快满时的两条路：压缩管「装得下」，交接管「接得上」</text>
+
+  <!-- 上路：只靠压缩 -->
+  <text x="24" y="56" font-family="sans-serif" font-size="12.5" fill="#1b1a17">只靠压缩：窗口满了就摘要，任务接着跑</text>
+
+  <rect x="24" y="66" width="180" height="38" fill="#8a2b06"/>
+  <text x="114" y="90" font-family="sans-serif" font-size="12" fill="#fdfcf8" text-anchor="middle">会话 1 · 跑了几十轮</text>
+
+  <line x1="208" y1="85" x2="246" y2="85" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+
+  <rect x="252" y="66" width="124" height="38" fill="#cfc9bf"/>
+  <text x="314" y="90" font-family="sans-serif" font-size="12" fill="#3a3730" text-anchor="middle">压成一段摘要</text>
+
+  <line x1="382" y1="85" x2="420" y2="85" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+
+  <rect x="426" y="66" width="176" height="38" fill="#8a2b06" opacity="0.35"/>
+  <text x="514" y="90" font-family="sans-serif" font-size="12" fill="#1b1a17" text-anchor="middle">会话 2 · 从摘要继续</text>
+
+  <text x="24" y="126" font-family="sans-serif" font-size="11.5" fill="#6c675e">摘要只留大意：为什么改、改到哪、什么算完成，三问答不清。</text>
+
+  <!-- 下路：压缩＋交接 -->
+  <text x="24" y="160" font-family="sans-serif" font-size="12.5" fill="#1b1a17">压缩＋交接：做完一步就写盘，下次读回状态</text>
+
+  <rect x="24" y="170" width="200" height="38" fill="#8a2b06"/>
+  <text x="124" y="194" font-family="sans-serif" font-size="12" fill="#fdfcf8" text-anchor="middle">会话 1 · 做完一步</text>
+
+  <line x1="228" y1="189" x2="266" y2="189" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+
+  <rect x="272" y="170" width="190" height="38" fill="#cfc9bf"/>
+  <text x="367" y="194" font-family="sans-serif" font-size="12" fill="#3a3730" text-anchor="middle">写盘：清单 · 进度 · 提交</text>
+
+  <line x1="466" y1="189" x2="504" y2="189" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+
+  <rect x="510" y="170" width="186" height="38" fill="#8a2b06" opacity="0.35"/>
+  <text x="603" y="194" font-family="sans-serif" font-size="12" fill="#1b1a17" text-anchor="middle">新会话 · 读回接着干</text>
+
+  <text x="24" y="230" font-family="sans-serif" font-size="11.5" fill="#6c675e">三问都有答案：要的东西在磁盘上，不在窗口里。</text>
+  <text x="24" y="252" font-family="sans-serif" font-size="11.5" fill="#6c675e">压缩所有 harness 都有；交接是任务跨很多个窗口时才要加的码。</text>
+</svg>
