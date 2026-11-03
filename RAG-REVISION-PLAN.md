@@ -69,19 +69,19 @@
 
 **部署**（⚠ v5 退役：安装操作不进课，本段事实留存备查）：
 - 硬件门槛：官方原文 "4 CPU cores (x86-64), 16 GB RAM, and 50 GB free disk space"；Docker ≥24.0.0、Compose ≥v2.26.1；`vm.max_map_count`≥262144（Docker Desktop 设在其 Linux VM 内）。
-- 版本：官方 quickstart 当前教 **v1.0.0-rc2（Go 后端）**，docs 分 DEV/1.0.0-rc2；社区通行 **0.17.2 zip（Python 后端）**，2026-10 仍大量部署文。
+- 版本：官方 quickstart 当前教 **v1.0.0-rc2（Go 后端）**（2026-11-03 复抓：docs 线已到 **1.0.0-rc3**）；社区通行 **0.17.2 zip（Python 后端）**，2026-10 仍大量部署文。
 - 架构：主服务＋四件底座（MySQL 元数据 / Redis 队列缓存 / MinIO 文件 / ES 全文＋向量）。单镜像编排。
 - Windows 坑清单（已随 v5 不进课）：①镜像拉取断→Docker registry mirror；②ES 反复重启→WSL2 内存不够（.wslconfig memory=12GB/processors=6/swap=4GB + `wsl --shutdown`，改完 ES 堆内存 2G）；③解析永久 pending→解析/嵌入模型没下载成功（HF_ENDPOINT 镜像端点，或先手动下模型再建库）；④挂载卷空/读不到→路径避开中文、空格、同步盘，正斜杠写法；⑤登录页打不开→宿主端口映射/防火墙（默认 80 冲突，改 9380 之类）。默认账号在 docker/.env（首登改密）。
 - 模型配置：Chat＝DeepSeek（.env 既有）；嵌入用内置模型起步（课件提一句其他场景自配）。生成模型配置三字段：API 地址（写到版本级）/Key/模型名必须与实际加载一致。
 
 **切块**（官方 dataset configuration 页，写 0002/0004 直接用）：
-- 12 种内置解析模板：General / Q&A（每对一 chunk）/ Manual（按层级章节）/ Table（每行一 chunk）/ Paper / Book / Laws / Presentation（每页一 chunk）/ One（整篇一 chunk）/ Tag / Audio（ASR 转写）/ Email。选法官方原文："choose the parsing method based on the form of the material"，常规文档先 General、表格先 Table。
+- 12 种内置解析模板（2026-11-03 复抓）：General / Q&A（每对一 chunk）/ Manual（按层级章节）/ Table（每行一 chunk）/ Paper / Book / Laws / Presentation（每页一 chunk）/ **Picture（OCR＋视觉描述）** / One（整篇一 chunk）/ Audio（ASR 转写）/ Email（⚠ 旧清单的 Tag 已下线）。选法官方原文："choose the parsing method based on the form of the material itself"，常规文档先 General、表格先 Table。
 - 全局切块器参数：recommended chunk size 默认 **512 token**（目标值非硬限）；overlap ratio（%，0＝无重叠）；delimiter 后可加自定义；表格/图片可带上下文窗口（前后 N token）；**Use sub-chunks（父子检索：小块检索、父块供上下文）**。
 - 标题切块器两模式：**Hierarchy**（保留完整标题路径"Part 1>Chapter 3>Section 2"，适合法规/合同/技术规范） vs **Group**（同层相邻小节合并，适合书/手册/报告，重连续性）。
 - PDF 解析器：DeepDOC（默认，OCR＋表格结构＋版面）/ Naive（纯文本快）/ Docling / TCADP / MonkeyOCRv2 / 外接视觉模型（复杂版面更强但多花 token）。
-- Extractor（切块后增强）：自动关键词、**自动问题**（预生成该 chunk 能答什么问题，索引 Questions 字段可让用户问题直接命中）、标签、**Augmented context（给每 chunk 生成上下文摘要——与 Anthropic Contextual Retrieval 同思想，理论课直接对照讲）**、自动元数据。
+- Extractor（切块后增强）：自动关键词、**自动问题**（预生成该 chunk 能答什么问题，索引 Questions 字段可让用户问题直接命中）、标签、**Summary（原名 Augmented context，2026-11-03 复抓改名——给每 chunk 生成上下文摘要，与 Anthropic Contextual Retrieval 同思想）**、自动元数据。
 - Indexer：Embedding / Full-text / 双开（官方建议双开）；filename embedding weight；索引字段可选 Processed text/Questions/Augmented context。
-- **嵌入锁定**：官方原文"Once you have selected an embedding model and used it to parse a file, you are no longer allowed to change it"（同一库必须在同一嵌入空间）——0005"换模型全重算"在工具里的刚性体现；换模型＝新建库＋全量重嵌。
+- **嵌入约束（⚠ 2026-11-03 复抓换口径）**：旧 0.17/rc2 时代官方原文"Once you have selected an embedding model and used it to parse a file, you are no longer allowed to change it"（选了就不许换）；**现行口径＝兼容性抽查**——有块之后换模型要过抽查（维度一致＋平均余弦 ≥0.9 才放行），**且保存后不自动重嵌旧块**。"换模型＝新建库＋全量重嵌"仍是 0005 的正确结论，但写课时不得再说"工具禁止换"。
 - 其他：数据集级 PageRank 权重、Tag sets、Table 列角色（索引/元数据/both）、自定义 Ingestion Pipeline、Knowledge Compilation（Wiki/Navigation/Graph）。
 
 **检索与生成**（写 0006/0008 用）：
@@ -132,7 +132,8 @@
 - [x] 2026-10-21 晚：四项选型确认（§0-6）；COURSE-STANDARD 五处修建完成；RESOURCES 索引表＋「RAG 系列」小节并入完成
 - [x] 批 1 第一会话（2026-11-02）：NOTES 4.1 骨架段重写（旧 deep 候选四条作废、只留指针）→ 0001 加厚完成（223 行；三短板展开案例收回年假贯穿例＋开卷考试定义＋参数没动＋闭卷/开卷插图＋小测 6 题；「工程数字」槽判无适用实测、按理论课结论级收口；课型标识转「理论」、指代同步 4 处。决策与教训见存档 5.67）
 - [x] **v5 修订（2026-11-03）**：学习者拍板删工具操作课（"RAGFlow 安装看官网即可，课件聚焦通用知识"）、0011 改「评测方法」去工具化、RAGFlow 降为例子锚点、编号前移一号（12→11 门）；旧 0004＋0004-deep＋两脚本重排为 0009 占位（互链 9 处、脚本打印串改后重跑与课内 `<pre>` 逐行对账）；tracks/rag.md 改写、COURSE-STANDARD 两处、RESOURCES 课号全同步（存档 5.68）
-- [ ] 批 1 第二会话起：0004 建库切块（同轮关停 0002-deep）→ 0005 嵌入（同轮关停 0001-deep）
+- [x] 批 1 第二会话（2026-11-03）：**0004 建库：清洗与切块**开课（222 行；清洗三脏/三档切法/尺寸基准/重叠两面/父子块＋闭卷三切插图＋小测 6 题；`0002-chunking.py`→`0004-chunking.py` 随课改名，摘录逐行对账）＋**首个 deep 关停**（0002-deep 内容升格进 0004 后删除，互链 2 处/目录卡/README/统计 22+11 同步，总门数 33 不变）。开工复抓一手资料**抓出四处事实置换**（rc2→rc3、嵌入锁定换口径、Tag→Picture、Augmented context→Summary），RESOURCES＋§5 已同改（存档 5.69）
+- [ ] 批 1 第三会话：0005 嵌入与相似度（同轮关停 0001-deep）
 - [ ] 批 2：0006 → 0007 → 0008 → 0009（收编 0004-deep）
 - [ ] 批 3：0010 → 0011 → 0002 地图终稿 → 0003 三选一
 - [ ] 收尾：MISSION 边界句、progress.ps1 D/E 段补 RAG 覆盖、index/README 同步、旧 deep 关停收尾、并入 NEXT-SESSION.md、建存档、本文件退役
@@ -143,7 +144,7 @@
 
 1. **开场**：新会话按 AGENTS.md 标准流程会先读 NEXT-SESSION.md——其中已写"下一步：读 RAG-REVISION-PLAN.md 按批次施工"，走标准流程即可自动接上。
 2. **每轮收尾**：更新本文件 §9 进度一行；编号、映射有变同步 §3/§4 与 RESOURCES 索引表。
-3. **下一项**：0004 建库：清洗与切块（0002-deep 升格＋新内容，同轮关停 0002-deep）。
+3. **下一项**：0005 嵌入与相似度（0001-deep 失手清单收编，同轮关停 0001-deep；嵌入约束按 2026-11-03 复抓的新口径写）。
 
 ## 变更履历
 

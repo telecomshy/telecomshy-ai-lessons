@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 318" width="720" height="318" role="img" aria-label="同一句答案在三种切法下的命运。上：切太大，答案那句话和一大段无关文字在同一块里，被埋住。中：切太碎，切口正好从答案中间劈过，一句话被拆进两块，谁也看不懂。下：切得刚好，答案完整落在一块里。虚线是切口。">
+  <rect x="0" y="0" width="720" height="318" fill="#fdfcf8"/>
+  <text x="24" y="26" font-family="sans-serif" font-size="13" fill="#1b1a17">同一句答案，三种切法的三种命运（竖虚线＝切口，橙色＝答案那句话）</text>
+
+  <!-- ① 切太大 -->
+  <text x="24" y="58" font-family="sans-serif" font-size="12.5" fill="#8a2b06">① 切太大：答案能命中，但被一大段无关文字埋住</text>
+  <rect x="24" y="68" width="140" height="36" fill="#e8e4dc" stroke="#c9c2b6"/>
+  <text x="34" y="90" font-family="sans-serif" font-size="10.5" fill="#6b6560">无关文字……</text>
+  <rect x="164" y="68" width="220" height="36" fill="#f6d9c8" stroke="#8a2b06"/>
+  <text x="174" y="83" font-family="sans-serif" font-size="10.5" fill="#1b1a17">请假三天以内（含三天），</text>
+  <text x="174" y="98" font-family="sans-serif" font-size="10.5" fill="#1b1a17">向直属主管口头报备即可。</text>
+  <rect x="384" y="68" width="160" height="36" fill="#e8e4dc" stroke="#c9c2b6"/>
+  <text x="394" y="90" font-family="sans-serif" font-size="10.5" fill="#6b6560">无关文字……</text>
+  <line x1="484" y1="62" x2="484" y2="110" stroke="#8a2b06" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+  <!-- ② 切太碎 -->
+  <text x="24" y="146" font-family="sans-serif" font-size="12.5" fill="#8a2b06">② 切太碎：切口从答案中间劈过，一句话拆进两块</text>
+  <rect x="24" y="156" width="140" height="36" fill="#e8e4dc" stroke="#c9c2b6"/>
+  <text x="34" y="178" font-family="sans-serif" font-size="10.5" fill="#6b6560">无关文字……</text>
+  <rect x="164" y="156" width="220" height="36" fill="#f6d9c8" stroke="#8a2b06"/>
+  <text x="174" y="171" font-family="sans-serif" font-size="10.5" fill="#1b1a17">请假三天以内（含三天），</text>
+  <text x="174" y="186" font-family="sans-serif" font-size="10.5" fill="#1b1a17">向直属主管口头报备即可。</text>
+  <rect x="384" y="156" width="160" height="36" fill="#e8e4dc" stroke="#c9c2b6"/>
+  <text x="394" y="178" font-family="sans-serif" font-size="10.5" fill="#6b6560">无关文字……</text>
+  <line x1="274" y1="150" x2="274" y2="198" stroke="#8a2b06" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="464" y1="150" x2="464" y2="198" stroke="#8a2b06" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+  <!-- ③ 切得刚好 -->
+  <text x="24" y="234" font-family="sans-serif" font-size="12.5" fill="#8a2b06">③ 切得刚好：答案完整落在一块里，检索到就能用</text>
+  <rect x="24" y="244" width="140" height="36" fill="#e8e4dc" stroke="#c9c2b6"/>
+  <text x="34" y="266" font-family="sans-serif" font-size="10.5" fill="#6b6560">无关文字……</text>
+  <rect x="164" y="244" width="220" height="36" fill="#f6d9c8" stroke="#8a2b06"/>
+  <text x="174" y="259" font-family="sans-serif" font-size="10.5" fill="#1b1a17">请假三天以内（含三天），</text>
+  <text x="174" y="274" font-family="sans-serif" font-size="10.5" fill="#1b1a17">向直属主管口头报备即可。</text>
+  <rect x="384" y="244" width="160" height="36" fill="#e8e4dc" stroke="#c9c2b6"/>
+  <text x="394" y="266" font-family="sans-serif" font-size="10.5" fill="#6b6560">无关文字……</text>
+  <line x1="164" y1="238" x2="164" y2="286" stroke="#8a2b06" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <line x1="384" y1="238" x2="384" y2="286" stroke="#8a2b06" stroke-width="1.5" stroke-dasharray="5 4"/>
+
+  <text x="24" y="306" font-family="sans-serif" font-size="12" fill="#1b1a17">判据就一条：块要装得下答案，还别太臃肿——人不看上下文能读懂，模型就能读懂。</text>
+</svg>

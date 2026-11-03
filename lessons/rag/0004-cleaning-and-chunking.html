@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 4 课 · 建库：清洗与切块</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 4 课 · 理论</div>
+  <h1>建库：清洗与切块</h1>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>你把年假制度丢进工具，建好库，问它："请三天年假要走什么流程？"</p>
+    <p>它回你<b>"未找到相关资料"</b>——可答案明明就写在文档里，你亲眼见过。</p>
+    <p style="margin-top:0.7rem">它怎么了？<b>它压根没看到那句话。</b>文档进库之前被切碎了，答案散在两个小块里，谁也看不懂。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>说清：文档进库前要做哪两件事、块该切多大、重叠在救什么又救不了什么。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>建库就两件事：把文档洗成干净的文字，再切成「答案装得下」的块。</b></p>
+    <p>切块是整条链里<b>最便宜的调优点</b>：改一次设置只花一次重建索引，不用动模型、不用动提示词。</p>
+  </div>
+
+  <h2>1. 先洗：三种脏东西，专坑切块</h2>
+  <p>工具读到的不是你眼睛里的那份文档，而是它从文件里<b>抽出来的文字</b>。抽取这一步没洗干净，后面每一步都在吃脏数据。有三种脏最常见。</p>
+  <p><b>第一种：页眉、页脚、目录混进正文。</b>"公司制度汇编 · 第 3 页"这种字每页重复一遍，它会跟着正文进块——一个块里一半是正文一半是页码，向量就被污染了。目录更坏：它把整份文档的标题都挤进开头那个块，那个块跟谁都不像。</p>
+  <p><b>第二种：表格被换行拆散。</b>表格抽成文字时经常一个单元格一行，"上限"和"2000 元/月"被拆进不同的块，检索到哪半边都答不了"上限多少"。</p>
+  <p><b>第三种：代码、缩进、版式被压平。</b>缩进是代码结构的一部分，压平之后 <code>if</code> 底下那行到底属于谁都看不出来；PDF 里被压平的还有多栏排版的阅读顺序。</p>
+  <p>这三种脏有一个共同点：<b>原文档没错，是抽取过程弄丢的</b>。所以动手顺序里"解析"永远排在切块前面——各家工具都给这类开关，比如 RAGFlow 的解析配置里就有 "Remove headers and footers"（去掉重复页眉页脚）和 "Remove original table of contents"（去掉原目录）两个勾选项，勾不勾差别就在这。</p>
+
+  <h2>2. 再切：三档切法，从糙到细</h2>
+  <p>文字洗干净了，就该切块了。第 2 课给过两个坑的名字：<b>切太大</b>（答案被无关内容埋住）和<b>切得不是地方</b>（一句话被劈成两半）。这课给修法。</p>
+  <p>先立判据。Pinecone 的切块指南给过一条很好用的尺子：<b>一段文字，人不看上下文能读懂，模型就能读懂</b>。切块的全部手艺就是让每个块过这一关。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">切法</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">干什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">什么时候用</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>固定长度</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">数够字数就切，不看内容</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>起步就用它</b>；整齐、可预测</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>递归（内容感知）</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">先按<b>段落</b>切，太长再按<b>换行</b>，还不行按<b>句号</b>，最后才按字数</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>大多数文本的正解</b>；在"够长"和"不切碎"之间找平衡</td></tr>
+      <tr><td style="padding:0.45rem"><b>语义</b></td>
+          <td style="padding:0.45rem">把每句都变成向量，<b>相邻两句差得远就切</b>（＝换话题了）</td>
+          <td style="padding:0.45rem">确实不规则的文本；<b>代价是要对每句算一次向量</b></td></tr>
+    </tbody>
+  </table>
+  <p>Pinecone 对这三档的建议跟第 2 课那句一致：<b>先从固定长度起步，确认不够再迭代</b>；递归是"固定长度和语义切块之间的好折中"。语义切块听着聪明，但它自己也是实验性的做法——值不值那个代价，第 3 节拿数字说话。</p>
+  <p>还有一种按结构切的：<b>跟着标题层级切</b>，每块带上自己的章节路径（"第 1 章 > 年假 > 请假流程"）。法规、合同、技术规范这类"位置信息本身就是信息"的文档适合它；小说、手册这类靠上下文连着读的，就把相邻小节合进一块。工具里这两种通常叫 Hierarchy 和 Group 两个模式——名字各家长得不一样，看它"带不带完整标题路径"就分得清。</p>
+
+  <h2>3. 切多大：有基准，但别纠结</h2>
+  <p>尺寸是最常被追问的数。先看同一句答案在三种切法下的命运：</p>
+  <figure class="figure">
+    <img src="../../assets/chunk-three-cuts.svg" alt="同一句答案在三种切法下的命运。切太大：答案那句和一大段无关文字在同一块里，被埋住。切太碎：切口从答案中间劈过，一句话拆进两块。切得刚好：答案完整落在一块里。竖虚线是切口，橙色是答案那句话。">
+    <figcaption><b>切块的第一判据：答案装不装得下。</b>太碎，答案被劈开；太大，答案被埋住；刚好的块，检索到它就能直接用。</figcaption>
+  </figure>
+  <p>这个判据落到数字上，几家独立基准给的是同一个量级：<b>250～500 token 起步</b>。</p>
+  <p>（单位是 token 不是字。中文一个字差不多一个 token，所以 400 token 大致就是 400 字的量——脚本演示用字数切，量级一样。）</p>
+  <p>背后有这么几条实测：</p>
+  <ul>
+    <li><b>九种切块配置</b>跑同一批语料、同一批查询，<b>最好与最差相差 8 个召回点</b>——所以这一项确实值得调。</li>
+    <li>但<b>朴素的递归切块（400 token）已经拿到 89.5%</b>；最好的语义切块只比它<b>多不到 2 个点</b>，而<b>最差的语义切块反而低于朴素法</b>。</li>
+    <li><b>NVIDIA 五个数据集基准</b>：<b>512～1024 token 最好</b>，按页切最稳定，<b>128 token 最差</b>。</li>
+    <li>反例也有：<b>一套"官方默认"（800 token ＋ 400 重叠）低于平均</b>——默认值不等于最优。</li>
+    <li>中文文档的行业经验值（个人博客实测，标"经验"）：<b>300～500 token、重叠 50～100</b>。</li>
+  </ul>
+  <p>怎么读这堆数？<b>起步值离最好不到 2 个点，最差值能差出 8 个点</b>——方向错了损失大，尺寸差一点损失小。所以从 400 token 上下起步，把精力留给"切在哪个边界"，别耗在小数点上。工具的默认值也在这个量级：RAGFlow 的 recommended chunk size 默认 <b>512 token</b>，官方明说这是"目标值不是硬限"——装不下的完整段落会整段保留。</p>
+  <p><b>为什么这个数不用太纠结</b>：因为它是整条链里<b>最便宜的调优点</b>。改一次设置，代价就是重建一次索引；不像换模型、改提示词那样牵一发动全身。先给个合理值跑起来，拿评测量，量出问题再回来调——评测怎么量，是<a href="0009-two-failure-modes.html">第 9 课</a>的事。</p>
+
+  <h2>4. 重叠：它救什么，救不了什么</h2>
+  <p>切口总落在句子中间怎么办？常用的办法叫<b>重叠（overlap）</b>：把上一块的尾巴复制到下一块开头，那句横跨切口的话，至少在某一块里是完整的。</p>
+  <p><b>它救不了的是"块太小"</b>。块本身装不下一整句时，多重叠都白搭。所以顺序不许颠倒：<b>第一步是块要够长，第二步才是重叠</b>。</p>
+  <p>常用区间是 10%～20%。工具里的开关通常就叫 Overlap ratio（%），填 0 就是不重叠。</p>
+  <p>但这里有一条反直觉的实测：</p>
+  <div class="note">
+    <span class="label">重叠未必有用</span>
+    <p>2026 年一项系统分析（SPLADE + Mistral-8B，在 Natural Questions 上）发现：<b>重叠没有可测的收益，只是增加了索引成本</b>。</p>
+    <p>多 15% 重叠 ＝ 多 15% 的向量要算、要存、要搜，而且<b>近似重复的块会互相抢 top-k 的位子</b>。</p>
+    <p><b>所以重叠要拿你自己的查询去量</b>：只有当评测里出现"答案被切碎"这类失败时，才往上加。</p>
+  </div>
+
+  <h2>5. 父子块：检索要小，理解要大</h2>
+  <p>切块还有一对天然矛盾：<b>检索希望块小</b>（小块跟问题贴得近、排得准），<b>理解希望块大</b>（模型要上下文才敢下结论）。一个尺寸两头都讨好不了。</p>
+  <p>解法是把两件事拆开：<b>存两层块</b>——大块切成小块，<b>拿小块去检索，命中之后把它的大块（父块）交给模型</b>。这叫父子块（sub-chunks），不少工具都内置。一句话：<b>拿小的找，拿大的用</b>。</p>
+  <p>这个开关在各家工具里都不显眼：RAGFlow 叫 "Use sub-chunks for retrieval"，就藏在切块配置里。</p>
+
+  <h2>6. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/rag/0004-chunking.py</code>。它把一份 143 字的小制度按 16 / 32 / 64 / 整篇四种切法切开，<b>盯着一句标准答案，看它在每种切法下活没活得完整</b>。它不调任何模型。</p>
+  <pre><code>python exercises/rag/0004-chunking.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是四种切法那段的输出摘录（跑了就有完整的）。</p>
+  <pre><code>[1] 同一份文档，四种切法
+  切法：每 16 字切一段  →  9 段
+    段 3（ 16 字）：年者 15 天。请假三天以内（含 ◀ 答案被切成半句
+    段 4（ 16 字）：三天），向直属主管口头报备即可。 ◀ 答案被切成半句
+
+  切法：每 32 字切一段  →  5 段
+    段 2（ 32 字）：年者 15 天。请假三天以内（含三天），向直属主管口头报备即可。 ◀ 答案完整在这段里</code></pre>
+  <p><b>三处要看懂</b>：</p>
+  <ul>
+    <li><b>16 字那档就是"切太碎"</b>：答案被切成两个半句，检索到哪一段都答不了问题。注意段 3 开头还有半个词（"年者 15 天"）——切口不认词。</li>
+    <li><b>32 字那档就是"刚好"</b>：答案完整落在段 2 里，那段也不臃肿。</li>
+    <li>脚本里还有 64 字和整篇两档：<b>答案完整，但被一大段无关内容稀释</b>——这就是"切太大"的脸。</li>
+  </ul>
+  <p>脚本第二段演重叠：</p>
+  <pre><code>[2] overlap（重叠）在救什么 —— 以及它救不了什么
+  ① 先看【救不了】的：切 16 字、重叠 8 字
+      → 答案仍然被切成三段。【因为块本身（16 字）比答案（24 字）还短】，
+        再多重叠也塞不下一整句。所以：【第一步是块要够长，第二步才是重叠】。
+
+  ② 块够长之后，重叠才开始起作用：切 30 字
+      切 30 字、不重叠  →  5 段
+      切 30 字、重叠 20 字  →  15 段
+      不重叠：答案完整的段数 = 0 段
+      重叠 20 字：答案完整的段数 = 1 段</code></pre>
+  <p><b>② 的代价也要看</b>：15 段 vs 5 段，<b>段数翻了 3 倍</b>——这就是"重叠涨成本"的字面意思。它换来的只是"答案完整"从 0 段变 1 段，值不值，得拿你自己的查询量。</p>
+
+  <h2>7. 最后一条：动手的顺序</h2>
+  <p>调参顺序有一条行业经验（个人博客总结，标"经验"）：<b>先看解析结果对不对 → 再调切块 → 最后才动检索参数</b>。理由一句话——<b>检索参数影响"找到什么"，切块参数影响"怎么被找到"</b>。块没切对，检索调得再精也是在错的东西里挑。</p>
+  <p>这条顺序在后面几课一直作数：嵌入（<a href="0001-why-retrieval.html">第 1 课</a>讲过它在干什么）建在块之上，块改了，向量就得重算。</p>
+  <p>还有一件事顺手提醒：改了清洗或切块的设置，<b>已经解析过的文档不会自动跟着变</b>——要重新解析才生效。所谓"最便宜"，指的是一次重建索引的代价，不是免费。</p>
+
+  <h2>8. 检查一下你懂了没</h2>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 建库时"清洗"主要在解决什么？</p>
+    <button class="quiz-option">让文档的字体和排版统一好看</button>
+    <button class="quiz-option" data-correct="true">页眉页脚这类重复内容混进正文，会污染每一个块</button>
+    <button class="quiz-option">把文档压缩得更小，节省存储空间</button>
+    <button class="quiz-option">给文档加密，防止库里内容外泄</button>
+    <p class="feedback"
+       data-ok="对。原文档没错，是抽取过程把脏东西带进正文——所以解析排在切块前面。"
+       data-no="清洗管的是内容干净：页码、目录、被拆散的表格，都会让块变得答不了问题。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 一句 24 字的答案被切成两半，块还加了重叠，照样碎。第一步该做什么？</p>
+    <button class="quiz-option">把重叠再加大一些</button>
+    <button class="quiz-option" data-correct="true">先把块加长到装得下一整句</button>
+    <button class="quiz-option">换一个更大的语言模型</button>
+    <button class="quiz-option">把答案那句从文档里删掉</button>
+    <p class="feedback"
+       data-ok="对。重叠救的是「切口」，救不了「块太小」——第一步是块要够长。"
+       data-no="块装不下那一整句时，重叠多少都是白加，还多付索引成本。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 刚建一个新库，切法先用哪种？</p>
+    <button class="quiz-option">语义切块，它按意思切最聪明</button>
+    <button class="quiz-option">按章节切，尊重文档结构</button>
+    <button class="quiz-option" data-correct="true">固定长度起步，确认不够再迭代</button>
+    <button class="quiz-option">整篇不切，信息最完整</button>
+    <p class="feedback"
+       data-ok="对。固定长度整齐可预测，实测离最好不到 2 个点——先跑起来再迭代。"
+       data-no="语义切块要对每句算向量，最差的语义切块还不如朴素切法；整篇不切则是「切太大」的极端。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 关于重叠，实测给的结论是什么？</p>
+    <button class="quiz-option">重叠越大越好，直接拉到 50%</button>
+    <button class="quiz-option">重叠是必须开的，不开就会翻车</button>
+    <button class="quiz-option" data-correct="true">未必有可测收益，还会涨索引成本，要用自己的查询量</button>
+    <button class="quiz-option">重叠只对英文文档有效</button>
+    <p class="feedback"
+       data-ok="对。2026 年那项系统分析测不出收益；只有评测里出现「答案被切碎」才往上加。"
+       data-no="别当默认真理：重叠多出的向量要算要存，近似重复的块还会互相抢 top-k 的位子。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 父子块（sub-chunks）在解决什么矛盾？</p>
+    <button class="quiz-option">文档太大，存不进向量库</button>
+    <button class="quiz-option" data-correct="true">检索要块小才准，理解要块大才全——拿小的找，拿大的用</button>
+    <button class="quiz-option">嵌入模型只能处理短文本</button>
+    <button class="quiz-option">一个文档里有两种语言</button>
+    <p class="feedback"
+       data-ok="对。小块检索、命中后把父块交给模型，两头的需求就都满足了。"
+       data-no="父子块管的是「找得准」和「看得全」的矛盾：小块去检索，大块供上下文。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 拿到一批新文档，下面哪个做法最接近"切得刚好"？</p>
+    <button class="quiz-option">按 128 token 切，越细检索越准</button>
+    <button class="quiz-option">把每一份文档整篇当一块，绝不遗漏</button>
+    <button class="quiz-option">一律按 2000 token 切，省得调参</button>
+    <button class="quiz-option" data-correct="true">让答案那种句子完整落在一块里，且那块不臃肿</button>
+    <p class="feedback"
+       data-ok="对。判据不是数字，是「答案装得下且不被稀释」——人不看上下文能读懂，模型就能读懂。"
+       data-no="128 是实测最差的一档；整篇和超长块则是「被埋住」的两个极端。"></p>
+  </div>
+
+  <h2>9. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.pinecone.io/learn/chunking-strategies/">Pinecone — Chunking Strategies for LLM Applications</a>（2025-06-28 版）——"人不看上下文能读懂，模型就能读懂"这条判据、三档切法与"先从固定长度起步"的建议。<br>
+    <a href="https://ragflow.io/docs/dataset_configuration">RAGFlow — Dataset Configuration</a>（1.0.0-rc3 文档线）——切块器参数（目标值非硬限）、标题切块两模式、父子块的官方说法。<br>
+    <b>那组"九种配置相差 8 个点、朴素递归 89.5%、NVIDIA 512～1024 最好"的基准</b>转引自公开综述，未读原始报告，标注为<b>二手</b>；中文经验值出自个人博客实测，标注为<b>经验</b>。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"中文要不要按词切？""表格到底怎么切才不散？""文档改了，块要全部重切吗？""切块怎么算切得好？"——最后那个是<a href="0009-two-failure-modes.html">第 9 课</a>的尺子。
+  </div>
+
+  <p class="next">
+    <b>回地图</b>：<a href="0002-rag-pipeline.html">RAG · 第 2 课 · 一条 RAG 链长什么样</a>（本课是六步里第 ① 步的深讲）<br>
+    <b>顺着往下</b>：第 5 课 · 嵌入与相似度（在写）——块切好了，怎么变成能比大小的数？<br>
+    <b>相关</b>：<a href="0009-two-failure-modes.html">RAG · 第 9 课 · 两种典型翻车</a>（块没切对，最先怪谁）<br>
+    术语表：<a href="../../reference/glossary.html#chunking">切块 / 重叠</a> · <a href="../../reference/glossary.html#text-embedding">文本嵌入</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 4 课 · 理论 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>
