@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 6 课 · 多路召回：混合检索与重排</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 6 课 · 理论</div>
+  <h1>多路召回：混合检索与重排</h1>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>同一个知识库，两个问题。一个是查编号："E-2107 是什么意思？"另一个是问症状："发烧了要怎么处理？"</p>
+    <p>字面匹配答得了第一个，答不了第二个。语义检索正好相反。<b>你没法提前知道用户会问哪一种。</b></p>
+    <p style="margin-top:0.7rem">怎么办？<b>两种一起开，各排一个榜单，再把两个榜单合成一个。</b>合成之后再精挑一道。这一课讲的就是这两步。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>说清：两种检索为什么必须搭配、榜单怎么合成、重排在补什么、以及每一步各花多少代价。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>混合检索 ＝ 字面匹配和语义检索各排一个榜，用名次合成一个。重排 ＝ 把捞回来的候选逐段跟问题对读一遍，精挑出进提示词的那几段。</b></p>
+    <p>整课的改进都发生在检索侧。<b>模型一个没换。</b></p>
+  </div>
+
+  <h2>1. 一个库，两种问法，各翻一次车</h2>
+  <p>第 5 课留了个缺口：嵌入分不清同名不同物，也不认识生僻词。补缺口的思路很朴素。一种方法会犯的错，往往正好是另一种方法的强项。</p>
+  <p>还是开头那两个问题。字面匹配数的是"问题和段落共有的字词组合"，语义检索比的是"意思近不近"。同一份资料、同一组段落，两种方法各排一个榜单，结果如下。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem"></th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">查编号 E-2107</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">问「发烧了怎么办」</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>字面匹配</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>赢</b>。编号直接撞上，分数明显领先</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>翻车</b>。文档写的是「发热」「降温」，字面没撞上，给 0 分</td></tr>
+      <tr><td style="padding:0.45rem"><b>语义检索</b></td>
+          <td style="padding:0.45rem"><b>翻车</b>。2107 和 2108 被看成一回事，两段打成同一分</td>
+          <td style="padding:0.45rem"><b>赢</b>。换个说法也找得到</td></tr>
+    </tbody>
+  </table>
+  <p>两处翻车的位置不同，才有互补的余地。结论一句话：字面匹配输在"换个说法"，语义检索输在"精确字面"。</p>
+  <p>第 1 课那句"稀疏看字面撞没撞，稠密看意思近不近"，到这里有了正反两个例子。</p>
+  <p>先把词定下来。检索这一步也叫<b>召回</b>：从库里把可能有用的段先捞回来。"字面匹配"那一支常被称为<b>稀疏检索</b>（BM25 是它的代表），"语义检索"那一支叫<b>稠密检索</b>。两种一起用，就是<b>混合检索</b>。标题里的"多路召回"，指的就是这两路。</p>
+
+  <h2>2. 两个榜单，分数没法相加</h2>
+  <p>两种一起开，马上遇到一个技术问题：两个榜单怎么合成一个。</p>
+  <p>最直觉的办法是把分数加起来。这个办法不成立。字面匹配分和语义相似度是两把不同的尺子量出来的，刻度完全不同。Pinecone 的官方指南写得很直接：这类分数放在不同的刻度上，相加或取平均都没有意义，而且往往是一个信号压掉另一个。取平均也一样，分数量级差得多的时候，平均值被大的那个牵着走。</p>
+  <p>要把两个榜单合成一个，得先换掉比的东西。</p>
+
+  <h2>3. RRF：只比名次，不比分数</h2>
+  <p>RRF（倒数排名融合）的做法是：<b>分数全扔掉，只看名次</b>。名次是两个榜单共有的语言，不管哪种尺子，"排第几"总能互相比较。</p>
+  <p>具体算起来很小。每个榜单给每一段打一个分：<b>1 ÷（60 ＋ 这段在这个榜单里的名次）</b>。两个榜单的这一项相加，再按总分从大到小排。一段在两个榜单里都靠前，总分就高。</p>
+  <p>没出现在某个榜单里的段，从那个榜单一分都拿不到。这句话等下有用。</p>
+  <p>那个 60 有出处。它是 RRF 原始论文实测的经验值，Pinecone 的默认设置也是它。它把名次压得很平：第 1 名只比第 2 名多 1.6%，第 10 名还有第 1 名 87% 的权重。名次压得平，奖励的就是"两个榜单都说它好"，而不是"某一个榜单的冠军"。k 调得更大，单榜冠军的话语权更小；k 调小，冠军更强势。</p>
+  <p>想偏向某一侧也有办法：把那一侧的 1/(k+名次) 乘个系数。Pinecone 把这种加权列为相关性调优的杠杆。默认不加权，先跑起来再说。</p>
+  <p>两个词别混。混合检索是"把两种信号合起来用"这个大思路，RRF 只是合的一种具体方法。Pinecone 的文档专门提醒过这一点。</p>
+
+  <h2>4. 名次也会说谎</h2>
+  <p>RRF 有个前提：它假设每个榜单的名次都有意义。这个前提破了，融合就会被带偏。</p>
+  <p>脚本里有个现成的例子。问题 B 是"发烧了要怎么处理"，字面匹配给五个段全打了 0 分。0 分的意思是一个词都没撞上，这批段落谁也不比谁更相关。但排序函数照样吐出一个名次来，顺序就是段落本来的编号顺序。</p>
+  <p>RRF 把这个名次当真了。结果毫无关系的段 1 冒到第一，真正该命中的段 3 反而排在第二。</p>
+  <p>解法只有一个：<b>没命中的段不进榜</b>。给"命中"设个阈值，分数为 0 的段直接排除，只让真有分的段参与融合。过滤之后，问题 B 的榜单里只剩段 3 一段，正是该命中的那段。宁可只剩一个，也别混进噪音。</p>
+  <p>对照一下官方实现会更清楚。Pinecone 的 RRF 里，没出现在某个榜单里的段，就从那个榜单拿不到分。你要防的是另一种情况：段在榜单里躺着，但全都是 0 分并列。前者是真缺席，后者是假名次。</p>
+
+  <h2>5. 先捞宽，再挑精</h2>
+  <p>到这里，检索已经能"找得比较全"了。但找回来的段落还不能直接塞给模型。行业里通行的做法是两道筛子：<b>第一道捞得宽，第二道挑得精</b>。</p>
+  <figure class="figure">
+    <img src="../../assets/retrieval-wide-then-narrow.svg" alt="两道筛子的示意图。左边是整库的几千段，第一道筛子是检索，宽宽地捞回五十段候选；第二道筛子是重排，逐段跟问题对读打分，只留五段；五段连同问题一起进提示词，模型照着回答。">
+    <figcaption><b>两道筛子分工不同。</b>检索负责从几千段里捞出几十段，宁可多捞；重排负责从几十段里挑出几段，宁可精挑。最后进提示词的只有几段。</figcaption>
+  </figure>
+  <p>为什么要"宁可多捞"？因为漏掉就是彻底没机会，捞多了只是排序问题。</p>
+  <p>工程经验值（个人博客实测，标注为经验）：先召回 50 段，再精排取 5 段。数字各家不同，思路一致。</p>
+  <p>每一步各买多少，有一组实测数字。第 2 课贴过 Anthropic 的那组，这里拆开看每步的收益：</p>
+  <pre><code>普通 RAG                       5.7% 失败
+＋ 给每段补上一句「这段在讲什么」   3.7%
+＋ 再叠上关键词检索               2.9%
+＋ 再加一道重排序                 1.9%</code></pre>
+  <p>三步改进，失败率从 5.7% 降到 1.9%。这三步全在检索侧：补的是段落的背景，合的是两种信号，精挑的是最终那几段。<b>没有一步是换更强的模型。</b></p>
+
+  <h2>6. 重排为什么更准</h2>
+  <p>现在说第二道筛子。重排（rerank）把捞回来的候选重新排一次序，排在最前的几段才进提示词。</p>
+  <p>它比嵌入准，原因在读法不同。嵌入是各算各的：问题压成一根向量，每段各压一根，算的时候彼此看不见。重排模型不是这样。它把问题和段落<b>拼在一起</b>，一次读一对，直接给这一对打分。Cohere 的文档写明了这个机制：每个文档的 token 会和问题的 token 合并计算。两者能互相对上号，判断自然更准。</p>
+  <p>更准的代价是更贵。每一对都要完整过一遍模型，候选一多就付不起。所以它只用在捞回来的几十段上，不用在全库上。"先捞宽，再挑精"的分工就是这么来的。</p>
+  <p>重排还有个好处：它不碰索引。这一步叠在检索结果之上，换重排模型不用重建库。这跟换嵌入模型是两回事，第 5 课那个"整库重算"的硬代价不适用于它。</p>
+  <p>重排的输出还有个用处：它是校准过的分，可以直接设阈值。低于阈值的段丢掉，整批都低于阈值，就回答"资料里没有"。Cohere 把这种用法列为典型场景之一：设阈值，触发再查一次，或者返回"不知道"。</p>
+
+  <h2>7. 改进和代价各是多少</h2>
+  <p>回头看这一课的三样东西：混合检索、RRF 融合、重排。它们都在检索侧动手，模型一个没换。代价也明码标价：</p>
+  <ul>
+    <li><b>索引翻倍。</b>字面索引和向量索引各存一份，建两份，更新也要两份。</li>
+    <li><b>融合要调。</b>两个榜单谁的权重大，得拿你自己的评测集量。</li>
+    <li><b>重排要算。</b>每对候选过一遍模型，换来的是更准的排序。</li>
+    <li><b>阈值要定。</b>重排分低到什么程度算"没找到"，这条线得自己量。</li>
+  </ul>
+  <p>所以别当免费午餐。单用一种检索已经够好的场景，不必付这个成本。</p>
+  <p>上不上、上哪几样，拿第 9 课那套尺子量过再定。</p>
+
+  <h2>8. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/rag/0006-sparse-vs-dense.py</code>。两道题、两个榜单，两种方法各翻一次车，再用 RRF 合成。<b>它不调任何模型。</b></p>
+  <pre><code>python exercises/rag/0006-sparse-vs-dense.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。"稠密"在脚本里是玩具，按同义词表归一再比字。真的用文本嵌入模型，但两个榜单各会翻车这件事一模一样。下面是融合那段的输出摘录。</p>
+  <pre><code>      问题 B
+        稀疏榜　　：段1 > 段2 > 段3 > 段4 > 段5
+        稠密榜　　：段3 > 段1 > 段2 > 段4 > 段5
+        RRF 融合　：段1 > 段3 > 段2 > 段4 > 段5
+
+      ⚠ 看问题 B 的融合结果：【段 1 冒到了第一】，可它跟问题毫无关系。
+        因为稀疏榜给所有段都是 0 分——【一个全是并列的榜，名次本身就是噪音】，
+        而 RRF 会把每个名次都当真。
+
+      过滤之后再融：
+        问题 A：段1 > 段2 > 段4 > 段5
+        问题 B：段3</code></pre>
+  <p><b>两处要看懂</b>：</p>
+  <ul>
+    <li>稀疏榜五个段全 0 分，它排出的"段 1 > 段 2 > …"是假名次。融合把假名次当真了。</li>
+    <li>过滤后问题 B 只剩段 3。这一段就是该命中的那段。榜单变短不是损失，是把噪音清掉了。</li>
+  </ul>
+
+  <h2>9. 检查一下你懂了没</h2>
+  <p>六道题，翻车的位置、融合的算式、重排的机制各过一遍。</p>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 两个榜单的分数为什么不能直接相加？</p>
+    <button class="quiz-option">因为加法比乘法算得慢</button>
+    <button class="quiz-option" data-correct="true">两种分数的刻度不同，加起来没有意义</button>
+    <button class="quiz-option">因为分数容易被恶意刷高</button>
+    <button class="quiz-option">因为字面匹配从不给分</button>
+    <p class="feedback"
+       data-ok="对。字面匹配分和语义相似度是两把尺子量的，相加和平均都不成立。"
+       data-no="跟速度、安全无关：是两种分数根本不在一个刻度上。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> RRF 把名次压得很平（第 10 名还有第 1 名 87% 的权重），这意味着它奖励什么？</p>
+    <button class="quiz-option">奖励单个榜单里排第一的段</button>
+    <button class="quiz-option" data-correct="true">奖励两个榜单都说它好的段</button>
+    <button class="quiz-option">奖励字数最多的段</button>
+    <button class="quiz-option">奖励出现得最早的段</button>
+    <p class="feedback"
+       data-ok="对。名次压平之后，共识比单榜冠军更值钱。"
+       data-no="k=60 的作用就是压平名次，让「两个榜都说它好」浮上来。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 一个榜单给所有段都打了 0 分，还是给出了名次。这时候该怎么做？</p>
+    <button class="quiz-option">照常参与融合，反正有先后</button>
+    <button class="quiz-option">把这个榜单的权重调到最大</button>
+    <button class="quiz-option" data-correct="true">不让它进榜，这个名次是噪音</button>
+    <button class="quiz-option">重新训练这个榜单的模型</button>
+    <p class="feedback"
+       data-ok="对。全是 0 分的榜单没有区分度，它的名次纯属噪音，会把融合带偏。"
+       data-no="解法是设阈值：没命中的段不进榜，只让真有分的段参与融合。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 重排为什么比嵌入排得准？</p>
+    <button class="quiz-option">重排模型的参数比嵌入模型多</button>
+    <button class="quiz-option" data-correct="true">它把问题和段落拼在一起读，看得见两者的对应</button>
+    <button class="quiz-option">它把每段文字读了三遍</button>
+    <button class="quiz-option">它联网查了最新资料</button>
+    <p class="feedback"
+       data-ok="对。嵌入是各算各的，重排是一次读一对，判断的是「这一段能不能答这一问」。"
+       data-no="差别在读法：拼在一起读，还是分开各压一根向量。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 重排为什么只用在捞回来的候选上，不全库用？</p>
+    <button class="quiz-option">全库用会把向量库撑爆</button>
+    <button class="quiz-option" data-correct="true">每一对都要过一遍模型，全库用不起</button>
+    <button class="quiz-option">重排只支持中文文档</button>
+    <button class="quiz-option">全库重排需要重新训练嵌入模型</button>
+    <p class="feedback"
+       data-ok="对。这就是两道筛子的分工：检索捞得宽，重排挑得精。"
+       data-no="重排的代价是算力，不是存储：候选越多，要过的对数越多。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 用户查"E-2107 是什么意思"，语义检索把 E-2108 也排了上来。该靠什么补上？</p>
+    <button class="quiz-option">把提示词写得更长一些</button>
+    <button class="quiz-option">换一个更大的语言模型</button>
+    <button class="quiz-option" data-correct="true">字面匹配，编号这类精确字面它最在行</button>
+    <button class="quiz-option">把块切得更大一些</button>
+    <p class="feedback"
+       data-ok="对。语义检索对精确字面迟钝，这一刀正是字面匹配的强项，所以要两种一起用。"
+       data-no="问题出在检索侧：2107 和 2108 在向量空间里几乎重合，提示词和模型都帮不上。"></p>
+  </div>
+
+  <h2>10. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://docs.pinecone.io/guides/search/hybrid-search">Pinecone — Hybrid search overview</a>——两种信号各补什么、三种结合方式、"RRF 是融合方法不是混合检索的同义词"。<br>
+    <a href="https://docs.pinecone.io/guides/search/reciprocal-rank-fusion">Pinecone — Reciprocal rank fusion</a>——"融合名次不融合分数"的理由、1/(k+rank) 公式、k=60 出自原始论文、k 越大单榜冠军越被压平。<br>
+    <a href="https://docs.cohere.com/docs/rerank">Cohere — Rerank</a>——重排的机制（问题和文档的 token 合并计算）、"不重建索引"、阈值拒答的用法。<br>
+    <a href="https://www.anthropic.com/engineering/contextual-retrieval">Anthropic — Introducing Contextual Retrieval</a>——5.7% → 1.9% 那组实测（第 2 课贴过全文，这里按步拆收益）。<br>
+    <b>RRF 原始论文</b>（Cormack et al. 2009）取自 Pinecone 指南的引用，本课未读原文，标注为<b>二手</b>；"召回 50 精排 5"出自个人博客实测，标注为<b>经验</b>。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"两个榜单的权重怎么调？""中文的字面匹配要不要分词？""重排模型自己怎么挑？""有没有不用重排的省钱做法？"
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0005-embedding-and-similarity.html">RAG · 第 5 课 · 嵌入与相似度</a>（嵌入的失手，这课来补）<br>
+    <b>顺着往下</b>：第 7 课 · 查询工程（在写）——捞得准不准，还取决于问法本身<br>
+    <b>相关</b>：<a href="0009-two-failure-modes.html">RAG · 第 9 课 · 两种典型翻车</a>（检索翻没翻，怎么判）<br>
+    术语表：<a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a> · <a href="../../reference/glossary.html#hybrid-rerank">混合检索 / RRF / 重排</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 6 课 · 理论 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

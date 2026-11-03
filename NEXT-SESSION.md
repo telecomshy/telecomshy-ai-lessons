@@ -7,32 +7,35 @@
 
 1. `AGENTS.md`：会话规则（会话自动加载，不用手动提醒）。
 2. 本文件：当前状态与下一步。
-3. [`NOTES.md`](NOTES.md) 第 1 节（流程纪律）＋ [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md)（全局写作标准）＋**本轮要动的那一轨 [`internal/standards/tracks/<轨道>.md`](internal/standards/tracks/)**。
+3. [`NOTES.md`](NOTES.md) 第 1 节（流程纪律）＋ [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md)（全局写作标准，**1.5 文章体＋句子层四条是文字质量的硬指标**）＋**本轮要动的那一轨 [`internal/standards/tracks/<轨道>.md`](internal/standards/tracks/)**。
 4. **做 RAG 改版任何一课前：读 [`RAG-REVISION-PLAN.md`](RAG-REVISION-PLAN.md)**（总施工图 **v5**：§0 已定决策不得重启讨论、§2 课表 11 门与批次、§5 例子素材、§9 进度）。
 5. 开工前跑 `pwsh tools/progress.ps1` 拿基线。
 
 ## 当前状态
 
-- **课程总盘**：34 门 / 23 基础 / 11 进阶 / 22 脚本；19 门已标 completed；audit 全绿（2026-11-04 收工实跑）。
-- **✅ 提交史**：`afbec6d` 0007 施工 · `fb12d31` 文字返工 · `a6934d7` RAG 批 1 会话一（0001 加厚）· `769dd46` RAG 地图 v5 · `57ce45e` RAG 批 1 会话二（0004＋首个 deep 关停）。
-- **✅ RAG 批 1 第三会话（2026-11-04，本会话）**：
-  - **0005「嵌入与相似度」开课**（`lessons/rag/0005-embedding-and-similarity.html`，220 行）：嵌入模型生命周期→三把尺子（点积/余弦/欧氏，恒等式机制）→尺子跟模型走（归一化点积≡余弦）→模型侧失手清单（同名不同物/生僻词/细粒度差）→换模型＝整库重算（RAGFlow 兼容性抽查**新口径**）；新插图 `assets/similarity-three-rulers.svg`＋新脚本 `0005-similarity-metrics.py`（玩具向量演示换尺子换名次）＋小测 6 题；术语表补「相似度尺子」。
-  - **三尺子一手来源当场抓**（Pinecone "Vector Similarity Explained"）入 RESOURCES。
-  - **⚠ 0001-deep 本轮没关**：它的主体（稀疏稠密＋RRF）是 0006 的料，只有失手清单进了 0005——**关停时机判据修正为"内容全部有家的那一轮"**（存档 5.70，计划 §9/§10 已改）。
-- **⚠ 三张图渲染未目视**：`closed-vs-open-book.svg`（0001）、`chunk-three-cuts.svg`（0004）、`similarity-three-rulers.svg`（0005），XML 合法都过，按 1.7 还差浏览器渲染看一眼。
+- **课程总盘**：34 门 / 24 基础 / 10 进阶 / 22 脚本（0006 新增＋0001-deep 关停，总数不变）；19 门已标 completed；audit 全绿（2026-11-04 收工实跑）。
+- **✅ 提交史**：`afbec6d` 0007 施工 · `fb12d31` 文字返工 · `a6934d7` RAG 会话一（0001）· `769dd46` 地图 v5 · `57ce45e` 会话二（0004）· `a17f838` 会话三（0005）。
+- **✅ RAG 批 2 第一会话（2026-11-04，本会话）**：
+  - **0006「多路召回：混合检索与重排」开课**（`lessons/rag/0006-hybrid-and-rerank.html`，220 行）：两种方法各翻一次车→RRF 只比名次（k=60 出处）→假名次陷阱→捞宽挑精（5.7%→1.9% 按步拆，逐字沿用 0002/0009 口径）→重排拼 token 机制（Cohere 原话）→代价清单；新插图 `assets/retrieval-wide-then-narrow.svg`＋`0006-sparse-vs-dense.py`（原 0001 随课改名）＋小测 6 题；术语表补「混合检索/RRF/重排」。
+  - **0001-deep 关停**（第二个 deep 退役，内容全部有家：失手清单 0005、稀疏稠密＋RRF 0006）。还剩 0004-deep 随 0009。
+  - 一手来源三篇当场抓入 RESOURCES（Pinecone Hybrid/RRF 官方指南、Cohere Rerank）。
+  - **文字质量这轮当了硬指标**：正文破折号全课 1 处、黑名单垫词零命中、比喻只留「榜」一个意象族、节拍标题＋逐节过渡；写完跑扫描自查（存档 5.71）。
+- **⚠ 学习者反馈（2026-11-04，记欠账）**：**0004/0005 两课"文字描述很别扭，没按课件标准"**——破折号成灾、临时比喻排队、标签式引子、清单腔。**整课文字返工待做**（按 1.5 文章体＋句子层四条，0006 可当对照样本）。
+- **⚠ 四张图渲染未目视**：`closed-vs-open-book.svg`（0001）、`chunk-three-cuts.svg`（0004）、`similarity-three-rulers.svg`（0005）、`retrieval-wide-then-narrow.svg`（0006）。
 
 ## 下一步
 
-1. **F5 验收（五批叠着）**：① `rag/0005` 新课＋三尺子插图渲染目视；② `rag/0004`＋其插图；③ `rag/0001` 加厚稿＋其插图；④ v5 重排抽查（`lessons/rag/0009-two-failure-modes*`）；⑤ 更早的 0007 施工＋文字返工两笔。
-2. **RAG 批 2 第一会话**：读 `RAG-REVISION-PLAN.md` 按批 2 施工——**0006 多路召回：混合检索与重排**（0001-deep 主体升格：稀疏/稠密翻车两题＋RRF k=60＋噪音榜陷阱；**同轮关停 0001-deep**、`0001-sparse-vs-dense.py` 随课改名挂 0006）。之后 0007 查询工程 → 0008 组装 → 0009 诊断（收编 0004-deep）。
-3. **拍板一笔欠账**：LLM 0005/0006/0008 脚本输出摘录三处「同款」要不要连脚本一起改。
-4. **Agent 轨 0001/0002 超长**：待 F5 后定压缩 vs 拆；体量预算要不要入 `tracks/agent.md` 未拍板。
-5. **收尾杂项**：`lessons/index.html` 速查区补不补卡；「Agent 原理篇」旧轨道名残留待拍板。
+1. **0004/0005 文字返工（学习者点名，优先级最高）**：两课按 1.5 文章体＋洗练四条整课重过；对照样本＝0006；改完跑文字自查扫描（破折号/黑名单）＋既有核验。动手前跟学习者确认是现在做还是排在批次后。
+2. **F5 验收（四批叠着）**：① 0006＋其插图；② 0005/0004/0001 各课＋插图渲染目视；③ v5 重排抽查；④ 0007 施工＋文字返工两笔。
+3. **RAG 批 2 第二会话**：**0007 查询工程**（HyDE/Step-back/改写/子问题分解，来源在 RESOURCES「查询与 Agentic 前沿论文」组）→ 0008 组装 → 0009 诊断（收编 0004-deep、最后一个 deep 关停）。
+4. **拍板一笔欠账**：LLM 0005/0006/0008 脚本输出摘录三处「同款」要不要连脚本一起改。
+5. **Agent 轨 0001/0002 超长**＋体量预算、速查区补卡、「Agent 原理篇」旧轨道名残留：仍待拍板。
 
 ## 待确认
 
+- **0004/0005 文字返工的时机**（现在做 vs 批次收尾后做）。
 - 学习者每周可投入时间（还没收集，影响 RAG 批次排期）。
 - 0003/0004 草稿 `internal/drafts/` 是否归档（上轮遗留）。
-- RAG 改版收尾（计划 §9 末项）：MISSION 边界句、`progress.ps1` D/E 段补 RAG 覆盖、旧 deep 关停收尾（还剩 0001-deep→随 0006、0004-deep→随 0009）、计划文件退役。
+- RAG 改版收尾（计划 §9 末项）：MISSION 边界句、`progress.ps1` D/E 段补 RAG 覆盖、0004-deep 关停、计划文件退役。
 
 > AI生成

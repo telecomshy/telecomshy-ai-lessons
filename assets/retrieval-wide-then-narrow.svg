@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 300" width="720" height="300" role="img" aria-label="两道筛子的分工。左边是整库几千段，第一道筛子是检索，宽宽捞回五十段候选；第二道筛子是重排，逐段跟问题对读打分，只留五段；五段连同问题进提示词，模型照着回答。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="720" height="300" fill="#fdfcf8"/>
+  <text x="24" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">两道筛子分工不同：第一道宁可多捞，第二道宁可精挑。</text>
+
+  <!-- 整库 -->
+  <text x="24" y="66" font-family="sans-serif" font-size="12" fill="#6b6560">整库：几千段</text>
+  <g fill="#e8e4dc" stroke="#c9c2b6">
+    <rect x="24" y="76" width="26" height="18"/><rect x="56" y="76" width="26" height="18"/><rect x="88" y="76" width="26" height="18"/>
+    <rect x="24" y="100" width="26" height="18"/><rect x="56" y="100" width="26" height="18"/><rect x="88" y="100" width="26" height="18"/>
+    <rect x="24" y="124" width="26" height="18"/><rect x="56" y="124" width="26" height="18"/><rect x="88" y="124" width="26" height="18"/>
+    <rect x="24" y="148" width="26" height="18"/><rect x="56" y="148" width="26" height="18"/><rect x="88" y="148" width="26" height="18"/>
+    <rect x="24" y="172" width="26" height="18"/><rect x="56" y="172" width="26" height="18"/><rect x="88" y="172" width="26" height="18"/>
+  </g>
+
+  <!-- 第一道筛子：检索 -->
+  <path d="M128,70 L208,92 L208,190 L128,212 Z" fill="#fdfcf8" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="136" y="140" font-family="sans-serif" font-size="12" fill="#8a2b06">检索</text>
+  <text x="132" y="158" font-family="sans-serif" font-size="10.5" fill="#6b6560">捞得宽</text>
+  <line x1="212" y1="141" x2="262" y2="141" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- 候选 50 段 -->
+  <text x="268" y="66" font-family="sans-serif" font-size="12" fill="#6b6560">候选：50 段</text>
+  <g fill="#f6d9c8" stroke="#8a2b06">
+    <rect x="268" y="76" width="26" height="18"/><rect x="300" y="76" width="26" height="18"/><rect x="332" y="76" width="26" height="18"/>
+    <rect x="268" y="100" width="26" height="18"/><rect x="300" y="100" width="26" height="18"/><rect x="332" y="100" width="26" height="18"/>
+    <rect x="268" y="124" width="26" height="18"/><rect x="300" y="124" width="26" height="18"/><rect x="332" y="124" width="26" height="18"/>
+    <rect x="268" y="148" width="26" height="18"/><rect x="300" y="148" width="26" height="18"/><rect x="332" y="148" width="26" height="18"/>
+    <rect x="268" y="172" width="26" height="18"/><rect x="300" y="172" width="26" height="18"/><rect x="332" y="172" width="26" height="18"/>
+  </g>
+
+  <!-- 第二道筛子：重排 -->
+  <path d="M380,70 L460,92 L460,190 L380,212 Z" fill="#fdfcf8" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="390" y="140" font-family="sans-serif" font-size="12" fill="#8a2b06">重排</text>
+  <text x="384" y="158" font-family="sans-serif" font-size="10.5" fill="#6b6560">挑得精</text>
+  <line x1="464" y1="141" x2="514" y2="141" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- 精选 5 段 -->
+  <text x="520" y="66" font-family="sans-serif" font-size="12" fill="#6b6560">进提示词：5 段</text>
+  <g fill="#f6d9c8" stroke="#8a2b06">
+    <rect x="520" y="76" width="26" height="18"/><rect x="552" y="76" width="26" height="18"/>
+    <rect x="520" y="100" width="26" height="18"/><rect x="552" y="100" width="26" height="18"/>
+    <rect x="520" y="124" width="26" height="18"/>
+  </g>
+  <rect x="520" y="164" width="176" height="52" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="532" y="186" font-family="sans-serif" font-size="11.5" fill="#1b1a17">【资料 1…5】＋【问题】</text>
+  <text x="532" y="204" font-family="sans-serif" font-size="11.5" fill="#1b1a17">一起发给模型</text>
+
+  <text x="24" y="256" font-family="sans-serif" font-size="12" fill="#1b1a17">漏掉就是彻底没机会，捞多了只是排序问题。所以第一道宽，第二道严。</text>
+  <text x="24" y="278" font-family="sans-serif" font-size="12" fill="#6b6560">经验值：召回 50 段，精排取 5 段（个人博客实测；数字各家不同，分工一致）。</text>
+</svg>
