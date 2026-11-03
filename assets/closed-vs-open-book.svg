@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 306" width="720" height="306" role="img" aria-label="闭卷与开卷两条路对比。上一条闭卷：你问「请三天年假要走什么流程」，模型手上只有那一句问题，于是编一套听着合理的流程。下一条开卷（RAG）：同一句问题，模型手上变成「问题＋查到的两段制度」，照着资料回答。两条路用的是同一个模型。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="720" height="306" fill="#fdfcf8"/>
+
+  <text x="24" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">同一句问题，两条路。差别只有一个：模型手上有什么。</text>
+
+  <!-- 上路：闭卷 -->
+  <text x="24" y="60" font-family="sans-serif" font-size="12.5" fill="#8a2b06">闭卷——不查资料</text>
+  <rect x="24" y="72" width="184" height="58" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="40" y="96" font-family="sans-serif" font-size="12" fill="#1b1a17">你问：请三天年假</text>
+  <text x="40" y="115" font-family="sans-serif" font-size="12" fill="#1b1a17">要走什么流程？</text>
+  <path d="M216,101 L250,101" stroke="#8a2b06" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <rect x="258" y="72" width="184" height="58" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="274" y="96" font-family="sans-serif" font-size="12" fill="#1b1a17">模型手上：</text>
+  <text x="274" y="115" font-family="sans-serif" font-size="12" fill="#1b1a17">只有那一句问题</text>
+  <path d="M450,101 L484,101" stroke="#8a2b06" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <rect x="492" y="72" width="204" height="58" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="508" y="96" font-family="sans-serif" font-size="12" fill="#1b1a17">它编一套流程，</text>
+  <text x="508" y="115" font-family="sans-serif" font-size="12" fill="#1b1a17">听着还挺合理</text>
+
+  <!-- 下路：开卷 -->
+  <text x="24" y="176" font-family="sans-serif" font-size="12.5" fill="#8a2b06">开卷（RAG）——先翻资料，再回答</text>
+  <rect x="24" y="188" width="184" height="58" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="40" y="212" font-family="sans-serif" font-size="12" fill="#1b1a17">你问：同一句问题</text>
+  <path d="M216,217 L250,217" stroke="#8a2b06" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <rect x="258" y="188" width="184" height="58" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="274" y="212" font-family="sans-serif" font-size="12" fill="#1b1a17">模型手上：那句问题</text>
+  <text x="274" y="231" font-family="sans-serif" font-size="12" fill="#1b1a17">＋查到的两段制度</text>
+  <path d="M450,217 L484,217" stroke="#8a2b06" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <rect x="492" y="188" width="204" height="58" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="508" y="212" font-family="sans-serif" font-size="12" fill="#1b1a17">它照着资料回答，</text>
+  <text x="508" y="231" font-family="sans-serif" font-size="12" fill="#1b1a17">答得出出处</text>
+
+  <text x="24" y="282" font-family="sans-serif" font-size="12" fill="#1b1a17">两条路用的是同一个模型，参数一个字没动。变的只是发过去的那段话。</text>
+</svg>
