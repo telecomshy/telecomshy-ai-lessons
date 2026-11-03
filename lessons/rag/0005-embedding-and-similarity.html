@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 5 课 · 嵌入与相似度</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 5 课 · 理论</div>
+  <h1>嵌入与相似度</h1>
+
+  <div class="goal">
+    <span class="label">先别急着学，聊两句</span>
+    <p>块切好了（<a href="0004-cleaning-and-chunking.html">第 4 课</a>），接下来每一块都要压成一根向量，问题也压成一根，然后<b>比大小排序</b>。</p>
+    <p>听起来就是"算个距离"。可真做起来会撞上一个问题：<b>换一把尺子，排名就变了</b>——同一组候选，点积选了段 B，余弦选了段 A。</p>
+    <p style="margin-top:0.7rem">哪把尺子才对？<b>没有"最准"的尺子，只有跟嵌入模型训练时一致的那把。</b></p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>说清：嵌入模型是哪来的、三把尺子各在量什么、尺子怎么选、以及它什么时候会把"像"当"对"。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">记住一条主线，后面就不会晕</span>
+    <p><b>嵌入 ＝ 把一段文字压成一根向量；相似度 ＝ 定义两根向量"像不像"的算法。</b></p>
+    <p>尺子只有三把，而且<b>必须跟嵌入模型训练时用的一致</b>——模型学出来的"像"和你排名用的"像"得是同一个定义。</p>
+  </div>
+
+  <h2>1. 嵌入模型：链上的第二个模型</h2>
+  <p>第 1 课分过两种"嵌入"，这里认领第二种：<b>文本嵌入</b>——把一整段文字压成一根向量的，是<b>另一个小模型</b>，跟最后答题的那个模型互不相干。一条 RAG 链上跑着两个模型，各干各的。</p>
+  <p>它干的活很窄：<b>让说得像的文字，压出来挨得近</b>。"向量挨得近"就是"意思相近"的操作定义。它压完就完事——<b>向量存进索引里等查，这个模型本身不再出场</b>。</p>
+  <p>它一生出场两次：建库时把每一块压成一根向量存进索引，提问时把问题压成一根去比。压完就退场，答案里没有它的影子。压出来的是一串固定长度的数字——多长由模型定，各家不同，这就是"维度"。</p>
+  <p>所以别把它想成"小号的答题模型"：它不生成文字、不懂逻辑，只会一件事——把一段话摆到向量空间里一个位置上。</p>
+  <p><b>后面所有的翻车，都源于这一个动作的局限。</b></p>
+
+  <h2>2. 三把尺子：点积、余弦、欧氏</h2>
+  <p>两根向量比"像不像"，常见的就三种算法。它们量的东西不一样：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">尺子</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">它量什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">性格</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>点积</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">方向 × 长度</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>长向量占便宜</b>：又长又偏也能拿高分</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>余弦</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">只有夹角（方向）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">长短被除掉了，<b>方向一致就是满分</b></td></tr>
+      <tr><td style="padding:0.45rem"><b>欧氏</b></td>
+          <td style="padding:0.45rem">两点间的直线距离</td>
+          <td style="padding:0.45rem">长度差被如实记账，<b>离得近才叫像</b></td></tr>
+    </tbody>
+  </table>
+  <p>（点积在 LLM 底层课里见过：注意力比"像不像"用的就是它。同一个动作，那里比 token、这里比整段。）</p>
+  <p>三把尺子其实是一家人。点积有个恒等式：<b>点积 ＝ 方向合不合 × 箭头有多长</b>。余弦就是把"有多长"除掉之后剩下的那半，欧氏则把长度差换了个方向记账。</p>
+  <p>所以它们的分歧永远在同一个地方：<b>长度算不算数</b>。</p>
+  <figure class="figure">
+    <img src="../../assets/similarity-three-rulers.svg" alt="两根向量从原点出发：Q 沿水平方向，B 斜向右上。图注三行：点积＝方向乘长度，长向量占便宜；余弦＝只看夹角，长短不影响；欧氏＝两个端点间的直线距离，长度差如实记账。">
+    <figcaption><b>同一对向量，三把尺子各读一样东西。</b>余弦只看那个夹角；点积把箭头的长度也算进去；欧氏看两个端点连成的虚线有多长。</figcaption>
+  </figure>
+  <p>差别不是纸面上的。<b>同一组候选，换尺子就换名次</b>——脚本实测（四个手写向量，问题在正右方）：</p>
+  <pre><code>    点积榜（大→小）： 段 B > 段 A > 段 C > 段 D
+    余弦榜（大→小）： 段 A > 段 B > 段 C > 段 D
+    欧氏榜（近→远）： 段 A > 段 C > 段 D > 段 B
+
+    → 三个榜的冠军不一样：【点积选了段 B，余弦和欧氏选了段 A】。
+    → 变化最大的是段 B：点积第 1、余弦第 2、欧氏垫底——同一个向量，
+      三把尺子给出三种待遇，分歧全在【长度算不算数】上。</code></pre>
+  <p>段 B 是"又长又偏"的那种向量：点积被它的长度骗了，欧氏被它的长度拖远了，只有余弦不看长度。<b>你的候选里永远躺着几个段 B</b>——选错尺子，它们就会冒到前面去。</p>
+  <p>另一半故事在段 A 身上：它方向完全一致，却在点积榜只排第二——<b>方向对但偏短的向量，会被长度淹没</b>。</p>
+  <p>真实的库不是四个二维向量，而是成千上万个上千维向量——但"又长又偏"在上千维里照样存在，只是没法画在纸上。玩具赢在<b>能看见</b>：哪个向量因为什么占了便宜，一眼就数得出来。</p>
+
+  <h2>3. 尺子怎么选：跟模型走</h2>
+  <p>既然换尺子换名次，怎么定？Pinecone 的口径就一句：<b>尺子跟嵌入模型训练时用的一致</b>。训练用什么度量"像"，检索就用什么度量"像"——否则模型学出来的"像"和你排名用的"像"不是一个定义。</p>
+  <p>两个现成的例子：all-MiniLM-L6-v2 训练用的是<b>余弦</b>，索引就配余弦；msmarco-bert-base-dot-v5 训练用<b>点积</b>，官方直接写明只支持点积。</p>
+  <p>还有一个能省掉一半纠结的事实：<b>把每个向量缩到长度 1 之后，点积和余弦给出完全一样的名次</b>——数学上是同一件事。工具里看到"归一化点积"和"余弦"两种说法，别当成两种方法去调参。</p>
+  <p>要是查不到模型用的哪把尺子（闭源模型常常不写），怎么办？Pinecone 给的次序也是这样：<b>先查、查不到再拿自己的评测集试</b>。注意是"拿评测集试"，不是"三把都跑一遍谁分高用谁"——后者在评测集小的时候，拟合的是噪音。</p>
+  <div class="note">
+    <span class="label">余弦分数不是概率</span>
+    <p>余弦的取值范围是 <b>−1 到 1</b>：1 是方向完全一致，0 是无关，−1 是正好相反。它是个几何量，<b>不是"相关的概率"</b>——0.8 不代表"80% 相关"，跨模型、跨语料的余弦分也不可横比。</p>
+    <p>看分数的正确姿势是<b>看名次和落差</b>：第 1 名和第 2 名差多少，比"绝对值是多少"有用得多。</p>
+  </div>
+
+  <h2>4. 失手清单：它只懂"像"，不懂"对"</h2>
+  <p>尺子选对了，嵌入还是会翻车。翻在<b>模型侧</b>：它量的是"像不像"，不是"对不对"——<b>名字像不等于内容相关</b>，这是 RAG 最常见的翻车点。三张脸：</p>
+  <p><b>同名不同物。</b>"苹果"的水果和公司，在向量空间里几乎是同一个位置。问"苹果的售后政策"，水果味的段落照样排得很前——它们确实"像"，只是像错了地方。</p>
+  <p><b>没见过的词。</b>新术语、生僻缩写、内部黑话（"P7 晋升答辩"），训练时没见过，它们的向量位置不可靠——检索时忽远忽近，全看运气。</p>
+  <p><b>细粒度差被抹平。</b>2107 和 2108、A4 和 A5、3% 和 8%——这种"就差一点点"的东西，在向量空间里几乎重叠。指望嵌入分辨它们，不如指望字面匹配。</p>
+  <p>这三张脸有个共同的判据：<b>凡是"必须逐字对上"的（编号、型号、金额、人名），别指望嵌入</b>。它们各有各的救法——字面匹配怎么跟嵌入搭档，是<a href="0001-why-retrieval.html">第 1 课</a>动手那节点过的"两个一起用"，下一门课展开。</p>
+  <p>顺带把边界划清：这三张脸都是<b>检索侧</b>的失手——答案压根没进提示词。另一种翻车是"进了提示词但没被用上"，那不是嵌入的锅。<b>分不清这两类的时候，先用第 9 课那面镜子：把提示词打出来看一眼。</b></p>
+
+  <h2>5. 换嵌入模型：整库重算，没有捷径</h2>
+  <p>嵌入模型不是只用一个就万事大吉：换模型的理由很多（领域适配、多语言、效果更好）。但换的代价是硬的：<b>不同模型的向量不在同一个空间</b>——同一个句子，两个模型压出的向量方向都对不上，放在一起比大小毫无意义。</p>
+  <p>所以<b>换模型 ＝ 新建一个库，全部重算</b>。老库的向量一个都搬不过来。</p>
+  <p>什么时候值得付这个代价？领域文档明显对不上（法律、医疗这类专业语料）、要支持多语言、或者新模型在<b>你自己的评测集</b>上真的更好——先量出差距再换，别凭口碑。量的方法是后面第 9、10 课的活。</p>
+  <p>工具对这件事的态度值得看一眼。RAGFlow 早期版本是硬锁：文档原话"Once you have selected an embedding model and used it to parse a file, you are no longer allowed to change it"。现行版本改成了<b>兼容性抽查</b>：换模型要过一关（维度得一致、抽样向量的平均余弦 ≥ 0.9 才放行），<b>但存盘后不会自动重嵌旧块</b>——也就是说，库里会留下两代向量混着的隐患。</p>
+  <p>工具松了口，<b>正确做法没变：换模型就重建库</b>。</p>
+
+  <h2>6. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/rag/0005-similarity-metrics.py</code>。它用四个手写的二维向量，把三把尺子的读数摆在一起看。<b>它不调任何模型</b>——向量是手写的，但"尺子在量什么"跟上千维的真实向量一模一样。</p>
+  <pre><code>python exercises/rag/0005-similarity-metrics.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是读数那段的输出摘录（跑了就有完整的）。</p>
+  <pre><code>[1] 同一对向量，三把尺子各在量什么（问题 Q=(1,0) vs 各段）
+                 点积↑大好       余弦↑大好       欧氏↓小好   向量
+    段 A          1.200       1.000       0.200   (1.2, 0.0)
+    段 B          3.000       0.894       2.500   (3.0, 1.5)
+    段 C          0.500       0.707       0.707   (0.5, 0.5)
+    段 D          0.000       0.000       2.236   (0.0, 2.0)</code></pre>
+  <p><b>三处要看懂</b>：</p>
+  <ul>
+    <li><b>段 B 点积最高（3.000），方向却是偏的</b>——长度把分数抬了上去。它就是"段 B 型选手"的标本。</li>
+    <li><b>段 A 余弦满分（1.000）</b>：方向和问题完全一致。长短不影响余弦。</li>
+    <li><b>段 D 两个"越大越好"的榜都给 0 分</b>：方向垂直就是无关，两把尺子都不会救它。</li>
+  </ul>
+  <p>脚本的第二段演示"换尺子换名次"。第三段把每个向量缩到长度 1 再比一遍：</p>
+  <pre><code>[3] 归一化之后：点积 ≡ 余弦
+    把每个向量缩到长度 1，再比：
+    段 A    归一化后 (1.0, 0.0)               点积=1.000
+    段 B    归一化后 (0.894, 0.447)           点积=0.894
+    段 C    归一化后 (0.707, 0.707)           点积=0.707
+    段 D    归一化后 (0.0, 1.0)               点积=0.000
+
+    名次： 段 A > 段 B > 段 C > 段 D （和余弦榜完全一样）</code></pre>
+  <p><b>看名次那一行</b>：缩到长度 1 之后，点积榜和余弦榜逐位相同——长度这个变量被除掉了，两把尺子量的自然只剩同一个东西。</p>
+
+  <h2>7. 检查一下你懂了没</h2>
+  <p>六道题，把"尺子怎么选、模型怎么失手、换模型什么代价"各过一遍。</p>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 向量库里该用哪种相似度算法？</p>
+    <button class="quiz-option">余弦最常用，闭眼选它</button>
+    <button class="quiz-option">欧氏最直观，闭眼选它</button>
+    <button class="quiz-option" data-correct="true">跟嵌入模型训练时用的一致</button>
+    <button class="quiz-option">三个都开，谁分高听谁的</button>
+    <p class="feedback"
+       data-ok="对。模型学出来的「像」和排名用的「像」得是同一个定义。"
+       data-no="没有「最准」的尺子——训练用余弦就用余弦，训练用点积就用点积。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 点积和余弦最本质的差别是什么？</p>
+    <button class="quiz-option">点积比余弦算得更快一些</button>
+    <button class="quiz-option" data-correct="true">点积把向量长度也算进去，余弦只看方向</button>
+    <button class="quiz-option">点积只支持英文，余弦支持中文</button>
+    <button class="quiz-option">点积是旧算法，已经被余弦淘汰</button>
+    <p class="feedback"
+       data-ok="对。所以又长又偏的向量能在点积榜拿高分，余弦榜上却排不到第一。"
+       data-no="差别在「长度算不算数」，不在速度、语言或新旧。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> 问"苹果的售后政策"，水果介绍排得很前。这属于哪种失手？</p>
+    <button class="quiz-option">切块切得太大了</button>
+    <button class="quiz-option" data-correct="true">同名不同物：嵌入只管像不像，不懂说的是谁</button>
+    <button class="quiz-option">检索的 top-k 给得太小</button>
+    <button class="quiz-option">提示词里没写清楚品牌名</button>
+    <p class="feedback"
+       data-ok="对。「苹果」两个意思在向量空间里几乎同一个位置——名字像不等于内容相关。"
+       data-no="这是嵌入模型侧的失手：它量的是像，不是对。切块和 top-k 都没错。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 换了一个嵌入模型，旧向量为什么不能接着用？</p>
+    <button class="quiz-option">旧向量的文件格式太老了</button>
+    <button class="quiz-option">旧模型的授权已经过期了</button>
+    <button class="quiz-option" data-correct="true">两个模型的向量不在同一个空间，比大小没意义</button>
+    <button class="quiz-option">旧向量占的存储空间更大</button>
+    <p class="feedback"
+       data-ok="对。同一个句子两个模型压出的方向都对不上——换模型就是新建库全量重算。"
+       data-no="跟格式、授权、存储无关：向量的意义由模型定义，换了定义就不能混着比。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 工具里"归一化点积"和"余弦"两种设置，该怎么理解？</p>
+    <button class="quiz-option">两种算法，效果要各测一遍</button>
+    <button class="quiz-option" data-correct="true">数学上是同一件事，别当两种方法调参</button>
+    <button class="quiz-option">归一化点积是余弦的升级版</button>
+    <button class="quiz-option">余弦只适合英文，点积适合中文</button>
+    <p class="feedback"
+       data-ok="对。向量缩到长度 1 之后，点积的名次和余弦逐位相同。"
+       data-no="脚本第三段演示的就是这件事：归一化点积 ≡ 余弦。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 内部黑话"P7 晋升答辩"检索不到，最可能因为什么？</p>
+    <button class="quiz-option">这句话太长了，超出了上限</button>
+    <button class="quiz-option">黑话应该全部用大写字母写</button>
+    <button class="quiz-option" data-correct="true">训练时没见过，它的向量位置不可靠</button>
+    <button class="quiz-option">向量库需要先手动添加这个词</button>
+    <p class="feedback"
+       data-ok="对。没见过的词在向量空间里没有靠谱的位置——忽远忽近全看运气。"
+       data-no="跟长度、写法无关：生僻词和新术语是嵌入模型的老大难。"></p>
+  </div>
+
+  <h2>8. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://www.pinecone.io/learn/vector-similarity/">Pinecone — Vector Similarity Explained</a>——三把尺子各量什么（Table 1）、"尺子跟模型训练时一致"的选型原则、两个模型实例、归一化点积与余弦等价。<br>
+    <a href="https://ragflow.io/docs/dataset_configuration">RAGFlow — Dataset Configuration</a>（2026-11-03 复抓）——换嵌入模型的兼容性抽查与"不自动重嵌旧块"的新口径。<br>
+    <b>失手清单</b>（同名不同物、生僻词、细粒度差）收编自原 RAG 第 1 课进阶版（2026-11-04 随改版升格进本课，旧页随后关停）。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"嵌入模型怎么挑？""中文要不要专门的中文模型？""向量库选哪个？""同名不同物有没有治法？"——最后那个的治法，是下一门课的主角。
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0004-cleaning-and-chunking.html">RAG · 第 4 课 · 建库：清洗与切块</a>（块切好了才轮到向量）<br>
+    <b>顺着往下</b>：第 6 课 · 多路召回：混合检索与重排（在写）——嵌入的失手，靠字面匹配和重排来补<br>
+    <b>相关</b>：<a href="0009-two-failure-modes.html">RAG · 第 9 课 · 两种典型翻车</a>（检索翻没翻，怎么判）<br>
+    术语表：<a href="../../reference/glossary.html#similarity-metrics">相似度尺子</a> · <a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#chunking">切块 / 重叠</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 5 课 · 理论 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>

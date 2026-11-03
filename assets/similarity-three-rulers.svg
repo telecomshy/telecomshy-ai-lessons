@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 320" width="720" height="320" role="img" aria-label="同一对向量，三把尺子各读一样东西。图里从原点出发两根箭头：向量 Q 沿水平方向，向量 B 斜向右上。余弦只看两根箭头的夹角；点积看方向乘长度，长向量占便宜；欧氏看两个箭头端点之间的直线距离。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1b1a17"/>
+    </marker>
+    <marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="720" height="320" fill="#fdfcf8"/>
+  <text x="24" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">同一对向量，三把尺子各读一样东西</text>
+
+  <!-- 坐标轴与向量 -->
+  <line x1="70" y1="270" x2="380" y2="270" stroke="#c9c2b6" stroke-width="1"/>
+  <line x1="70" y1="270" x2="70" y2="60" stroke="#c9c2b6" stroke-width="1"/>
+  <line x1="70" y1="270" x2="330" y2="270" stroke="#1b1a17" stroke-width="2.2" marker-end="url(#arw)"/>
+  <line x1="70" y1="270" x2="255" y2="115" stroke="#8a2b06" stroke-width="2.2" marker-end="url(#arw2)"/>
+  <text x="330" y="292" font-family="sans-serif" font-size="12" fill="#1b1a17">向量 Q（问题）</text>
+  <text x="258" y="106" font-family="sans-serif" font-size="12" fill="#8a2b06">向量 B（某一块）</text>
+  <text x="150" y="205" font-family="sans-serif" font-size="12" fill="#1b1a17">夹角 θ</text>
+  <path d="M 130 270 A 60 60 0 0 0 111 214" fill="none" stroke="#6b6560" stroke-width="1.2"/>
+  <text x="150" y="175" font-family="sans-serif" font-size="11" fill="#6b6560">长度 |B| 也在这根箭头上</text>
+  <line x1="330" y1="270" x2="255" y2="115" stroke="#6b6560" stroke-width="1.4" stroke-dasharray="6 5"/>
+  <text x="288" y="192" font-family="sans-serif" font-size="11" fill="#6b6560">直线距离 d</text>
+
+  <!-- 三把尺子的读数 -->
+  <text x="430" y="88" font-family="sans-serif" font-size="13" fill="#1b1a17">点积 ＝ 方向 × 长度</text>
+  <text x="430" y="108" font-family="sans-serif" font-size="11.5" fill="#6b6560">长向量占便宜：又长又偏也能拿高分</text>
+  <text x="430" y="152" font-family="sans-serif" font-size="13" fill="#8a2b06">余弦 ＝ 只看夹角 θ</text>
+  <text x="430" y="172" font-family="sans-serif" font-size="11.5" fill="#6b6560">长短被除掉了，方向一致就是满分</text>
+  <text x="430" y="216" font-family="sans-serif" font-size="13" fill="#1b1a17">欧氏 ＝ 直线距离 d</text>
+  <text x="430" y="236" font-family="sans-serif" font-size="11.5" fill="#6b6560">长度差被如实记账，离得近才叫像</text>
+
+  <text x="24" y="311" font-family="sans-serif" font-size="12" fill="#1b1a17">尺子没有"最准"，只有跟嵌入模型训练时一致的那把。</text>
+</svg>

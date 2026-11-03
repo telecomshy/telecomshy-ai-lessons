@@ -29,7 +29,7 @@
 | `rag/0002`（链路地图·六步） | Pinecone RAG 指南（四组件）＋RAGFlow quickstart/Dataset Configuration（六步→面板对照）＋管线实践 |
 | `rag/0003`（该不该上·三选一） | Lewis＋Pinecone RAG 指南（四条好处）＋llm/0009 微调课互链 |
 | `rag/0004`（建库·清洗与切块） | Pinecone Chunking＋RAGFlow Dataset Configuration＋Windows 部署（调参顺序） |
-| `rag/0005`（嵌入与相似度） | RAGFlow quickstart（嵌入锁定）＋旧 0001-deep 收编内容 |
+| `rag/0005`（嵌入与相似度） | Pinecone Vector Similarity（三尺子）＋RAGFlow Dataset Configuration（嵌入约束新口径）＋0001-deep 失手清单收编 |
 | `rag/0006`（混合检索与重排） | Anthropic Contextual Retrieval（数字链）＋12 种增强（RRF k=60）＋管线实践（召回 50 精排 5） |
 | `rag/0007`（查询工程） | HyDE＋Step-back＋12 种增强（适用边界与温度） |
 | `rag/0008`（上下文组装与生成） | Lost in the Middle＋管线实践（约束 prompt）＋RAGFlow quickstart（Empty response） |
@@ -427,6 +427,8 @@
 
 - [Pinecone — "Chunking Strategies for LLM Applications"](https://www.pinecone.io/learn/chunking-strategies/)
   固定长度 / 递归 / 语义三档切法的**定义与取舍**，并明确说"**先从固定长度起步，确定不够再迭代**"。**用来**：给"切块有哪几档"提供标准分类。
+- [Pinecone — "Vector Similarity Explained"](https://www.pinecone.io/learn/vector-similarity/)（2023-06-30，2026-11-04 抓）
+  **三把尺子的一手口径**：Table 1 给出各尺子量什么——Euclidean（幅值＋方向）/ Cosine（只有方向）/ Dot product（幅值＋方向）；恒等式 <code>a·b = |a||b|cosθ</code>（点积＝方向×长度，长向量占便宜）；余弦只受夹角影响（−1~1）；欧氏对缩放敏感（d(αx,αy)=αd(x,y)）。**选型原则原话**："match it to the one used to train your embedding model"（例：all-MiniLM-L6-v2 训练用余弦；msmarco-bert-base-dot-v5 明写只支持点积）；**归一化点积 ≡ 余弦**（"normalize and use dot product… mathematically equivalent"）。查不到模型度量时才"experiment with various other similarity metrics"。**用来**：0005 三尺子/选型/归一化等价。
 - [Anyscale — "RAG evaluation"](https://docs.anyscale.com/rag/evaluation)
   **"分开评"的出处**："先分别评检索与生成，再评端到端——这样才能定位瓶颈、正确归因"。给全 Precision@k / Recall@k / Hit rate@k / MRR / MAP 的定义与取舍。**用来**：讲 RAG 该怎么评、为什么不能只看最终答案。
 - [RAGAS — "List of available metrics"](https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/)
