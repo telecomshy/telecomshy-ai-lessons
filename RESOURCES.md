@@ -28,15 +28,14 @@
 | `rag/0001`（为什么先查·三短板） | Lewis 原论文＋Pinecone RAG 指南（五局限·四组件） |
 | `rag/0002`（链路地图·六步） | Pinecone RAG 指南（四组件）＋RAGFlow quickstart/Dataset Configuration（六步→面板对照）＋管线实践 |
 | `rag/0003`（该不该上·三选一） | Lewis＋Pinecone RAG 指南（四条好处）＋llm/0009 微调课互链 |
-| `rag/0004`（实操·上手 RAGFlow） | 「RAG 系列」实验台组（RAGFlow quickstart · Windows 部署避坑） |
-| `rag/0005`（建库·清洗与切块） | Pinecone Chunking＋RAGFlow Dataset Configuration＋Windows 部署（调参顺序） |
-| `rag/0006`（嵌入与相似度） | RAGFlow quickstart（嵌入锁定）＋旧 0001-deep 收编内容 |
-| `rag/0007`（混合检索与重排） | Anthropic Contextual Retrieval（数字链）＋12 种增强（RRF k=60）＋管线实践（召回 50 精排 5） |
-| `rag/0008`（查询工程） | HyDE＋Step-back＋12 种增强（适用边界与温度） |
-| `rag/0009`（上下文组装与生成） | Lost in the Middle＋管线实践（约束 prompt）＋RAGFlow quickstart（Empty response） |
-| `rag/0010`（翻车诊断与评估原理） | Anyscale（分开评四尺）＋RAGAS metrics＋survey＋5 组配置评测（翻车数字） |
-| `rag/0011`（实操·评测实战） | 5 组配置评测（实验蓝本）＋RAGAS metrics（DeepSeek 当判官） |
-| `rag/0012`（Agentic RAG） | Self-RAG＋CRAG＋Pinecone RAG 指南（agentic 一节）＋agent/0002 互链 |
+| `rag/0004`（建库·清洗与切块） | Pinecone Chunking＋RAGFlow Dataset Configuration＋Windows 部署（调参顺序） |
+| `rag/0005`（嵌入与相似度） | RAGFlow quickstart（嵌入锁定）＋旧 0001-deep 收编内容 |
+| `rag/0006`（混合检索与重排） | Anthropic Contextual Retrieval（数字链）＋12 种增强（RRF k=60）＋管线实践（召回 50 精排 5） |
+| `rag/0007`（查询工程） | HyDE＋Step-back＋12 种增强（适用边界与温度） |
+| `rag/0008`（上下文组装与生成） | Lost in the Middle＋管线实践（约束 prompt）＋RAGFlow quickstart（Empty response） |
+| `rag/0009`（翻车诊断与评估原理） | Anyscale（分开评四尺）＋RAGAS metrics＋survey＋5 组配置评测（翻车数字） |
+| `rag/0010`（评测方法：标注集与指标） | 5 组配置评测（实验蓝本）＋RAGAS metrics（LLM-as-Judge 方法） |
+| `rag/0011`（Agentic RAG） | Self-RAG＋CRAG＋Pinecone RAG 指南（agentic 一节）＋agent/0002 互链 |
 | `reference/` 速查页 | 评估系（Anthropic evals · τ-bench · Inspect AI · AgentBench）→ agent-eval-checklist；「记忆」小节 → memory-products；缓存官方系 → prompt-caching；采样系 → sampling-params |
 
 ## Knowledge（知识来源）
@@ -417,7 +416,7 @@
 
 ### RAG 系列（2026-10-21 重构扩充）
 
-> RAG 轨 2026-10-21 起改制为「理论课＋实操课（RAGFlow 实验台）」，新课表与施工批次见根目录 `RAG-REVISION-PLAN.md`。本节前两段（原论文、切块与评估）为旧制时代存量，其后四段为改制当日扩充。
+> RAG 轨 2026-10-21 起改制，**2026-11-03 v5 修订为单轨理论课**（工具安装与操作不进课，RAGFlow 只当例子锚点；学习者拍板），新课表与施工批次见根目录 `RAG-REVISION-PLAN.md`。本节前两段（原论文、切块与评估）为旧制时代存量，其后四段为改制当日扩充（课号已按 v5 前移）。
 
 - [Lewis et al. — "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"（NeurIPS 2020）](https://arxiv.org/abs/2005.11401)
   **RAG 这个名字的原始出处**。核心说法："模型对知识的访问与精确操控能力仍然有限""给出来源、更新世界知识仍是未解问题"。最值钱的一句结论：<b>换掉那份资料索引就能更新知识，不用重新训练</b>。**用来**：讲"RAG 到底在补什么、它不改模型"。
@@ -435,42 +434,42 @@
 - [Evaluation of Retrieval-Augmented Generation: A Survey（2024）](https://arxiv.org/html/2405.07437v2)
   各框架（RAGAS / ARES / TruLens / DeepEval…）指标的**对照表**。**用来**：知道"同一个概念各家叫法不同"。
 
-**概念地图（0001/0002/0003/0012 用 · 2026-10-21 抓）**
+**概念地图（0001/0002/0003/0011 用 · 2026-10-21 抓）**
 
 - [Pinecone — "Retrieval-Augmented Generation (RAG)"](https://www.pinecone.io/learn/retrieval-augmented-generation/)
-  基础模型的五类局限（**知识截止／领域知识浅／拿不到私有数据／不可溯源／概率性生成**）与 RAG 四组件（**Ingestion → Retrieval → Augmentation → Generation**）；四条好处（实时与私有数据、信任与引用、可控、比训练/微调/硬塞上下文省钱）。**agentic 演进**（官方收尾口径，引号内为原话）：agent 当 RAG 组件的编排者——"construct more effective queries"（构造更有效的查询）、"access additional retrieval tools"、"evaluate the accuracy and relevance of the retrieved context"、"apply reasoning to validate retrieved information"（推理验证後再决定信不信）。**用来**：0001 三短板、0002 四组件地图、0003 三选一、0012 Agentic 收尾。
+  基础模型的五类局限（**知识截止／领域知识浅／拿不到私有数据／不可溯源／概率性生成**）与 RAG 四组件（**Ingestion → Retrieval → Augmentation → Generation**）；四条好处（实时与私有数据、信任与引用、可控、比训练/微调/硬塞上下文省钱）。**agentic 演进**（官方收尾口径，引号内为原话）：agent 当 RAG 组件的编排者——"construct more effective queries"（构造更有效的查询）、"access additional retrieval tools"、"evaluate the accuracy and relevance of the retrieved context"、"apply reasoning to validate retrieved information"（推理验证後再决定信不信）。**用来**：0001 三短板、0002 四组件地图、0003 三选一、0011 Agentic 收尾。
 
-**RAGFlow 实验台（0004/0005 用 · 2026-10-21 抓）**
+**RAGFlow 例子（0002/0004/0005 等课举例用 · 2026-10-21 抓 · 2026-11-03 起降为例子锚点，安装操作不进课）**
 
 - [RAGFlow — quickstart（官方文档）](https://ragflow.io/docs/)
-  部署门槛原文："**4 CPU cores (x86-64), 16 GB RAM, and 50 GB free disk space**"；Docker ≥24.0.0＋Compose ≥v2.26.1；`vm.max_map_count`≥262144；流程＝起服务→配模型→建 dataset 传文件解析→检索测试→建 chat。两条**定义级原话**：① **嵌入锁定**——"Once you have selected an embedding model and used it to parse a file, **you are no longer allowed to change it**"（同一库必须在同一嵌入空间；换模型＝新建库全量重嵌）；② **Empty response**——填了则把回答限定在知识库内（检索不到就统一回这句话），留空则模型自由发挥（"may give rise to hallucinations"）。另有：Chunk 页可人工给块加关键词/问题提权。**用来**：0004 部署与验通路、0006"换模型全重算"、0009 拒答设置。
+  部署门槛原文："**4 CPU cores (x86-64), 16 GB RAM, and 50 GB free disk space**"；Docker ≥24.0.0＋Compose ≥v2.26.1；`vm.max_map_count`≥262144；流程＝起服务→配模型→建 dataset 传文件解析→检索测试→建 chat。两条**定义级原话**：① **嵌入锁定**——"Once you have selected an embedding model and used it to parse a file, **you are no longer allowed to change it**"（同一库必须在同一嵌入空间；换模型＝新建库全量重嵌）；② **Empty response**——填了则把回答限定在知识库内（检索不到就统一回这句话），留空则模型自由发挥（"may give rise to hallucinations"）。另有：Chunk 页可人工给块加关键词/问题提权。**用来**：0005"换模型全重算"（嵌入锁定原话）、0008 拒答设置（Empty response 原话）、各课例子锚点。⚠ v5 起部署门槛与安装流程不进课（那是官网文档的事），原话留存于此备查。
 - [RAGFlow — Dataset Configuration（官方文档）](https://ragflow.io/docs/dataset_configuration)
-  **12 种内置解析模板**：General／Q&A（每对一块）／Manual（按手册层级）／Table（每行一块）／Paper／Book／Laws／Presentation（每页一块）／One（整篇一块）／Tag／Audio（ASR）／Email；官方选法原话"choose the parsing method based on the form of the material"（常规先 General、表格先 Table）。**切块器参数**：chunk size 默认 **512 token**（"a target rather than a strict limit"）／overlap ratio（%）／自定义分隔符／表格与图片前后文窗口／**sub-chunks 父子块**（小块检索、父块供上下文）。**标题切块器两模式**：Hierarchy（块带完整标题路径，适合法规契约）vs Group（同层相邻小节合并，适合书/手册/报告）。**Extractor**：自动关键词／自动问题／标签／**Augmented context（给每块生成上下文摘要——与 Anthropic Contextual Retrieval 同思想）**／元数据。**Indexer**：Embedding／Full-text／双开（官方建议双开）；索引字段三选（Processed text／Questions／Augmented context）。⚠ 改解析配置后需重新解析才生效。**用来**：0002 面板对照表、0005 切块、0007 检索配置、0012 顺带一句 Knowledge Compilation。
+  **12 种内置解析模板**：General／Q&A（每对一块）／Manual（按手册层级）／Table（每行一块）／Paper／Book／Laws／Presentation（每页一块）／One（整篇一块）／Tag／Audio（ASR）／Email；官方选法原话"choose the parsing method based on the form of the material"（常规先 General、表格先 Table）。**切块器参数**：chunk size 默认 **512 token**（"a target rather than a strict limit"）／overlap ratio（%）／自定义分隔符／表格与图片前后文窗口／**sub-chunks 父子块**（小块检索、父块供上下文）。**标题切块器两模式**：Hierarchy（块带完整标题路径，适合法规契约）vs Group（同层相邻小节合并，适合书/手册/报告）。**Extractor**：自动关键词／自动问题／标签／**Augmented context（给每块生成上下文摘要——与 Anthropic Contextual Retrieval 同思想）**／元数据。**Indexer**：Embedding／Full-text／双开（官方建议双开）；索引字段三选（Processed text／Questions／Augmented context）。⚠ 改解析配置后需重新解析才生效。**用来**：0002 面板对照表、0004 切块、0006 检索配置、0011 顺带一句 Knowledge Compilation。
 - [Windows Docker Desktop 部署 RAGFlow 0.17.2 避坑实录（CSDN）](https://blog.csdn.net/weixin_31220401/article/details/168435333)（⚠ 个人博客，经验值需实操校核）
-  Windows 五坑全清单：① 镜像拉取断→registry mirror；② ES 反复重启→WSL2 内存不足（`.wslconfig` memory=12GB/processors=6/swap=4GB ＋ `wsl --shutdown`，ES 堆限 2G）；③ 解析永久 pending→解析/嵌入模型没下载成（HF_ENDPOINT 指镜像端点或先手动下好模型再建库）；④ 挂载卷读不到→路径避开中文/空格/同步盘、用正斜杠；⑤ 登录页打不开→宿主端口映射与防火墙（默认 80 常冲突，改 9380 类）。**调参顺序法则**：先解析→再切块→最后才动检索参数（"检索参数影响找到什么，切块参数影响怎么被找到"）。中文经验值：chunk 300~500 token、overlap 50~100、top_k 8~12、相似度阈值 0.2~0.3。**用来**：0004"怎么不翻车"节、0005/0007 经验参考。⚠ 该文基于 0.17.2（Python 后端 zip 部署），与已选官方现行版（1.0.0-rc2 Go 后端）流程有出入，施工时以官方文档为准校对。
+  Windows 五坑全清单：① 镜像拉取断→registry mirror；② ES 反复重启→WSL2 内存不足（`.wslconfig` memory=12GB/processors=6/swap=4GB ＋ `wsl --shutdown`，ES 堆限 2G）；③ 解析永久 pending→解析/嵌入模型没下载成（HF_ENDPOINT 指镜像端点或先手动下好模型再建库）；④ 挂载卷读不到→路径避开中文/空格/同步盘、用正斜杠；⑤ 登录页打不开→宿主端口映射与防火墙（默认 80 常冲突，改 9380 类）。**调参顺序法则**：先解析→再切块→最后才动检索参数（"检索参数影响找到什么，切块参数影响怎么被找到"）。中文经验值：chunk 300~500 token、overlap 50~100、top_k 8~12、相似度阈值 0.2~0.3。**用来**：0004/0006 经验参考（调参顺序法则与中文经验值）；⚠ 五坑清单随 v5 退役（安装操作不进课）。该文基于 0.17.2（Python 后端 zip 部署），与已选官方现行版（1.0.0-rc2 Go 后端）流程有出入，引用经验值时以官方文档为准校对。
 
-**评测实战（0010/0011 用 · 2026-10-21 抓）**
+**评测（0009/0010 用 · 2026-10-21 抓）**
 
 - [RAGAS＋RAGFlow 5 组配置评测实战（CSDN，2025-10）](https://blog.csdn.net/m0_59235945/article/details/153839845)（⚠ 第三方实测——作实验设计蓝本，数字不可当基准）
-  场景＝员工手册知识库（考勤休假/报销/福利/员工信息表），与本项目年假贯穿例同款。**5 组对照**：baseline（top_n=8, 阈值 0.2, temp 0.1）／high_recall（15, 0.15）／high_precision（5, 0.3）／anti_hallucination（检索不变＋prompt 强约束）／contextual（12＋CoT prompt）。**结果与三个反直觉**：high_recall 三指标全最佳（Context Recall 1.0／Answer Relevancy 0.597／Faithfulness 0.477）；high_precision 与 anti_hallucination 的 Answer Relevancy **归零（全拒答）**；anti 的 Faithfulness 仅 **0.025**——不是不忠实，是 Ragas 把"拒答"判为不忠实（评估假设与业务目标错位）；过度约束 prompt 反噬。**测试集三挑战**：代表性＞数量（10-15 道精题＞100 道泛化题）；LLM 初稿＋专家改写（"员工的年假政策是什么" vs "我 2021 年 3 月入职现在能休几天"）；GT 标注"够用即可"、条件分支写明限定词、核心题全标＋边缘题轻量评。**稳定指标**：context_precision 与 answer_correctness 常返 NaN，重点看 Context Recall／Answer Relevancy／Faithfulness；附"低分→优化方向"对照表。另：RAGFlow Manual 模式分块（Document.add_chunk API、按章节精确控块、跳过解析）。**用来**：0011 实验设计蓝本（主体）、0010 翻车与归因数字。
+  场景＝员工手册知识库（考勤休假/报销/福利/员工信息表），与本项目年假贯穿例同款。**5 组对照**：baseline（top_n=8, 阈值 0.2, temp 0.1）／high_recall（15, 0.15）／high_precision（5, 0.3）／anti_hallucination（检索不变＋prompt 强约束）／contextual（12＋CoT prompt）。**结果与三个反直觉**：high_recall 三指标全最佳（Context Recall 1.0／Answer Relevancy 0.597／Faithfulness 0.477）；high_precision 与 anti_hallucination 的 Answer Relevancy **归零（全拒答）**；anti 的 Faithfulness 仅 **0.025**——不是不忠实，是 Ragas 把"拒答"判为不忠实（评估假设与业务目标错位）；过度约束 prompt 反噬。**测试集三挑战**：代表性＞数量（10-15 道精题＞100 道泛化题）；LLM 初稿＋专家改写（"员工的年假政策是什么" vs "我 2021 年 3 月入职现在能休几天"）；GT 标注"够用即可"、条件分支写明限定词、核心题全标＋边缘题轻量评。**稳定指标**：context_precision 与 answer_correctness 常返 NaN，重点看 Context Recall／Answer Relevancy／Faithfulness；附"低分→优化方向"对照表。另：RAGFlow Manual 模式分块（Document.add_chunk API、按章节精确控块、跳过解析）。**用来**：0010 实验设计蓝本（主体）、0009 翻车与归因数字。
 
-**查询与 Agentic 前沿论文（0008/0012 用 · 2026-10-21 核摘要）**
+**查询与 Agentic 前沿论文（0007/0011 用 · 2026-10-21 核摘要）**
 
 - [Gao et al. — "Precise Zero-Shot Dense Retrieval without Relevance Labels"（HyDE · arXiv 2212.10496）](https://arxiv.org/abs/2212.10496)
-  **HyDE 一手出处**：先让 LLM 生成假想文档（"captures relevance patterns but is unreal and may contain false details"），用无监督编码器把它编码成向量去检索真文档——"the encoder's dense bottleneck **filtering out the incorrect details**"（编码瓶颈天然滤掉假细节）。**用来**：0008——"答案的语义空间比问题更接近文档"。
+  **HyDE 一手出处**：先让 LLM 生成假想文档（"captures relevance patterns but is unreal and may contain false details"），用无监督编码器把它编码成向量去检索真文档——"the encoder's dense bottleneck **filtering out the incorrect details**"（编码瓶颈天然滤掉假细节）。**用来**：0007——"答案的语义空间比问题更接近文档"。
 - [Zheng et al. — "Take a Step Back"（Step-Back Prompting · ICLR 2024 · arXiv 2310.06117）](https://arxiv.org/abs/2310.06117)
-  **Step-back 一手出处**：先从具体问题抽象出上位概念/原理再推理；PaLM-2L 在 MMLU 物理 +7%、化学 +11%、TimeQA +27%、MuSiQue +7%。**用来**：0008——"拿上位问题去检索背景知识"一支。
+  **Step-back 一手出处**：先从具体问题抽象出上位概念/原理再推理；PaLM-2L 在 MMLU 物理 +7%、化学 +11%、TimeQA +27%、MuSiQue +7%。**用来**：0007——"拿上位问题去检索背景知识"一支。
 - [Asai et al. — "Self-RAG"（ICLR 2024 · arXiv 2310.11511）](https://arxiv.org/abs/2310.11511)
-  **Self-RAG 一手出处**，两句关键：传统 RAG "indiscriminately retrieving and incorporating a fixed number of retrieved passages, regardless of whether retrieval is necessary, or passages are relevant, **diminishes LM versatility**"；Self-RAG "adaptively retrieves passages **on-demand**…using special tokens, called **reflection tokens**"（反思 token 控制检索时机与自我批判）。**用来**：0012。
+  **Self-RAG 一手出处**，两句关键：传统 RAG "indiscriminately retrieving and incorporating a fixed number of retrieved passages, regardless of whether retrieval is necessary, or passages are relevant, **diminishes LM versatility**"；Self-RAG "adaptively retrieves passages **on-demand**…using special tokens, called **reflection tokens**"（反思 token 控制检索时机与自我批判）。**用来**：0011。
 - [Yan et al. — "Corrective Retrieval Augmented Generation"（CRAG · arXiv 2401.15884）](https://arxiv.org/abs/2401.15884)
-  **CRAG 一手出处**：轻量**检索评估器**给检回文档打置信度、据此触发不同检索动作；静态语料不够时**网搜兜底**；"decompose-then-recompose"选择性聚焦关键信息。**用来**：0012。
+  **CRAG 一手出处**：轻量**检索评估器**给检回文档打置信度、据此触发不同检索动作；静态语料不够时**网搜兜底**；"decompose-then-recompose"选择性聚焦关键信息。**用来**：0011。
 
-**工程经验综述（0007/0009 用 · 2026-10-21 抓 · ⚠ 二手，引用时标"经验"）**
+**工程经验综述（0006/0008 用 · 2026-10-21 抓 · ⚠ 二手，引用时标"经验"）**
 
 - [12 种 RAG 前沿增强技术与落地选型（CSDN，2026-10）](https://blog.csdn.net/weixin_29039773/article/details/168187407)
-  增强方法按五环节归类（查询/索引/检索/重排/生成）；好用口径："**基础 RAG＋混合检索＋重排＋干净切块**解决 80% 的问题"；HyDE 适用边界（短查询适合/完整句不适合）与温度 0~0.3；RRF 公式 k=60 起步；重排后设分数阈值丢噪声；Agent 调用设上限。**用来**：0007/0008 结构参考与经验口径。
+  增强方法按五环节归类（查询/索引/检索/重排/生成）；好用口径："**基础 RAG＋混合检索＋重排＋干净切块**解决 80% 的问题"；HyDE 适用边界（短查询适合/完整句不适合）与温度 0~0.3；RRF 公式 k=60 起步；重排后设分数阈值丢噪声；Agent 调用设上限。**用来**：0006/0007 结构参考与经验口径。
 - [RAG 系统化拆解：索引/检索/生成的工程实践与调优（CSDN，2026-10）](https://blog.csdn.net/weixin_32377497/article/details/168161496)（⚠ 个人博客）
-  工程细节：约束式 prompt 模板四块（指令/资料/问题/约束，核心是"资料中没有就明确回答'未找到相关资料'，严禁编造"）；"召回 50 → 精排取 5"两阶段量级；temperature 0.1~0.2；**幻觉先归因检索**（"先把检索到的 chunk 打印出来，人工判断模型是不是真的有料可依"）；多轮对话必做查询改写；Recall@5 与 Recall@10 看差定位；chunk_size 改完必须重嵌重建索引。**用来**：0007/0009/0010 经验素材（与一手数字分开标注）。
+  工程细节：约束式 prompt 模板四块（指令/资料/问题/约束，核心是"资料中没有就明确回答'未找到相关资料'，严禁编造"）；"召回 50 → 精排取 5"两阶段量级；temperature 0.1~0.2；**幻觉先归因检索**（"先把检索到的 chunk 打印出来，人工判断模型是不是真的有料可依"）；多轮对话必做查询改写；Recall@5 与 Recall@10 看差定位；chunk_size 改完必须重嵌重建索引。**用来**：0006/0008/0009 经验素材（与一手数字分开标注）。
 
 ### 记忆（Agent 篇第 1 课记忆节 · 2026-10-17 新增，2026-10-18 补产品口径）
 

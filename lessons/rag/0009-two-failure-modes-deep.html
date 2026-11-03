@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAG · 第 4 课（进阶版）· RAG 到底怎么评</title>
+<title>RAG · 第 9 课（进阶版）· RAG 到底怎么评</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta" data-alias="RAG 到底怎么评">RAG · 第 4 课 · 进阶版</div>
+  <div class="lesson-meta" data-alias="RAG 到底怎么评">RAG · 第 9 课 · 进阶版</div>
   <h1>RAG 到底怎么评</h1>
-  <p class="subtitle">初学版给了"两类翻车"的<b>诊断办法</b>；这里给<b>能分开量它们的尺子</b>。</p>
+  <p class="subtitle">第 9 课给了"两类翻车"的<b>诊断办法</b>；这里给<b>能分开量它们的尺子</b>。</p>
 
   <div class="note">
     <span class="label">怎么用这篇</span>
-    <p style="color:var(--muted)">只收读完初学版仍会冒出来的问题。<b>按需跳读</b>。<br>
+    <p style="color:var(--muted)">只收读完第 9 课仍会冒出来的问题。<b>按需跳读</b>。<br>
     这一篇还在长：引用与可追溯、矛盾资料怎么处理，等真问了再写。</p>
     <p style="color:var(--muted)">先放一句话：<b>不评，就没法说"我改了之后真的变好了"</b>——而 RAG 恰好是最容易"改了也不知道好没好"的东西。</p>
   </div>
@@ -82,8 +82,8 @@
   </ul>
 
   <h3>动手：把尺子跑一遍</h3>
-  <p>脚本在工作区：<code>exercises/rag/0004-rag-eval.py</code>。它拿一个<b>最小标注集</b>（8 个问题）跑检索，把四个数都算出来。</p>
-  <pre><code>python exercises/rag/0004-rag-eval.py</code></pre>
+  <p>脚本在工作区：<code>exercises/rag/0009-rag-eval.py</code>。它拿一个<b>最小标注集</b>（8 个问题）跑检索，把四个数都算出来。</p>
+  <pre><code>python exercises/rag/0009-rag-eval.py</code></pre>
   <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。检索器仍是玩具（二字组合 + 点积）——<b>评的是尺子，不是检索器</b>。下面是起步做法那段的输出摘录。</p>
   <pre><code>[5] 起步做法（照抄）
     ① 收集 50～100 个真实问题（别自己编，用用户真问的）
@@ -150,12 +150,12 @@
   </div>
 
   <p class="next">
-    <b>回初学版</b>：<a href="0004-two-failure-modes.html">RAG · 第 4 课（初学版）· 两种典型翻车</a><br>
+    <b>回第 9 课</b>：<a href="0009-two-failure-modes.html">RAG · 第 9 课 · 两种典型翻车</a><br>
     <b>相关</b>：<a href="0002-rag-pipeline-deep.html">第 2 课进阶 · 切块切多大</a>（切块好坏要靠本篇的尺子量）<br>
     术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a>
   </p>
 
-  <footer>AI Agent 原理与工程 · RAG · 第 4 课（进阶版）· <a href="../index.html">课程目录</a></footer>
+  <footer>AI Agent 原理与工程 · RAG · 第 9 课（进阶版）· <a href="../index.html">课程目录</a></footer>
 </div>
 </body>
 </html>

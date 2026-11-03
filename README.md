@@ -140,7 +140,7 @@ python exercises/agent/0002-build-an-agent.py
 | 0001 | [为什么得「先查资料再回答」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0001-why-retrieval.html)                 |
 | 0002 | [一条 RAG 链长什么样](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0002-rag-pipeline.html) —— 六步里只有最后一步是模型   |
 | 0003 | [什么时候不该上 RAG](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0003-when-not-to-use-rag.html)             |
-| 0004 | [两种典型翻车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0004-two-failure-modes.html) —— 该来的没来 vs 来了但没用上 |
+| 0009 | [两种典型翻车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0009-two-failure-modes.html) —— 该来的没来 vs 来了但没用上 |
 
 **进阶版** —— 给想动手验算的技术读者。
 
@@ -148,7 +148,7 @@ python exercises/agent/0002-build-an-agent.py
 | ------- | ------------------------------------------------------------------------------------------------------------ |
 | 0001 进阶 | [稀疏和稠密各自在哪翻车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0001-why-retrieval-deep.html)   |
 | 0002 进阶 | [切块到底切多大](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0002-rag-pipeline-deep.html)        |
-| 0004 进阶 | [RAG 到底怎么评](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0004-two-failure-modes-deep.html) |
+| 0009 进阶 | [RAG 到底怎么评](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0009-two-failure-modes-deep.html) |
 
 ### 速查 · 课很少回看，速查会
 
