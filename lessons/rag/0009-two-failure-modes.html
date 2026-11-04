@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAG · 第 9 课 · 两种典型翻车</title>
+<title>RAG · 第 9 课 · 翻车诊断与评估：先分清哪一段坏了</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
@@ -11,65 +11,54 @@
 <div class="wrap">
 
   <div class="lesson-meta">RAG · 第 9 课 · 理论</div>
-  <h1>两种典型翻车</h1>
+  <h1>翻车诊断与评估：先分清哪一段坏了</h1>
 
   <div class="goal">
-    <span class="label">先别急着学，聊两句</span>
-    <p>RAG 跑起来了，可答案还是不对。这时候大多数人的第一反应是"换个更大的模型"。</p>
-    <p><b>多半没用。</b>因为真正的原因只有两类，而且<b>解法正好相反</b>。</p>
-    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：RAG 答错时，一眼分清是哪一类，知道先查哪一步。</p>
+    <span class="label">从一次答错说起</span>
+    <p>同一句"请五天假要走什么流程"，系统答错了。第一反应是换个更大的模型。</p>
+    <p>换完可能更糟。因为 RAG 的错只有两类，<b>解法正好相反</b>：一类是资料压根没检索到，一类是资料检索到了、模型没用上。前者要修"怎么找"，后者要修"怎么用"。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>拿一屏提示词，一眼分清是哪一类，知道先查哪一步，也能用一套小评估集，量出改动前后到底有没有变好。</p>
   </div>
 
   <div class="note">
-    <span class="label">记住一条主线，后面就不会晕</span>
-    <p><b>① 该来的没来</b>——检索压根没找到那段。<b>问题在前五步。</b></p>
-    <p><b>② 来了但没用上</b>——检索到了、也塞了，模型没用它。<b>问题在最后一步。</b></p>
-    <p><b>这两类要分开诊断</b>，因为解法完全相反：一个要"找得更准"，一个要"用得更好"。</p>
+    <span class="label">主线</span>
+    <p><b>先看答案在不在那一屏里：不在，修怎么找；在，修怎么用。</b></p>
+    <p>一次诊断，把提示词打出来看就够；要看趋势得靠指标：检索侧四个数，生成侧忠实度和相关性。</p>
   </div>
 
-  <h2>1. 全部诊断方法就一句</h2>
-  <div class="goal" style="background:#fff;border-color:var(--ink)">
-    <p><b>把模型会看到的那一屏打出来，人眼看。</b></p>
-    <p>答案在里面吗？<b>不在 → 第一类</b>；<b>在 → 第二类</b>。</p>
-  </div>
-  <p>就这么简单，而且<b>不要跳过这一步</b>。绝大多数人是两头一起调（又调检索、又换模型、又改提示词），最后连自己改了什么都记不清。</p>
+  <h2>1. 答错了，先别换模型</h2>
+  <p>RAG 出问题，症状都落在最后那句回答上，病灶却可能在前面的任何一步。把所有错都归给模型，等于每坏一次换一次发动机，修没修好全看运气。</p>
+  <p>先分两类：</p>
+  <ul>
+    <li><b>该来的没来</b>：检索压根没找到能回答的那段，模型手上没有料。</li>
+    <li><b>来了但没用上</b>：那段就在提示词里，模型却没用它，或者用错了。</li>
+  </ul>
+  <p>第一类回去修切块、嵌入、取几段，第二类修顺序、段数、约束和拒答。混着调，最后连自己改了什么都记不清。</p>
+  <p>分开它们只要一个动作：<b>把模型会看到的那一屏提示词打印出来，人眼看一遍。</b>答案在不在里面？</p>
+
+  <figure class="figure">
+    <img src="../../assets/rag-diagnosis.svg" alt="RAG 翻车诊断流程图。先把模型看到的那一屏提示词打印出来，看答案在不在里面。不在，就是第一类「该来的没来」，去修检索：切块、嵌入、top-k；在，就是第二类「来了但没用上」，去修组装：顺序、段数、约束。底下注明一次诊断靠眼睛，要看趋势得把检索和生成分开评。">
+    <figcaption><b>先看答案在不在这一屏里，再决定修哪边。</b>这一步不用模型，也不用评测集，把提示词打出来就能看。图底下那四个检索指标，是后面量趋势用的。</figcaption>
+  </figure>
 
   <h2>2. 第一类：该来的没来</h2>
-  <p><b>症状</b>：答案根本不在提示词里，模型只能编。</p>
-  <p><b>原因</b>（按常见程度排）：</p>
-  <ul>
-    <li><b>切块切坏了</b>——答案被切成两半，谁也看不懂（第 2 课见过）；</li>
-    <li><b>说法对不上</b>——你问"能休几天"，文档写的是"年假天数"，<b>按词匹配就漏</b>；</li>
-    <li><b>取少了</b>——<code>top-k</code> 取 1，正好卡在分界的问题就只有半套规则；</li>
-    <li><b>换了嵌入模型没重算</b>——老向量全作废，查出来的排序是乱的。</li>
-  </ul>
-  <p><b>解法</b>（Anthropic 实测，取前 20 段时没取到正确那段的比例）：</p>
-  <pre><code>普通 RAG                       5.7% 失败
-＋ 给每段补上一句「这段在讲什么」   3.7%
-＋ 再叠上关键词检索               2.9%
-＋ 再加一道重排序                 1.9%</code></pre>
-  <p><b>注意这几步没有一个是"换更强的模型"</b>——全是<b>前五步</b>的改进。</p>
+  <p>症状很直接：答案根本不在提示词里。模型手上没料，只能编，或者老实说"资料里没有"。</p>
+  <p>常见原因有四个：切块把答案切断了；问法和文档用词对不上；<code>top-k</code> 取得太小；换了嵌入模型却没重算旧向量。</p>
+  <p>脚本里的场景 A 就是前两个原因叠在一起。问题是"我入职四年，年假有几天"，资料库里明明写着"满三年 10 天，满五年 15 天"，检索却只取了 1 段；而且拿"入职四年"去撞原文，撞上的是请假流程那段。</p>
+  <p>模型看到的那一屏只有请假流程，没有年假天数。提示词再怎么要求它"认真回答"，也答不出那个数。<b>资料里没有的，它写不出来。</b></p>
+  <p>要改的地方都在检索侧：把块切对、把问法改对、把 <code>top-k</code> 放宽、换模型后整库重算。第 6 课拆过 Anthropic 那组 5.7% → 1.9% 的数字：三步改进全在检索侧，没有一步是换更强的模型。</p>
 
   <h2>3. 第二类：来了但没用上</h2>
-  <p><b>症状</b>：答案就在提示词里，模型还是答错、或者答了别的。</p>
-  <p><b>原因</b>：</p>
-  <ul>
-    <li><b>排在中间</b>——这是最隐蔽的一条，实测：</li>
-  </ul>
-  <div class="note">
-    <span class="label">"放中间比不给还差"</span>
-    <p>把正确答案那段放在一堆资料的<b>正中间</b>，模型的成绩会掉到<b>比完全不给资料还差</b>。</p>
-    <p>放开头或结尾才好使。<b>所以检索完还要管顺序</b>，不能随手排。<span style="color:var(--muted)">（出处：Liu et al. 2023《Lost in the Middle》）</span></p>
-  </div>
-  <ul>
-    <li><b>塞太多</b>——8 段里只有 2 段有用，另外 6 段是噪音，把答案淹了；</li>
-    <li><b>几段互相矛盾</b>——新旧版本都在里面，模型挑了旧的；</li>
-    <li><b>没要求"照资料回答"</b>——它就按自己"接得像"的习惯走了。</li>
-  </ul>
-  <p><b>解法</b>：管顺序（重要的放开头或结尾）、少而精、在提示词里写明"只根据下面的资料回答，资料里没有就说没有"。</p>
+  <p>症状更隐蔽：答案就在提示词里，模型还是答错、答偏，或者挑了另一段。</p>
+  <p>脚本里的场景 B 是典型。问题是"请三天假要走什么流程"，检索给了 8 段，正确的那两段都在里面，却排在中间，前后压着办公用品、会议室、门禁卡。</p>
+  <p>答案在，但被埋住了。第 8 课量过这件事：相关信息放中间时，模型用上的机会明显下降；放开头或结尾才好使。段数太多、几段互相矛盾、提示词没要求"只依据资料"，也会让模型绕开那段。</p>
+  <p>要改的是组装：把最相关的放前面，把段数压到够用，给每段标上来源和版本，写清"只依据资料回答"和"没有就说没有"。第 8 课讲的六个决定，就是这一类的修法。</p>
+  <p>这里最容易犯的错，是回头继续调检索。答案已经在提示词里，再把 <code>top-k</code> 调大，只会塞进更多噪音，把问题弄得更糟。</p>
 
-  <h2>4. 一张表分清</h2>
-  <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
+  <h2>4. 两类错，一张表</h2>
+  <p>把症状、类别和第一步对在一起，排查时就不容易乱。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <colgroup><col style="width:26%"><col style="width:24%"><col></colgroup>
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">你看到的症状</th>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">是哪一类</th>
@@ -81,81 +70,219 @@
           <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">切块 / 变向量 / 取几段</td></tr>
       <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">答案给了却没用</td>
           <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">来了但没用上</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">顺序 / 段数 / 提示词怎么写</td></tr>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">顺序 / 段数 / 约束</td></tr>
       <tr><td style="padding:0.45rem">答得模棱两可</td>
           <td style="padding:0.45rem">两种都有可能</td>
-          <td style="padding:0.45rem">先打印提示词看一眼</td></tr>
+          <td style="padding:0.45rem">先把提示词打出来看一眼</td></tr>
     </tbody>
   </table>
+  <p>表只负责定位。定位完，一次只改一类：要么修检索，要么修组装。两边一起动，下次再坏还是分不清是谁的责任。</p>
 
-  <h2>5. 动手：看两种翻车长什么样</h2>
-  <p>脚本在工作区：<code>exercises/rag/0009-two-failure-modes.py</code>。<b>它不调任何模型</b>，只做一件事——<b>把模型会看到的那一屏打出来</b>。</p>
-  <pre><code>python exercises/rag/0009-two-failure-modes.py</code></pre>
-  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是第二类那段的输出摘录（跑了就有完整的）。</p>
-  <pre><code>[3] 场景 B · 来了但没用上（检索到了，模型没用）
+  <h2>5. 手工诊断只能救急</h2>
+  <p>打印提示词能救一次火，但量不了趋势。你改了切块、换了嵌入模型、调了 <code>top-k</code>，哪一次真的更好？只看几条个例，很容易被最近一次翻车带偏。</p>
+  <p>要回答"改完有没有变好"，得用同一套问题、同一套指标，在改动前后各跑一遍。这就是评测——RAG 的回归测试，不是学术仪式。</p>
+  <p>评测的第一条规矩：<b>检索和生成分开评。</b>只看最终答案，你只知道"坏了"，不知道坏在哪一段。Anyscale 的 RAG 评测文档把理由写得很直白：分开评才能定位瓶颈、正确归因，弄清楚是找错了资料，还是把对的资料用错了。</p>
+  <p>第 8 课的引用核对是单条答案的出处检查；这一课要的是整批问题的趋势。两件事不冲突，但别拿单条核对代替整批评测。</p>
+
+  <h2>6. 检索侧：四个指标</h2>
+  <p>检索侧要先有一份标注：每个问题，人工标出"该命中哪几段"。二元判断就够，不用打相关性分数。有了它，四个数才有意义。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.9rem">
+    <colgroup><col style="width:18%"><col><col style="width:34%"></colgroup>
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">指标</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">它问什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">低了意味着</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Recall@k</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">该命中的段，我拿到了多少？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>漏了</b>；缺了就一定答不出</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Precision@k</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">拿到的 k 段里，有用的占多少？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>噪音多</b>；答案容易被淹</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Hit rate@k</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">top-k 里至少有一段对的吗？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">最粗的及格线，<b>看不出漏了多少</b></td></tr>
+      <tr><td style="padding:0.45rem"><b>MRR</b></td>
+          <td style="padding:0.45rem">第一段对的排在第几？</td>
+          <td style="padding:0.45rem">排序不好；正确的那段不够靠前</td></tr>
+    </tbody>
+  </table>
+  <p>四个数经常互相打架，怎么打架本身就是信息。脚本用 10 个问题的小标注集跑出来是这样：</p>
+  <pre><code>      k   Recall@k   Hit rate@k   Precision@k
+      1      0.70         0.80          0.80
+      2      0.80         0.80          0.50
+      3      0.90         0.90          0.37
+      5      1.00         1.00          0.24
+
+    MRR = 0.86</code></pre>
+  <p><code>k</code> 从 1 调到 5，Recall 涨到满分，Precision 却从 0.80 掉到 0.24。多塞进来的三段没有用，等于亲手制造了"来了但没用上"。</p>
+  <p>所以别只报一个数。至少同时看 <b>Recall@k</b>（漏没漏）和 <b>MRR</b>（排得好不好）；怕噪音的场景再加一个 Precision。只报 Hit rate 会骗自己：它只回答"至少中了一个没有"，不回答"漏了多少"。</p>
+  <p>起步不需要几百条。先拿几十条真实问题，覆盖常见问法，认真标"该命中哪几段"。质量比数量重要：十条有代表性的题，胜过一百条自己编的泛化题。</p>
+
+  <h2>7. 生成侧：忠实度与相关性</h2>
+  <p>检索侧量"找没找到"，生成侧量"答得怎么样"。最要紧的两个数是忠实度和相关性。</p>
+  <p><b>忠实度</b>（Faithfulness）问的是：答案里的每一句断言，能不能在检索到的资料里找到依据。RAGAS 的算法是先把回答拆成若干断言，再逐条核对，最后算比例：</p>
+  <pre><code>忠实度 = 资料能支持的断言数 ÷ 答案里的断言总数</code></pre>
+  <p>RAGAS 文档里有个例子：资料说爱因斯坦生于 1879 年 3 月 14 日，回答却写成 3 月 20 日。回答拆成两句，"生于德国"有依据，"生于 3 月 20 日"没有，忠实度就是 1 ÷ 2 ＝ 0.5。</p>
+  <p>忠实度低，说明模型在编，或者把资料里没有的数字、日期、条款加了进去。它<b>不问答案对不对</b>，只问有没有依据。答得对、资料里却没有，也算低忠实度。</p>
+  <p><b>相关性</b>（Answer Relevancy）问的是另一件事：答案有没有正面回答用户的问题。Anyscale 的文档举了个例子：问"法国首都在哪"，答"法国位于西欧"，这句话可能完全忠实，但答非所问。</p>
+  <p>两个数要一起看。忠实度高、相关性低，可能是模型老实说"资料里没有"，也可能是绕开了问题；相关性高、忠实度低，说明答得像，但在编。两个都过了，答案才谈得上可信。</p>
+  <p>红线要不要设？要，但别照抄别人的数字。制度、法务、医疗这类场景可以定得很紧，资料整理、头脑风暴这类可以松一些。红线是你自己的产品决定，不是通用常数。</p>
+
+  <h2>8. LLM-as-Judge：能用，但要校准</h2>
+  <p>忠实度和相关性都要判断"这句话有没有依据""有没有回答问题"。逐条人工看最准，但跑一次评测就要几百条，人工扛不住。常见做法是让一个强模型当判官，按写好的标准打分，这叫 <b>LLM-as-Judge</b>。</p>
+  <p>它靠得住吗？Zheng 等人在 MT-Bench 和 Chatbot Arena 上做过对照：像 GPT-4 这样的强判官，和人类偏好的 agreement 超过 80%，跟人与人之间的一致程度差不多。所以它确实能当一条可扩展的尺子。</p>
+  <p>但它有系统性偏差。同一篇论文列了三条：<b>位置偏差</b>（更偏爱排在前面的答案）、<b>啰嗦偏差</b>（更偏爱更长的回答）、<b>自我增强</b>（更偏爱自己或同族模型的输出）；此外，判官的推理能力也有限。Anyscale 的文档还提醒，不同判官模型给出的分不一致。</p>
+  <p>所以判官不能拿来就用，用之前得校准。四条做法：</p>
+  <ul>
+    <li><b>给标准，别给自由。</b>把评分规则、通过条件、反例写清楚；判官只按规则判，不自由发挥。</li>
+    <li><b>把资料一起给它。</b>判忠实度时，判官必须看到检索到的原文，不能只看答案。</li>
+    <li><b>防偏差。</b>比较两个版本时交换顺序，别让判官长期只看"先出现的那个"；也别让同一个模型判自己的输出。</li>
+    <li><b>拿人校准。</b>抽一批人工标过的题，比较判官和人的一致率；一致率不过关，判官的分就不能当结论。</li>
+  </ul>
+  <p>判官是回归测试里的工具，不是最终答案。它适合大批量筛查、看趋势；低分和边界样本，仍然要人看。Anyscale 的建议也是混合：判官做广覆盖，人做失败样本和高风险场景的复核。</p>
+
+  <h2>9. 评估集：三类题都要有</h2>
+  <p>评测集不是随便攒一百个问题。至少要覆盖三种题型，否则量出来的分数会偏。</p>
+  <p><b>单跳题</b>：答案在一段资料里。比如"年假每年多少天？"它测最基本的检索和回答，是及格线。</p>
+  <p><b>多跳题</b>：答案要两三段资料拼起来。比如"我 2021 年 3 月入职，今年能休几天，没休完能留到明年吗？"它测覆盖面和拼装能力；只放一段，答案就缺一块。RAGAS 的测试集生成文档也把查询分成单跳和多跳两类，理由正是它们需要的上下文不同。</p>
+  <p><b>否定题</b>：资料里根本没有答案。比如"公司有班车吗？"它测的是拒答：系统会不会老实说"资料里没有"，还是拿一段相似的文字硬凑。第 8 课讲过，拒答是两道闸门；否定题就是量这道闸门的。</p>
+  <p>三类题的比例看场景，但一种都不能缺。全是单跳题，系统可能很会查一条规则，却不会拼多段；全是有答案的题，系统可能永远在编，你却在相关性上给它高分。</p>
+  <p>否定题的检索指标要单独处理：它没有"该命中的段"，Recall 和 MRR 没有定义，别硬塞进平均值。它该看的是有没有正确拒答，以及拒答的话说得清不清楚。</p>
+
+  <h2>10. 最小评测流程</h2>
+  <p>把上面的东西串起来，一个能跑的最小流程只有六步：</p>
+  <ol>
+    <li>收集真实问题，覆盖单跳、多跳、否定三类；</li>
+    <li>给每个问题标"该命中哪几段"，否定题标空；</li>
+    <li>跑检索，记下 Recall@k、Precision@k、Hit rate@k、MRR；</li>
+    <li>生成答案，判忠实度和相关性；人工抽检，或让校准过的判官打分；</li>
+    <li>同一套题，在改动前后各跑一遍，比较同一批指标；</li>
+    <li>线上答错的问题，补进评估集，当回归测试。</li>
+  </ol>
+  <p>一次只改一个变量。先看检索分有没有变，再看生成分有没有变；两边一起动，分数涨了也不知道是谁的功劳。第 10 课会把"攒一套题、跑一组配置、得出结论"完整走一遍。</p>
+
+  <h2>11. 动手跑一遍</h2>
+  <p>这一课有两个脚本，都不调模型。第一个打印两屏提示词，让你看两类翻车长什么样；第二个用 10 个问题的小标注集，把检索侧四个数算出来。</p>
+  <pre><code>python exercises/rag/0009-two-failure-modes.py
+python exercises/rag/0009-rag-eval.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。检索器仍是玩具（二字组合 + 点积），评的是指标，不是检索器。下面是两段输出摘录。</p>
+  <pre><code>[1] 场景 A · 该来的没来（检索没找到）
+      问题：「我入职四年，年假有几天？」
+      资料库里明明有答案：
+        年假天数：入职满一年者每年 5 天，满三年者 10 天，满五年者 15 天。
+
+      但检索只取了 1 段（top-k = 1），而且问法跟原文的说法对不上，
+      结果拿到的是这一段：
       ┌──────────────────────────────────────
-      │【资料 1】办公用品领用：每人每月限领签字笔 2 支、笔记本 1 本。
-      │【资料 2】会议室预约：提前 1 天在系统预约，超时 15 分钟自动释放。
-      │【资料 3】门禁卡办理：入职当天由行政统一办理，遗失补办 20 元。
-      │【资料 4】请假三天以内（含三天），向直属主管口头报备即可，事后补一条消息。 ◀◀ 答案在这儿
-      │【资料 5】请假三天以上，需在系统里提交申请单，附上证明材料，主管审批后生效。 ◀◀ 答案在这儿
-      │【资料 6】打印机使用：公共打印机在三楼东侧，故障报修走 IT 工单。
-      │【资料 7】快递收发：公司统一收发，个人快递请勿寄到前台。
-      │【资料 8】工位调整：每季度可申请一次，由部门助理统一报备。
-      │【问题】请三天假要走什么流程？
-      └──────────────────────────────────────</code></pre>
-  <p><b>看这一屏就够了</b>：答案确实在，但被<b>埋在正中间</b>，前后各压着三段无关内容。<b>一眼就能看出这是第二类</b>——不用跑模型、不用猜。</p>
+      │【资料 1】请假三天以内（含三天），向直属主管口头报备即可，事后补一条消息。
+      │【问题】我入职四年，年假有几天？
+      └──────────────────────────────────────
+      → 模型看到的那一屏里，【根本没有答案】。它只能编。
+      这就是第一类：该来的没来。</code></pre>
+  <pre><code>      k   Recall@k   Hit rate@k   Precision@k
+      1      0.70         0.80          0.80
+      2      0.80         0.80          0.50
+      3      0.90         0.90          0.37
+      5      1.00         1.00          0.24
 
-  <h2>6. 检查一下你懂了没</h2>
+    MRR = 0.86   （1.0 = 每次正确那段都排第一）</code></pre>
+  <p><b>两段输出里，三处值得多看一遍</b>：</p>
+  <ul>
+    <li><b>场景 A 的答案不在那一屏里。</b>这不是提示词写得不好，是检索根本没把年假那段捞回来；改提示词救不了。</li>
+    <li><b>场景 B 的答案在那一屏里，但排在中间。</b>这时才轮到顺序、段数、约束；两类翻车的修法不能互换。</li>
+    <li><b>k 变大，Recall 和 Hit rate 都好看，Precision 却掉下来。</b>指标不是越高越好，它们量的是不同的东西；只看一个数，会把"漏"换成"淹"。</li>
+  </ul>
+
+  <h2>12. 检查一下</h2>
+  <p>六道题，诊断顺序、两类翻车、四个检索指标、忠实度、判官和否定题各过一遍。</p>
 
   <div class="quiz">
     <p class="q"><span class="num">Q1</span> RAG 答错了，第一件该做什么？</p>
-    <button class="quiz-option" data-correct="true">把提示词打出来看一眼</button>
-    <button class="quiz-option">立刻换个更大的模型</button>
-    <button class="quiz-option">先把 top-k 调大再说</button>
-    <button class="quiz-option">重新训练嵌入模型再说</button>
+    <button class="quiz-option">换一个更大的生成模型</button>
+    <button class="quiz-option">把 top-k 直接调大</button>
+    <button class="quiz-option" data-correct="true">把提示词打出来看答案</button>
+    <button class="quiz-option">重新训练嵌入模型</button>
     <p class="feedback"
-       data-ok="对。答案在不在那一屏里，直接决定该修哪一边。"
-       data-no="先诊断再动手。两头一起调，最后连自己改了什么都记不清。"></p>
+       data-ok="对。答案在不在那一屏里，直接决定该修检索还是修组装。"
+       data-no="先诊断再动手；两头一起调，最后连自己改了什么都记不清。"></p>
   </div>
 
   <div class="quiz">
     <p class="q"><span class="num">Q2</span> 答案就在提示词里，模型还是答错，这是哪一类？</p>
     <button class="quiz-option">该来的没来</button>
     <button class="quiz-option" data-correct="true">来了但没用上</button>
-    <button class="quiz-option">检索器已经坏了</button>
-    <button class="quiz-option">嵌入模型已经过期</button>
+    <button class="quiz-option">嵌入模型过期了</button>
+    <button class="quiz-option">切块尺寸太小了</button>
     <p class="feedback"
-       data-ok="对。这时该修「怎么用」——顺序、段数、提示词。"
-       data-no="既然已经在提示词里，问题就不在「找」，在「用」。"></p>
+       data-ok="对。该修「怎么用」：顺序、段数、约束。"
+       data-no="答案已经在提示词里，问题就不在「找」，在「用」。"></p>
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q3</span> 正确答案那段，应该排在提示词的哪里？</p>
-    <button class="quiz-option">越靠后越保险一些</button>
-    <button class="quiz-option">正中间，那样最显眼</button>
-    <button class="quiz-option" data-correct="true">开头或结尾，别放中间</button>
-    <button class="quiz-option">随便哪个位置都一样</button>
+    <p class="q"><span class="num">Q3</span> <code>top-k</code> 调大后 Recall 涨到 1.0，Precision 掉到 0.24。这说明什么？</p>
+    <button class="quiz-option">检索器已经彻底失效</button>
+    <button class="quiz-option">嵌入模型需要重训</button>
+    <button class="quiz-option" data-correct="true">塞进来的无关段落变多了</button>
+    <button class="quiz-option">标注集标错了要重标</button>
     <p class="feedback"
-       data-ok="对。实测是 U 形：两端好，中间最差。"
-       data-no="位置很要命——放中间，成绩能掉到比不给资料还差。"></p>
+       data-ok="对。Recall=1.0 说明找齐了；掉的是 Precision，说明噪音变多。"
+       data-no="找齐了不等于找得干净；Precision 掉的代价是答案更容易被淹。"></p>
   </div>
 
-  <h2>7. 想往下读</h2>
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 忠实度（Faithfulness）低，具体是什么意思？</p>
+    <button class="quiz-option">答案写得太长，用户读不完</button>
+    <button class="quiz-option">检索到的资料数量不够</button>
+    <button class="quiz-option" data-correct="true">断言在资料里找不到依据</button>
+    <button class="quiz-option">回答的语气不够专业</button>
+    <p class="feedback"
+       data-ok="对。它只问「有没有编」，不问「答得对不对」。"
+       data-no="忠实度看的是每一句能不能追溯到检索到的资料；长度、数量、语气都不在它的定义里。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 下面哪一条是 LLM 判官已知的系统性偏差？</p>
+    <button class="quiz-option">判官算不了加法</button>
+    <button class="quiz-option" data-correct="true">偏爱更长、靠前的回答</button>
+    <button class="quiz-option">判官只认识英文</button>
+    <button class="quiz-option">判官无法读取资料原文</button>
+    <p class="feedback"
+       data-ok="对。啰嗦偏差和位置偏差都在论文里列过，还有自我增强。"
+       data-no="已知偏差是位置、啰嗦、自我增强，还有推理能力有限；不是算不了数，也不是只懂英文。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 评估集里放"公司有班车吗"这类否定题，是为了量什么？</p>
+    <button class="quiz-option">量检索速度够不够快</button>
+    <button class="quiz-option">量嵌入维度够不够大</button>
+    <button class="quiz-option" data-correct="true">量它会不会老实说没有</button>
+    <button class="quiz-option">量切块尺寸合不合适</button>
+    <p class="feedback"
+       data-ok="对。否定题没有答案，专门测拒答；系统硬答就是幻觉。"
+       data-no="否定题不测速度、维度或切块；它测的是「资料里没有时，会不会编」。"></p>
+  </div>
+
+  <h2>13. 想往下读</h2>
   <div class="source">
     <b>这节课的一手资料</b>：<br>
-    <a href="https://www.anthropic.com/engineering/contextual-retrieval">Anthropic — Introducing Contextual Retrieval（2024-09）</a>——那组 5.7% → 3.7% → 2.9% → 1.9% 的数字。<br>
-    <a href="https://arxiv.org/abs/2307.03172">Liu et al., 2023 — Lost in the Middle</a>——"放中间比不给还差"的出处。
+    <a href="https://docs.anyscale.com/rag/evaluation">Anyscale — RAG evaluation</a>——分开评检索与生成的理由；Precision@k / Recall@k / Hit rate@k / MRR 的定义；忠实度、相关性；LLM 判官的位置、啰嗦、自我偏好偏差与混合评估建议。<br>
+    <a href="https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/">RAGAS — Faithfulness</a>——断言拆分、逐条核对与 1/2 的例子；<a href="https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_recall/">Context Recall</a>——参考回答拆成断言、看能否被检索上下文支持。<br>
+    <a href="https://arxiv.org/abs/2306.05685">Zheng et al., 2023 — Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</a>——强判官与人类偏好 agreement 超过 80%；位置、啰嗦、自我增强三类偏差与有限推理能力。<br>
+    <a href="https://docs.ragas.io/en/stable/concepts/test_data_generation/rag/">RAGAS — Testset Generation for RAG</a>——单跳查询与多跳查询的定义和例子。<br>
+    <b>经验值</b>：50～100 条真实问题起步、线上错题进回归集，取自配套脚本的工程做法，不是论文原值。
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"重排序具体在做什么？""两段资料互相矛盾怎么办？""要不要让它给引用？""怎么知道我改了之后真的变好了？"——最后那个尤其值得问，见<a href="../../reference/agent-eval-checklist.html">Agent 评估检查单</a>「拆完怎么验」。
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"我的评测集只有十几条，够不够？""判官和人不一致时听谁的？""否定题该占多少比例？""忠实度的高分会不会骗人？"
   </div>
 
   <p class="next">
-    <b>回前三课</b>：<a href="0001-why-retrieval.html">第 1 课</a> · <a href="0002-rag-pipeline.html">第 2 课</a> · <a href="0003-when-not-to-use-rag.html">第 3 课</a><br>
-    <b>相关</b>：<a href="../agent/0007-harness.html">Agent 篇 · 第 7 课 · Harness</a>（少而精、怎么裁——上下文管理那一节）<br>
-    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a>
+    <b>回上一课</b>：<a href="0008-context-assembly.html">RAG · 第 8 课 · 上下文组装与生成</a>（第二类翻车的修法，在那一课）<br>
+    <b>顺着往下</b>：第 10 课 · 评测方法（在写）——攒一套题、跑一组配置，把"该切多大"量出来<br>
+    <b>相关</b>：<a href="0006-hybrid-and-rerank.html">RAG · 第 6 课 · 多路召回</a>（检索侧那组 5.7% → 1.9% 的数字）<br>
+    术语表：<a href="../../reference/glossary.html#rag-eval">RAG 评测 / Recall@k / 忠实度 / LLM-as-Judge</a>
   </p>
 
   <footer>AI Agent 原理与工程 · RAG · 第 9 课 · 理论 · <a href="../index.html">课程目录</a></footer>

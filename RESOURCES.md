@@ -33,7 +33,7 @@
 | `rag/0006`（混合检索与重排） | Pinecone Hybrid/RRF 官方指南（融合名次不融合分数、k=60）＋Cohere Rerank（拼 token 机制）＋Anthropic 数字链＋管线实践（召回 50 精排 5） |
 | `rag/0007`（查询工程） | Rewrite-Retrieve-Read＋IRCoT（子问题）＋HyDE＋Step-back＋Adaptive-RAG（路由）＋12 种增强（温度经验值） |
 | `rag/0008`（上下文组装与生成） | Lost in the Middle（位置/段数）＋Anthropic 长上下文提示（问题放最后）＋Citations（引用）＋RAGFlow Chat Configuration（Empty Response/Top N/Show citations）＋管线实践（约束 prompt） |
-| `rag/0009`（翻车诊断与评估原理） | Anyscale（分开评四尺）＋RAGAS metrics＋survey＋5 组配置评测（翻车数字） |
+| `rag/0009`（翻车诊断与评估原理） | Anyscale（分开评四尺＋忠实度/相关性＋判官偏差）＋RAGAS（Faithfulness/Context Recall 公式、单跳/多跳）＋Zheng LLM-as-Judge＋5 组配置评测（翻车数字） |
 | `rag/0010`（评测方法：标注集与指标） | 5 组配置评测（实验蓝本）＋RAGAS metrics（LLM-as-Judge 方法） |
 | `rag/0011`（Agentic RAG） | Self-RAG＋CRAG＋Pinecone RAG 指南（agentic 一节）＋agent/0002 互链 |
 | `reference/` 速查页 | 评估系（Anthropic evals · τ-bench · Inspect AI · AgentBench）→ agent-eval-checklist；「记忆」小节 → memory-products；缓存官方系 → prompt-caching；采样系 → sampling-params |
@@ -448,9 +448,13 @@
 - [Cohere — "Rerank"](https://docs.cohere.com/docs/rerank)＋[Rerank overview](https://docs.cohere.com/docs/rerank-overview)（2026-11-04 抓）
   **重排机制原话**："Rerank combines the tokens from the query with the tokens from the document"（问题和文档拼在一起算，对比嵌入的分开编码）；用途列明 "**Improving search relevance…with no re-indexing**"（不碰索引）、"reducing the tokens sent to the LLM"（少而精）、**"Setting relevance thresholds, for example to trigger another search or return 'I don't know'"**（阈值拒答）；输出是校准过的 0~1 分。**用来**：0006 重排机制/不重索引/阈值拒答。
 - [Anyscale — "RAG evaluation"](https://docs.anyscale.com/rag/evaluation)
-  **"分开评"的出处**："先分别评检索与生成，再评端到端——这样才能定位瓶颈、正确归因"。给全 Precision@k / Recall@k / Hit rate@k / MRR / MAP 的定义与取舍。**用来**：讲 RAG 该怎么评、为什么不能只看最终答案。
-- [RAGAS — "List of available metrics"](https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/)
-  Context Precision / Context Recall / **Faithfulness**（"答案里的断言能否追溯到检索到的上下文"）那一套。**用来**：讲生成侧的忠实度。
+  **"分开评"的出处**："Evaluate retrieval and generation separately before testing end-to-end performance… isolate bottlenecks and attribute failures correctly"；给全 Precision@k / Recall@k / F1@k / Hit rate@k / MRR / MAP 的定义与取舍。生成侧给 Correctness / **Faithfulness**（每条 claim 能否被检索上下文支持）/ **Answer relevance**（是否正面回答问题，忠实但答非所问也算低）/ Completeness。**LLM-as-Judge**：判官有偏好更长、位置偏差、偏爱自家输出三类系统性偏差；人评是 gold standard，建议**混合**（判官广覆盖＋人复核失败样本）。**用来**：0009 分开评、四个检索尺子、忠实度/相关性、判官校准。
+- [RAGAS — Faithfulness](https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/)＋[Context Recall](https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_recall/)＋[available metrics](https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/)
+  **公式级口径**：Faithfulness＝被检索上下文支持的 claim 数 ÷ 回答 claim 总数；文档例子（爱因斯坦生日写成 3 月 20 日）给出 1/2＝0.5。Context Recall＝参考回答里能被检索上下文支持的 claim 数 ÷ 参考回答 claim 总数（LLM 版用 reference 当 reference_contexts 的代理）。**用来**：0009 生成侧忠实度、检索侧 Context Recall 的定义与例子。
+- [Zheng et al. — "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena"（NeurIPS 2023 · arXiv 2306.05685）](https://arxiv.org/abs/2306.05685)
+  **LLM 判官的一手依据**：强判官（如 GPT-4）与人类偏好 agreement **超过 80%**，和人与人之间的一致程度相当；同时列明 **position / verbosity / self-enhancement** 三类偏差与有限推理能力。**用来**：0009「判官能当尺子但要校准」。
+- [RAGAS — Testset Generation for RAG](https://docs.ragas.io/en/stable/concepts/test_data_generation/rag/)
+  **单跳 / 多跳的定义与例子**：single-hop 只需一段资料；multi-hop 要两段以上并做连接。还按 specific / abstract 再分。**用来**：0009 评估集三类题里的前两类（否定题按 0008 拒答逻辑补）。
 - [Evaluation of Retrieval-Augmented Generation: A Survey（2024）](https://arxiv.org/html/2405.07437v2)
   各框架（RAGAS / ARES / TruLens / DeepEval…）指标的**对照表**。**用来**：知道"同一个概念各家叫法不同"。
 
