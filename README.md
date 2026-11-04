@@ -143,6 +143,8 @@ python exercises/agent/0002-build-an-agent.py
 | 0004 | [建库：清洗与切块](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0004-cleaning-and-chunking.html) —— 洗对、切对，答案才装得下 |
 | 0005 | [嵌入与相似度](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0005-embedding-and-similarity.html) —— 三把尺子各量什么，尺子跟模型走 |
 | 0006 | [多路召回：混合检索与重排](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0006-hybrid-and-rerank.html) —— 各排一个榜，用名次合成，再精挑 |
+| 0007 | [查询工程：原话不是查询](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0007-query-engineering.html) —— 补全、拆开、升高、换形态 |
+| 0008 | [上下文组装与生成](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0008-context-assembly.html) —— 放几段、怎么排、怎么约束、没有答案怎么说 |
 | 0009 | [两种典型翻车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0009-two-failure-modes.html) —— 该来的没来 vs 来了但没用上 |
 
 **进阶版** —— 给想动手验算的技术读者。

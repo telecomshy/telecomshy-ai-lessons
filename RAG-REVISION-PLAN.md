@@ -86,7 +86,7 @@
 
 **检索与生成**（写 0006/0008 用）：
 - 检索测试面板（Retrieval testing）：不开对话、直接看某 query 召回哪些 chunk 及相似度——评检索的第一只眼；Chunk 页可人工加关键词/问题提权。
-- Chat 的 Empty response：官方原文——填了则"confine answers to your datasets"（检索不到统一回这句话＝拒答）；留空则"improvise，may give rise to hallucinations"。0008 拒答的实验台落点。
+- Chat 的 Empty response（**2026-11-05 复抓 `chat_configuration` 已换口径**）：检索不到可用内容时，用它填的话作为统一回复；**留空则允许模型在没有资料的情况下继续生成**。旧 quickstart 的"confine answers to your datasets / improvise, may give rise to hallucinations"已随文档改版退役。另有 **Show citations** 开关、**Top N**（最后进提示词的段数）、**Rerank candidates** 默认 64／范围 64～256（重排候选池）。0008 拒答/段数/引用的实验台落点。
 - Windows 实战文的调参经验（行业经验值，标注出处）：中文文档 chunk token 300~500、overlap 50~100、top_k 8~12、相似度阈值 0.2~0.3；先开混合检索，机器差就把 rerank 缓一缓。
 - 调参顺序法则（该文）：**先看解析结果对不对→再调切块→最后才动检索参数**；"检索参数影响找到什么，切块参数影响怎么被找到"。
 - 干预能力：chunk 可视化＋人工增删关键词/问题/启用禁用。
@@ -136,8 +136,9 @@
 - [x] 批 1 第三会话（2026-11-04）：**0005 嵌入与相似度**开课（220 行；另一个模型/三把尺子/尺子跟模型走/失手清单/换模型重算＋三尺子插图＋小测 6 题；新脚本 `0005-similarity-metrics.py`；三尺子来源 Pinecone Vector Similarity 当场抓入 RESOURCES）。⚠ **0001-deep 本轮不关**——它的主体（稀疏稠密＋RRF）是 0006 的料，只失手清单进了 0005；**映射跨两课时，等内容全部有家的那一轮（0006）再关**（存档 5.70）
 - [x] 批 2 第一会话（2026-11-04）：**0006 多路召回：混合检索与重排**开课（220 行；各翻一次车两题/RRF 只比名次/假名次陷阱/捞宽挑精/重排拼 token 机制/代价清单＋两道筛子插图＋小测 6 题）；一手来源三篇当场抓（Pinecone Hybrid/RRF 官方指南、Cohere Rerank）；`0001-sparse-vs-dense.py`→`0006-sparse-vs-dense.py`；**0001-deep 关停**（内容全部有家，第二个 deep 退役）。⚠ 学习者判 0004/0005 文字别扭，**文字返工入欠账**（存档 5.71）
 - [x] **0004/0005 文字返工（2026-11-04 当日完成，学习者拍板"现在就做"）**：两课按 1.5 文章体＋句子层四条整课重写；`<pre>`/表格/图注字节对照零变动、摘录对账过、破折号归零、垫词与临时比喻清零（存档 5.71 末节，含返工配方）
-- [ ] 批 2 第二会话：0007 查询工程
-- [ ] 批 2：0006 → 0007 → 0008 → 0009（收编 0004-deep）
+- [x] 批 2 第二会话（2026-11-04）：**0007 查询工程**开课（243 行；原话与查询差在四处→改写/拆开/升高/HyDE→查前分流；新插图 `query-engineering.svg`＋脚本 `0007-query-engineering.py`＋小测 6 题；一手来源 Rewrite-Retrieve-Read、IRCoT、Adaptive-RAG 当场抓入 RESOURCES；0006 的"在写"改真链接；两份 0001 文字实验稿移入 `internal/drafts/`）
+- [x] 批 2 第三会话（2026-11-05）：**0008 上下文组装与生成**开课（263 行；位置/段数/标签/约束/引用/拒答六件；插图 `context-assembly.svg`＋脚本 `0008-context-assembly.py`＋小测 6 题；一手来源 Lost in the Middle 原文数字、Anthropic 长上下文与 Citations、RAGFlow Chat Configuration 现行口径；RAGFlow Empty Response 旧 quote 退役并同步 RESOURCES/§5）
+- [ ] 批 2 剩余：0009（收编 0004-deep，最后一个 deep 关停）
 - [ ] 批 3：0010 → 0011 → 0002 地图终稿 → 0003 三选一
 - [ ] 收尾：MISSION 边界句、progress.ps1 D/E 段补 RAG 覆盖、index/README 同步、旧 deep 关停收尾、并入 NEXT-SESSION.md、建存档、本文件退役
 
@@ -147,7 +148,7 @@
 
 1. **开场**：新会话按 AGENTS.md 标准流程会先读 NEXT-SESSION.md——其中已写"下一步：读 RAG-REVISION-PLAN.md 按批次施工"，走标准流程即可自动接上。
 2. **每轮收尾**：更新本文件 §9 进度一行；编号、映射有变同步 §3/§4 与 RESOURCES 索引表。
-3. **下一项**：0007 查询工程（HyDE＋Step-back＋改写，来源在 RESOURCES「查询与 Agentic 前沿论文」组）。另有一笔文字欠账优先级更高：**0004/0005 整课文字返工**（学习者判"别扭"，按 1.5 文章体＋句子层四条重过，0006 可当对照样本）。
+3. **下一项**：0009 诊断评估（收编 0004-deep：两种翻车、排查顺序、分开评检索与生成、LLM-as-Judge、三类评估集；最后一个 deep 关停）。0008 上下文组装已完成，0006/0007/0008 可当文字手感对照样本。
 
 ## 变更履历
 

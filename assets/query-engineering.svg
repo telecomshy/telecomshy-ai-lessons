@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" role="img" aria-label="查询工程的流程图。左边是用户原话「那还能休几天？」，上文提到的是陪产假；先判断该不该查、查哪个库、要不要反问；需要查时把原话加工成查询，四种加工分别是补全主语、拆成子问题、升高到规则、换成假答案；最后交给只认查询的检索器。底下注明四种加工治四种不同的病，不必每次都全上。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="340" fill="#fdfcf8"/>
+  <text x="24" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">原话不是查询：检索之前，先把缺的那部分信息补上。</text>
+
+  <!-- 用户原话 -->
+  <rect x="24" y="64" width="150" height="98" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="38" y="86" font-family="sans-serif" font-size="10.5" fill="#6b6560">用户原话</text>
+  <text x="38" y="110" font-family="sans-serif" font-size="13" fill="#1b1a17">「那还能休几天？」</text>
+  <text x="38" y="132" font-family="sans-serif" font-size="10.5" fill="#6b6560">上文说过：病假</text>
+  <text x="38" y="150" font-family="sans-serif" font-size="10.5" fill="#6b6560">检索器没听见上文</text>
+
+  <line x1="178" y1="113" x2="216" y2="113" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- 先判断 -->
+  <rect x="220" y="58" width="148" height="110" rx="6" fill="#fdfcf8" stroke="#8a2b06" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="234" y="82" font-family="sans-serif" font-size="12" fill="#8a2b06">先判断</text>
+  <text x="234" y="104" font-family="sans-serif" font-size="11" fill="#1b1a17">该不该查</text>
+  <text x="234" y="124" font-family="sans-serif" font-size="11" fill="#1b1a17">查哪个库</text>
+  <text x="234" y="144" font-family="sans-serif" font-size="11" fill="#1b1a17">要不要先反问</text>
+
+  <!-- 不查 / 反问出口 -->
+  <line x1="294" y1="168" x2="294" y2="198" stroke="#8a2b06" stroke-width="1.2" marker-end="url(#arw)"/>
+  <text x="234" y="216" font-family="sans-serif" font-size="10.5" fill="#6b6560">不查 / 反问，也是一种结果</text>
+
+  <line x1="372" y1="113" x2="410" y2="113" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- 加工成查询 -->
+  <rect x="414" y="44" width="214" height="166" rx="6" fill="#ffffff" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="428" y="68" font-family="sans-serif" font-size="12" fill="#8a2b06">加工成查询</text>
+  <text x="428" y="92" font-family="sans-serif" font-size="11.5" fill="#1b1a17">补全　病假有几天</text>
+  <text x="428" y="116" font-family="sans-serif" font-size="11.5" fill="#1b1a17">拆开　子问题 1 / 2 / 3</text>
+  <text x="428" y="140" font-family="sans-serif" font-size="11.5" fill="#1b1a17">升高　因公晚归的考勤规定</text>
+  <text x="428" y="164" font-family="sans-serif" font-size="11.5" fill="#1b1a17">换形态　先写一段假答案</text>
+  <text x="428" y="192" font-family="sans-serif" font-size="10.5" fill="#6b6560">治四种不同的病，不必全上</text>
+
+  <line x1="632" y1="113" x2="670" y2="113" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- 检索器 -->
+  <rect x="674" y="80" width="68" height="70" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="686" y="108" font-family="sans-serif" font-size="12" fill="#1b1a17">检索器</text>
+  <text x="682" y="128" font-family="sans-serif" font-size="10" fill="#6b6560">只认查询</text>
+
+  <!-- 底部收口 -->
+  <line x1="24" y1="236" x2="736" y2="236" stroke="#e4ded1"/>
+  <text x="24" y="262" font-family="sans-serif" font-size="12" fill="#1b1a17">用户说的是给人听的话，查询是给检索器看的话。</text>
+  <text x="24" y="286" font-family="sans-serif" font-size="11.5" fill="#6b6560">缺主语就补全，缺结构就拆开，缺层级就升高，缺说法就换形态；缺的是「该不该查」，就别加工。</text>
+  <text x="24" y="312" font-family="sans-serif" font-size="11.5" fill="#6b6560">加工只在内部用：用户看到的回答，不必重复改写后的那句查询。</text>
+</svg>

@@ -31,8 +31,8 @@
 | `rag/0004`（建库·清洗与切块） | Pinecone Chunking＋RAGFlow Dataset Configuration＋Windows 部署（调参顺序） |
 | `rag/0005`（嵌入与相似度） | Pinecone Vector Similarity（三尺子）＋RAGFlow Dataset Configuration（嵌入约束新口径）＋0001-deep 失手清单收编 |
 | `rag/0006`（混合检索与重排） | Pinecone Hybrid/RRF 官方指南（融合名次不融合分数、k=60）＋Cohere Rerank（拼 token 机制）＋Anthropic 数字链＋管线实践（召回 50 精排 5） |
-| `rag/0007`（查询工程） | HyDE＋Step-back＋12 种增强（适用边界与温度） |
-| `rag/0008`（上下文组装与生成） | Lost in the Middle＋管线实践（约束 prompt）＋RAGFlow quickstart（Empty response） |
+| `rag/0007`（查询工程） | Rewrite-Retrieve-Read＋IRCoT（子问题）＋HyDE＋Step-back＋Adaptive-RAG（路由）＋12 种增强（温度经验值） |
+| `rag/0008`（上下文组装与生成） | Lost in the Middle（位置/段数）＋Anthropic 长上下文提示（问题放最后）＋Citations（引用）＋RAGFlow Chat Configuration（Empty Response/Top N/Show citations）＋管线实践（约束 prompt） |
 | `rag/0009`（翻车诊断与评估原理） | Anyscale（分开评四尺）＋RAGAS metrics＋survey＋5 组配置评测（翻车数字） |
 | `rag/0010`（评测方法：标注集与指标） | 5 组配置评测（实验蓝本）＋RAGAS metrics（LLM-as-Judge 方法） |
 | `rag/0011`（Agentic RAG） | Self-RAG＋CRAG＋Pinecone RAG 指南（agentic 一节）＋agent/0002 互链 |
@@ -423,7 +423,16 @@
 - [Anthropic — "Introducing Contextual Retrieval"（2024-09）](https://www.anthropic.com/engineering/contextual-retrieval)
   工业界怎么做检索那一步，带**实测数字**：取前 20 段时没取到正确那段的比例，普通 RAG **5.7%** → 给每段补一句"这段在讲什么" **3.7%** → 叠上关键词检索 **2.9%** → 再加重排序 **1.9%**。**用来**：证明"RAG 的技术性全在前五步、没有一步是换更强模型"。
 - [Liu et al. — "Lost in the Middle: How Language Models Use Long Contexts"（2023）](https://arxiv.org/abs/2307.03172)
-  **"检索到 ≠ 用上"的出处**：相关信息放在长上下文**中间**时成绩显著下降，**GPT-3.5 在多文档问答上甚至低于完全不给文档的水平**；给 20 篇以上收益几乎归零（GPT-3.5 约 +1.5%、Claude-1.3 约 +1%）。**用来**：讲"检索完还要管顺序"以及"别一味堆资料"。
+  **"检索到 ≠ 用上"的出处**：2,655 个 NaturalQuestions 问题，每个配 10/20/30 段 Wikipedia（只有一段能答），只改答案位置。**GPT-3.5-Turbo 闭卷 56.1%、开卷（只给正确段）88.3%**；20/30 段设置里答案放中间时**低于闭卷**，最好与最差差 **20 多个点**。16K 版本在同为 10/20 段时曲线几乎重合（长窗口≠会用）；基座模型也有 U 形；编码器-解码器在训练长度内较稳、超出也出现 U 形。开放域问答里 20→50 篇仅 **+1.5%**（GPT-3.5）/ **+1%**（Claude-1.3），延迟与成本照涨。**用来**：0008 位置与段数（也支撑 0002/0009 的"顺序要管、别一味堆资料"）。
+
+**上下文组装（0008 用 · 2026-11-05 抓）**
+
+- [Anthropic — Prompting best practices · Long context prompting](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices)
+  **顺序与引用的一手口径**：20k+ token 的长输入，把**长文档放最上面**，问题、指令、例子放后面；"Queries at the end can improve response quality by **up to 30 percent** in tests, especially with complex, multidocument inputs"（Anthropic 自家测试，不是通用常数）。另建议用 `<document index="n"><source>…` 隔开多篇；长文档任务先让模型**摘出相关原句**再作答（"Ground responses in quotes"）。**用来**：0008 顺序（问题放最后）与"先引原文"。
+- [Anthropic — Citations](https://platform.claude.com/docs/en/build-with-claude/citations)
+  **引用溯源的接口层**：文档按句切块；回答返回 `cited_text` 与字符/页码/内容块索引；文档说引用"guaranteed to contain valid pointers to the provided documents"，且比纯提示词方式更可能引到最相关原句；`cited_text` 不计输出 token（回传时也不计输入）。**用来**：0008 引用两层（提示词层 vs 接口层）与"引用只证出处、不证结论"。
+- [RAGFlow — Chat Configuration](https://ragflow.io/docs/chat_configuration)（2026-11-05 抓，现行文档线）
+  **0008 的实验台锚点**：**Empty Response**＝检索不到可用内容时的统一回复，留空则允许模型继续生成；**System prompt** 保留 `{knowledge}` 占位符，指示优先使用数据集内容、标出证据、答不了就明说，避免互相冲突的指令；**Show citations** 显示来源；**Top N** 是最后进提示词的段数（多给涨时间与 token）；**Rerank candidates** 默认 64、范围 64～256，是重排候选池、不是最终段数。**用来**：0008 约束/引用/段数/拒答。
 
 - [Pinecone — "Chunking Strategies for LLM Applications"](https://www.pinecone.io/learn/chunking-strategies/)
   固定长度 / 递归 / 语义三档切法的**定义与取舍**，并明确说"**先从固定长度起步，确定不够再迭代**"。**用来**：给"切块有哪几档"提供标准分类。
@@ -453,7 +462,7 @@
 **RAGFlow 例子（0002/0004/0005 等课举例用 · 2026-10-21 抓 · 2026-11-03 起降为例子锚点，安装操作不进课）**
 
 - [RAGFlow — quickstart（官方文档）](https://ragflow.io/docs/)
-  部署门槛原文："**4 CPU cores (x86-64), 16 GB RAM, and 50 GB free disk space**"；Docker ≥24.0.0＋Compose ≥v2.26.1；`vm.max_map_count`≥262144；流程＝起服务→配模型→建 dataset 传文件解析→检索测试→建 chat。两条**定义级**事实：① **嵌入约束**（⚠ 2026-11-03 复抓 dataset_configuration 已换口径，旧 quote 属 0.17/rc2 时代）——旧口径是"Once you have selected an embedding model and used it to parse a file, **you are no longer allowed to change it**"（选了就不许换）；**现行口径＝兼容性抽查**：有块之后换模型要过抽查（维度一致＋平均余弦 ≥0.9 才放行），**且保存后不自动重嵌旧块**——"换模型＝新建库全量重嵌"仍是正确做法，但"工具禁止换"这句已不成立。② **Empty response**——填了则把回答限定在知识库内（检索不到就统一回这句话），留空则模型自由发挥（"may give rise to hallucinations"）。另有：Chunk 页可人工给块加关键词/问题提权。**用来**：0005"换模型全重算"（嵌入约束新口径）、0008 拒答设置（Empty response 原话）、各课例子锚点。⚠ v5 起部署门槛与安装流程不进课（那是官网文档的事），原话留存于此备查。
+  部署门槛原文："**4 CPU cores (x86-64), 16 GB RAM, and 50 GB free disk space**"；Docker ≥24.0.0＋Compose ≥v2.26.1；`vm.max_map_count`≥262144；流程＝起服务→配模型→建 dataset 传文件解析→检索测试→建 chat。两条**定义级**事实：① **嵌入约束**（⚠ 2026-11-03 复抓 dataset_configuration 已换口径，旧 quote 属 0.17/rc2 时代）——旧口径是"Once you have selected an embedding model and used it to parse a file, **you are no longer allowed to change it**"（选了就不许换）；**现行口径＝兼容性抽查**：有块之后换模型要过抽查（维度一致＋平均余弦 ≥0.9 才放行），**且保存后不自动重嵌旧块**——"换模型＝新建库全量重嵌"仍是正确做法，但"工具禁止换"这句已不成立。② **Empty response**（⚠ 2026-11-05 复抓 `chat_configuration` 已换口径）——**检索不到可用内容时，用它填的话作为统一回复；留空则允许模型在没有资料的情况下继续生成**。旧 quickstart 那句"may give rise to hallucinations"已随文档改版退役，引用时用现行口径。另有：**Show citations** 显示来源；**Top N** 是最后进提示词的段数；**Rerank candidates** 默认 64、范围 64～256（重排候选池，不是最终段数）；Chunk 页可人工给块加关键词/问题提权。**用来**：0005"换模型全重算"（嵌入约束新口径）、0008 拒答/段数/引用开关（现行原话）、各课例子锚点。⚠ v5 起部署门槛与安装流程不进课（那是官网文档的事），原话留存于此备查。
 - [RAGFlow — Dataset Configuration（官方文档）](https://ragflow.io/docs/dataset_configuration)（2026-11-03 复抓，1.0.0-rc3 文档线）
   **12 种内置解析模板**：General／Q&A（每对一块）／Manual（按手册层级）／Table（每行一块）／Paper／Book／Laws／Presentation（每页一块）／**Picture（OCR＋视觉描述，复抓新增）**／One（整篇一块）／Audio（ASR）／Email（⚠ 旧清单里的 Tag 已下线）。官方选法："choose the parsing method based on the form of the material itself"（常规先 General、表格先 Table）。**切块器参数**：Recommended chunk size 默认 **512 token**（"a target rather than a strict limit"）／Overlap ratio（%）／自定义分隔符／表格与图片前后文窗口／**Use sub-chunks for retrieval（父子块：小块检索、父块供上下文）**。**标题切块器两模式**：Hierarchy（块带完整标题路径"Part 1>Chapter 3>Section 2"，适合法规契约）vs Group（同层相邻小节合并，适合书/手册/报告）。**Parser 配置**含 Remove headers and footers／Remove original table of contents（清洗类开关）。**Extractor**：Auto keywords／Auto-question／Tags／**Summary**（复抓改名，旧称 Augmented context——给每块生成上下文摘要，与 Anthropic Contextual Retrieval 同思想）／Metadata。**Indexer**：搜索方式 Embedding／Full-text（现行面板是展示标签、不是勾选框）；Filename embedding weight；索引字段三选（Processed text／Questions／Augmented context）。⚠ 改解析/切块配置后需**重新解析**才生效（已解析的文档不自动重切）。**用来**：0002 面板对照表、0004 切块（本轮已用：目标值非硬限/两模式/父子块/清洗开关）、0006 检索配置、0011 顺带一句 Knowledge Compilation。
 - [Windows Docker Desktop 部署 RAGFlow 0.17.2 避坑实录（CSDN）](https://blog.csdn.net/weixin_31220401/article/details/168435333)（⚠ 个人博客，经验值需实操校核）
@@ -470,12 +479,18 @@
   **HyDE 一手出处**：先让 LLM 生成假想文档（"captures relevance patterns but is unreal and may contain false details"），用无监督编码器把它编码成向量去检索真文档——"the encoder's dense bottleneck **filtering out the incorrect details**"（编码瓶颈天然滤掉假细节）。**用来**：0007——"答案的语义空间比问题更接近文档"。
 - [Zheng et al. — "Take a Step Back"（Step-Back Prompting · ICLR 2024 · arXiv 2310.06117）](https://arxiv.org/abs/2310.06117)
   **Step-back 一手出处**：先从具体问题抽象出上位概念/原理再推理；PaLM-2L 在 MMLU 物理 +7%、化学 +11%、TimeQA +27%、MuSiQue +7%。**用来**：0007——"拿上位问题去检索背景知识"一支。
+- [Ma et al. — "Query Rewriting for Retrieval-Augmented Large Language Models"（EMNLP 2023 · arXiv 2305.14283）](https://arxiv.org/abs/2305.14283)
+  **查询改写一手出处**：提出 Rewrite-Retrieve-Read，理由是"there is inevitably a gap between the input text and the needed knowledge in retrieval"（输入文本与检索所需知识之间总有落差）；用一个**小模型做可训练的改写器**，拿 LLM reader 的反馈做强化学习训练；在开放域 QA 与选择题 QA 上取得一致提升。**用来**：0007 改写那一节（"补信息、别改锚点"的框架来源，以及"谁来做改写器"）。
+- [Trivedi et al. — "Interleaving Retrieval with Chain-of-Thought Reasoning for Knowledge-Intensive Multi-Step Questions"（IRCoT · ACL 2023 · arXiv 2212.10509）](https://arxiv.org/abs/2212.10509)
+  **多跳拆解一手出处**：多步问答里"what to retrieve depends on what has already been derived, which in turn may depend on what was previously retrieved"（该检索什么取决于已经推出了什么，而这又可能取决于之前检索到了什么）；把检索与思维链步骤交错，用 GPT-3 在四个多跳数据集上检索最多 +21 点、下游问答最多 +15 点，小模型 Flan-T5-large 不用额外训练也有收益。**用来**：0007 拆开那一节（多跳为什么不能一次查完；IRCoT 的交错版留给 0011）。
+- [Jeong et al. — "Adaptive-RAG: Learning to Adapt Retrieval-Augmented Large Language Models through Question Complexity"（NAACL 2024 · arXiv 2403.14403）](https://arxiv.org/abs/2403.14403)
+  **路由一手出处**：用一个小分类器按问题复杂度，在"不检索""单步检索""多步迭代检索"之间选；分类器用自动收集的标签训练。出发点原话：简单查询被加上不必要的计算开销，复杂多步查询又处理不好，而用户请求并不只分简单/复杂两类。**用来**：0007 查之前分流那一节（该不该查的复杂度依据；多步迭代留给 0011）。
 - [Asai et al. — "Self-RAG"（ICLR 2024 · arXiv 2310.11511）](https://arxiv.org/abs/2310.11511)
   **Self-RAG 一手出处**，两句关键：传统 RAG "indiscriminately retrieving and incorporating a fixed number of retrieved passages, regardless of whether retrieval is necessary, or passages are relevant, **diminishes LM versatility**"；Self-RAG "adaptively retrieves passages **on-demand**…using special tokens, called **reflection tokens**"（反思 token 控制检索时机与自我批判）。**用来**：0011。
 - [Yan et al. — "Corrective Retrieval Augmented Generation"（CRAG · arXiv 2401.15884）](https://arxiv.org/abs/2401.15884)
   **CRAG 一手出处**：轻量**检索评估器**给检回文档打置信度、据此触发不同检索动作；静态语料不够时**网搜兜底**；"decompose-then-recompose"选择性聚焦关键信息。**用来**：0011。
 
-**工程经验综述（0006/0008 用 · 2026-10-21 抓 · ⚠ 二手，引用时标"经验"）**
+**工程经验综述（0006/0007/0008 用 · 2026-10-21 抓 · ⚠ 二手，引用时标"经验"）**
 
 - [12 种 RAG 前沿增强技术与落地选型（CSDN，2026-10）](https://blog.csdn.net/weixin_29039773/article/details/168187407)
   增强方法按五环节归类（查询/索引/检索/重排/生成）；好用口径："**基础 RAG＋混合检索＋重排＋干净切块**解决 80% 的问题"；HyDE 适用边界（短查询适合/完整句不适合）与温度 0~0.3；RRF 公式 k=60 起步；重排后设分数阈值丢噪声；Agent 调用设上限。**用来**：0006/0007 结构参考与经验口径。

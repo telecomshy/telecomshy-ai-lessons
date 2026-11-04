@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 348" width="820" height="348" role="img" aria-label="同一批检索结果两种摆法的对比图。左边按分数从高到低直接铺六段，答案排在第四段，落在中间；右边把第一名放最前、其余从后往前铺，答案落到第五段，靠近结尾，问题仍放在最后。底下注明实测是 U 形：资料放开头或结尾更容易被用上，放中间最容易被跳过。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="820" height="348" fill="#fdfcf8"/>
+  <text x="24" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">同一叠资料，换个摆法，答案的位置就变了。</text>
+
+  <!-- 左：按分数直接铺 -->
+  <rect x="24" y="48" width="372" height="262" rx="6" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="40" y="74" font-family="sans-serif" font-size="12.5" fill="#8a2b06">摆法 A · 按分数从高到低直接铺</text>
+
+  <rect x="40" y="90" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="52" y="108" font-family="sans-serif" font-size="12" fill="#1b1a17">① 请假三天以内</text>
+  <rect x="40" y="120" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="52" y="138" font-family="sans-serif" font-size="12" fill="#1b1a17">② 病假</text>
+  <rect x="40" y="150" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="52" y="168" font-family="sans-serif" font-size="12" fill="#1b1a17">③ 报销</text>
+  <rect x="40" y="180" width="340" height="26" rx="3" fill="#f6e7c8" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="52" y="198" font-family="sans-serif" font-size="12" fill="#8a2b06">④ 请假三天以上　◀ 答案</text>
+  <rect x="40" y="210" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="52" y="228" font-family="sans-serif" font-size="12" fill="#1b1a17">⑤ 门禁卡</text>
+  <rect x="40" y="240" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="52" y="258" font-family="sans-serif" font-size="12" fill="#1b1a17">⑥ 年假天数</text>
+  <rect x="40" y="270" width="340" height="22" rx="3" fill="#efe9dc" stroke="#c9c2b6"/>
+  <text x="52" y="285" font-family="sans-serif" font-size="11.5" fill="#6b6560">问题放在最后</text>
+
+  <text x="40" y="304" font-family="sans-serif" font-size="11.5" fill="#8a2b06">答案卡在第 4 / 6 段：前后都压着别的段。</text>
+
+  <!-- 箭头 -->
+  <line x1="398" y1="168" x2="420" y2="168" stroke="#8a2b06" stroke-width="1.8" marker-end="url(#arw)"/>
+  <text x="392" y="190" font-family="sans-serif" font-size="10" fill="#6b6560">换摆法</text>
+
+  <!-- 右：两头夹 -->
+  <rect x="424" y="48" width="372" height="262" rx="6" fill="#ffffff" stroke="#8a2b06" stroke-width="1.5"/>
+  <text x="440" y="74" font-family="sans-serif" font-size="12.5" fill="#8a2b06">摆法 B · 两头夹，问题仍在最后</text>
+
+  <rect x="440" y="90" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="452" y="108" font-family="sans-serif" font-size="12" fill="#1b1a17">① 请假三天以内</text>
+  <rect x="440" y="120" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="452" y="138" font-family="sans-serif" font-size="12" fill="#1b1a17">② 报销</text>
+  <rect x="440" y="150" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="452" y="168" font-family="sans-serif" font-size="12" fill="#1b1a17">③ 门禁卡</text>
+  <rect x="440" y="180" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="452" y="198" font-family="sans-serif" font-size="12" fill="#1b1a17">④ 年假天数</text>
+  <rect x="440" y="210" width="340" height="26" rx="3" fill="#e3efe4" stroke="#2f6b4f" stroke-width="1.5"/>
+  <text x="452" y="228" font-family="sans-serif" font-size="12" fill="#2f6b4f">⑤ 请假三天以上　◀ 答案</text>
+  <rect x="440" y="240" width="340" height="26" rx="3" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="452" y="258" font-family="sans-serif" font-size="12" fill="#1b1a17">⑥ 病假</text>
+  <rect x="440" y="270" width="340" height="22" rx="3" fill="#efe9dc" stroke="#c9c2b6"/>
+  <text x="452" y="285" font-family="sans-serif" font-size="11.5" fill="#6b6560">问题放在最后</text>
+
+  <text x="440" y="304" font-family="sans-serif" font-size="11.5" fill="#2f6b4f">答案挪到第 5 / 6 段，靠近结尾。</text>
+
+  <!-- 底部收口 -->
+  <line x1="24" y1="320" x2="796" y2="320" stroke="#e4ded1"/>
+  <text x="24" y="340" font-family="sans-serif" font-size="11.5" fill="#6b6560">实测是 U 形：放开头或结尾更容易被用上，放中间最容易被跳过（Liu et al. 2023）。</text>
+</svg>
