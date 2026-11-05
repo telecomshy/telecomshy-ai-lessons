@@ -146,6 +146,7 @@ python exercises/agent/0002-build-an-agent.py
 | 0007 | [查询工程：原话不是查询](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0007-query-engineering.html) —— 补全、拆开、升高、换形态 |
 | 0008 | [上下文组装与生成](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0008-context-assembly.html) —— 放几段、怎么排、怎么约束、没有答案怎么说 |
 | 0009 | [翻车诊断与评估](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0009-two-failure-modes.html) —— 先看答案在不在提示词里，再分开量检索与生成 |
+| 0010 | [评测方法：切多大，好不好](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0010-eval-methods.html) —— 同一套题跑三个切块配置，只动一个变量 |
 
 ### 速查 · 课很少回看，速查会
 
