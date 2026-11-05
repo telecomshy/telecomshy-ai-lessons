@@ -1,6 +1,6 @@
 # Agent 篇 · 轨道标准
 
-> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md)，再读本文件。本文件只收 Agent 篇的分版、课型与脚本分层；deep 页体例在全局 1.4（本轨无 deep 页）。
+> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md)，再读本文件。本文件只收 Agent 篇的分版、课型与脚本分层；本轨无 deep 页（全局 1.4 已改为下放说明）。
 
 ## 分版（2026-10-21 学习者定）
 

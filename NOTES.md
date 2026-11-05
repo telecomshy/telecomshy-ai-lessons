@@ -11,7 +11,7 @@
 | 你要什么 | 去哪 | 什么时候读 |
 |---|---|---|
 | 流程规矩（找资料 · 交付核验 · 开发流程 · 写入纪律） | 本文件**第 1 节** | **每次开发课之前** |
-| 写作标准·全局（零件清单 · 课型 · deep 体例 · 讲法 · 互链） | [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) | **每次写课/改课之前** |
+| 写作标准·全局（零件清单 · 课型 · 讲法 · 互链） | [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) | **每次写课/改课之前** |
 | 写作标准·轨道（分版 · 课型标识 · 受众 · 脚本分层 · 编号特例） | `internal/standards/tracks/<轨道>.md` | **写/改哪轨的课读哪轨** |
 | 操作细节（联网取材 · 标 `completed` 的具体步骤） | [`internal/rules/`](internal/rules/) | 做那件事的时候 |
 | 当初为什么这么定、踩过什么坑 | [`internal/history/`](internal/history/)（5.1 起，一节一篇，文件名即节号） | 只在旧决策被质疑、或要续写同款工作时 |
@@ -34,15 +34,10 @@
 
 ### 1.2～1.6 写作标准（已拆出）
 
-零件清单 · 课型分工 · deep 体例 · 讲法规矩（含文章体与改课）· 编号互链——全局部分在 [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md)（节号沿用 1.2～1.6，拆分决策见存档 5.52）；**分版、课型标识、受众、脚本分层、编号特例已下放各轨 [`internal/standards/tracks/<轨道>.md`](internal/standards/tracks/)**（2026-10-24，存档 5.60）。机器兜底：`progress.ps1` F 段盯全局体量（阈值 200 行）与轨道文件存在性/体量（阈值 120 行）。
+零件清单 · 课型分工 · 讲法规矩（含文章体与改课）· 编号互链——全局部分在 [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md)（节号沿用 1.2～1.6，拆分决策见存档 5.52）；**分版、课型标识、受众、脚本分层、编号特例已下放各轨 [`internal/standards/tracks/<轨道>.md`](internal/standards/tracks/)**（2026-10-24，存档 5.60）；**deep 页体例同日（2026-11-05）下放 LLM 轨标准**（deep 是 LLM 轨专属，存档 5.76）。机器兜底：`progress.ps1` F 段盯全局体量（阈值 200 行）与轨道文件存在性/体量（阈值 120 行）。
 
 ### 1.7 交付门槛：写完必核验
-**核验不过，不交付。** 每轮至少跑这四项：
-
-1. **链接可解析**：所有 `href` / `src` 指向的文件存在；**"所有"包括这轮没动过的页面** —— 删／改一个锚点时，引用方可能散在好几个文件里，**自己写的核验脚本要把输入列全**；md 文档间的相对链接（根目录＋`internal/`＋`docs/`）由 `progress.ps1` **G 段**兜底，核「文件不存在」与「相对链接逃逸出仓库根」两类（C 段只管 lessons 课卡，见存档 5.62）；
-2. **锚点能落地**：`href="x.html#frag"` → `x.html` 里必须有 `id="frag"`；
-3. **术语一致**：旧措辞零残留、术语表已更新。
-4. **参考卡与课程目录页已同步**（涉及时才查）：改到的概念、字段、链接，在对应参考卡和 `lessons/index.html` 课卡里没有旧说法残留。
+**核验不过，不交付。** 跑什么、逐条判什么，见 [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) 末尾的**交付检查单**（2026-11-05 起机器核验与人工自查合并于此，A 段机器跑、B 段人读；链接、锚点、术语、参考卡同步、`data-correct` 计数、引号、markdown 残留都在里面）。本节只留核验的**纪律与判据**：
 
 **定稿的课受保护。** 标了 `completed` 的课＝里面每句话都是过过的，要动它**必须先问过学习者**。理由：即使只是改一个措辞，也可能连带作废别处的口径（`COURSE-STANDARD.md` 1.6 说的"同一个东西两课里说法不同"）、漏掉一处引用、或改动本身超出这一课该管的范围。**拿不准算不算"改"，先问。**
 
@@ -64,22 +59,19 @@
   - **XML 合法性**检查（`ElementTree.parse`）——只保证"能打开"。
   - **真的在浏览器里渲染出来看一眼**——**"合法"不等于"好看"，也不等于"在页面上读得清"**（`llm-pipeline` 画布撑宽后页面等效字号被压小约 20%：图自己看着没问题，在课里变难读）。
   - 附带两条：**改 SVG 宽度＝改页面上所有文字的可读性**，字号要跟着重算；**SVG 的 `<text>` 不认 HTML 标签**，`<b>` 会原样显示。
-- **小测每题恰好一个 `data-correct="true"`。** **新建一课时，先把全部选项和 `data-correct` 一次性写完再写正文**，别等正文写完回头补标记 —— 连着两课分别漏了 4 处和 6 处，都是同一类失误。
-- **HTML 属性值里一律用「」，别用英文直引号 `"`**（会截断属性值）。
-- 扫 markdown 残留时**连脚本一起扫**：`print()` 字符串里的 `**` 会渲染成字面星号。
 - **工具的报错里通常写着怎么修——先照做再下结论**（"这个环境截不了图"那次是错的，代价是骗了学习者两轮，见存档 5.04）。**"环境不支持"这种结论必须当场复验，不许转述。**
 
 ### 1.8 一次开发一课的流程（照着走）
 1. 读 `NEXT-SESSION.md` 的「下一步」施工图；施工图没覆盖的新任务，再读 `MISSION.md` / `NOTES.md` / `internal/learning-records/`，定这一课该讲什么；
 2. **跑一次 `pwsh tools/progress.ps1` 拿基线** —— 确认上一轮没留下漂移（尤其可能还有别的会话在改，见 1.7 那条多会话规矩）；
 3. **查一手资料** → 补进 `RESOURCES.md`；
-4. **写脚本**并本地跑通；
-5. **写课**（按 `internal/standards/COURSE-STANDARD.md` 1.2 零件清单 + 1.5 讲法〔含文章体与改课〕+ 1.6 互链，分版与脚本分层按该轨 `internal/standards/tracks/<轨道>.md`）；
-6. **跑核验**：机器核验（1.7）＋逐条过 [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) 末尾自查清单（含「轨道专属」组，按该轨标准逐条过）；
+4. **写脚本**并本地跑通（该轨标准说不配脚本就不配——判据见 `internal/standards/tracks/<轨道>.md`）；
+5. **写课**（按 `internal/standards/COURSE-STANDARD.md` 1.2 零件清单 + 1.5 讲法〔含文章体与改课〕+ 1.6 互链，分版与脚本分层按该轨 `internal/standards/tracks/<轨道>.md`）。**新建课时，先把全部小测选项和 `data-correct` 一次性写完再写正文**——回头补标记会漏（两课各漏过 4、6 处）；HTML 属性值里一律用「」，别用英文直引号；
+6. **审计＋核验**：先派**学习审计子代理**通读全课报概念缺口（画像与派单见 [`internal/rules/learner-audit.md`](internal/rules/learner-audit.md)），逐条核实后修改；再跑机器核验与**交付检查单**（[`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) 末尾，A 段机器跑＋B 段人读，含「轨道专属」组按该轨标准逐条过）；
 7. **报告**：落盘清单 + 核验结果 + 下一步选项；
 8. **让用户 F5 刷新**，并请他挑刺。
 
-**课件文字的修改走专用通道**：写完初稿后，语言修改（去 AI 味、删句、合并）派子代理 shuorenhua 狠改——派单模板、护栏与三阶段分工见 [`internal/rules/writing-workflow.md`](internal/rules/writing-workflow.md)（决策见存档 5.73）。写初稿腔调可用 course-writing 技能（用户级工具，按需加载）；**验收判据只在 [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) 自查清单**，技能不参与验收。
+**初稿完成后先审计、后核验**：语言层面的精修不再单设通道（shuorenhua 通道 2026-11-05 退役——语言收益小，且句子顺不等于概念讲清了）；取代它的是**学习审计子代理**：学生画像（对 LLM 与 agent 有初步了解）通读全课，报告「哪些概念没掌握、哪里卡住、哪里自以为懂了」，主代理逐条核实后修改，改完才进机器核验。画像、派单模板、意见处理护栏见 [`internal/rules/learner-audit.md`](internal/rules/learner-audit.md)（决策见存档 5.76）。写初稿腔调可用 course-writing 技能（用户级工具，按需加载）；**验收判据只在 [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md) 交付检查单**，技能不参与验收。
 
 ### 1.9 NOTES.md 自己的写入纪律（防再次膨胀）
 - **历史不进本文件。** 一轮结束要记"决策 / 教训 / 当初为什么这么定"，写进 `internal/history/5.NN-<slug>.md`（**编号接着走**，下一节号看第 5 节索引表最后一行；同日同一主题续写就并进那一篇、做小节 5.NN.M，先例 5.18.9），然后**只在第 5 节索引表加一行**（篇名 + 一句话 + 什么时候查）。
@@ -238,5 +230,6 @@
 | [5.73](internal/history/5.73-writing-tools-three-stage.md) 写作工具收敛与三阶段分工 | 写＝course-writing·改＝shuorenhua 子代理狠改·验＝自查清单 · **1.5 不下放**（同源声明，冲突以标准为准）· **同功能技能只留一个**（8 装 2 留）· 狠改四条护栏（教学内容零增删/不覆盖/交清单）· 审阅模式砍掉（找问题三落点重复） | 判写作技能分工 · 派 shuorenhua 子代理改稿 · 质疑标准与技能重复 · 装新写作技能之前 |
 | [5.74](internal/history/5.74-rag-0008-context-assembly.md) RAG 0008 上下文组装开课 | 六个决定（位置/段数/标签/约束/引用/拒答）· Lost in the Middle 原文数字 · RAGFlow Empty Response 换口径三处同改 · 三栏图页内字太小改两栏 · 玩具脚本演「引用只证出处」· 正确项不能是唯一长句 | 写 0008 及其后续上下文组装课 · 厂商文档改版时 · 三栏图/脚本/小测选项定稿前 |
 | [5.75](internal/history/5.75-rag-0009-diagnosis-and-eval.md) RAG 0009 诊断评估＋最后 deep 关停 | 薄课＋deep 合并的主线（诊断→尺子→题）· 旧 deep 两处数字要审（8→10、无出处 90/70）· 文件名不改只改标题 · deep 关停四处落点 · LLM 判官一手依据与校准 · 否定题单独处理 | 写 0009/0010 · 收编旧 deep · 删 deep 页 · 讲 LLM-as-Judge 时 |
+| [5.76](internal/history/5.76-standard-revision.md) 课程开发标准五项修订 | 脚本改可选（判据下放轨道）· 1.3 除名技巧课（三件套保留）· deep 体例下放 LLM 轨（1.4 留指针节）· 机器核验＋自查清单合并为交付检查单（A 机器段＋B 人工段）· **学习审计子代理取代 shuorenhua 通道**（学生画像＝初学/业务＋初步了解 LLM·agent，目标＝学完掌握概念；writing-workflow.md 退役，learner-audit.md 新立） | 改任何标准条款时 · 派学习审计前 · 质疑「脚本是不是每课必备」「deep 体例在哪」时 |
 
 > AI生成

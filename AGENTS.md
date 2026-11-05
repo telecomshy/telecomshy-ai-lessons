@@ -22,7 +22,7 @@
 | 入口规则 | `AGENTS.md` | 本文件；会话自动加载 |
 | 当前进度与下一步 | `NEXT-SESSION.md` | **唯一权威**；每轮开发结束**重写全文**，不追加 |
 | 流程纪律＋画像＋待办 | `NOTES.md` | 第 1 节每次开发前读；写入纪律见其 1.9 |
-| 写作标准·全局（零件 · 课型 · deep 体例 · 讲法 · 互链＋自查清单） | `internal/standards/COURSE-STANDARD.md` | 每次写课/改课前读；节号沿用原 1.2～1.6 |
+| 写作标准·全局（零件 · 课型 · 讲法 · 互链＋交付检查单） | `internal/standards/COURSE-STANDARD.md` | 每次写课/改课前读；节号沿用原 1.2～1.6 |
 | 写作标准·轨道（分版 · 课型标识 · 受众 · 脚本分层 · 编号特例） | `internal/standards/tracks/<轨道>.md` | **写/改哪轨的课读哪轨**；审计 F 段盯存在与体量 |
 | 一手来源 | `RESOURCES.md` | 写任何知识点唯一取材处；顶部索引表按课查 |
 | 学习证据 | `internal/learning-records/` | teach 技能的学习记录 |
