@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 402" width="820" height="402" role="img" aria-label="固定流水线与 agentic RAG 的对比。左边固定流水线：问题、查一次（k 固定）、组装、生成、答，每条问题都走同一条路，查完就生成，不再回头。右边 agentic：问题进入循环，模型先决定查不查、查什么，调用检索工具，观察结果，再判断够不够；不够且预算没到顶就再查一轮，够了或预算到顶就生成答案；旁边挂着轮数、token、时间三个预算。底部注明：多出来的自由度，要用预算和评测管住。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+    <marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6c675e"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="820" height="402" fill="#fdfcf8"/>
+  <text x="24" y="28" font-family="sans-serif" font-size="13" fill="#1b1a17">固定流水线 vs agentic：检索从「一步」变成「循环里的工具」。</text>
+
+  <!-- 左：固定流水线 -->
+  <rect x="24" y="54" width="338" height="296" rx="7" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="42" y="80" font-family="sans-serif" font-size="12.5" fill="#1b1a17" font-weight="600">固定流水线</text>
+  <text x="42" y="98" font-family="sans-serif" font-size="10.5" fill="#6c675e">代码写死顺序，每条问题一样</text>
+
+  <rect x="96" y="112" width="194" height="32" rx="4" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="193" y="133" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">问题</text>
+  <line x1="193" y1="144" x2="193" y2="162" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="96" y="164" width="194" height="32" rx="4" fill="#fff" stroke="#8a2b06"/>
+  <text x="193" y="185" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">查一次（k 固定）</text>
+  <line x1="193" y1="196" x2="193" y2="214" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="96" y="216" width="194" height="32" rx="4" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="193" y="237" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">组装提示词</text>
+  <line x1="193" y1="248" x2="193" y2="266" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="96" y="268" width="194" height="32" rx="4" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="193" y="289" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">生成答案</text>
+
+  <text x="42" y="322" font-family="sans-serif" font-size="10.5" fill="#6c675e">查完就生成，不再回头；够不够、要不要再查，</text>
+  <text x="42" y="340" font-family="sans-serif" font-size="10.5" fill="#6c675e">这条链里没有哪个零件负责判断。</text>
+
+  <!-- 右：agentic 循环 -->
+  <rect x="392" y="54" width="404" height="296" rx="7" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="410" y="80" font-family="sans-serif" font-size="12.5" fill="#1b1a17" font-weight="600">agentic：检索是循环里的一个工具</text>
+  <text x="410" y="98" font-family="sans-serif" font-size="10.5" fill="#6c675e">模型按上一轮的结果，决定下一步</text>
+
+  <rect x="414" y="120" width="132" height="34" rx="4" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="480" y="142" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">问题</text>
+  <line x1="546" y1="137" x2="570" y2="137" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="572" y="116" width="196" height="44" rx="4" fill="#fff" stroke="#8a2b06"/>
+  <text x="670" y="134" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">决定：查不查 / 查什么</text>
+  <text x="670" y="150" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#6c675e">（模型写一次工具调用）</text>
+  <line x1="670" y1="160" x2="670" y2="176" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="572" y="178" width="196" height="34" rx="4" fill="#fff" stroke="#8a2b06"/>
+  <text x="670" y="200" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">检索工具（search）</text>
+  <line x1="670" y1="212" x2="670" y2="228" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <rect x="572" y="230" width="196" height="34" rx="4" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="670" y="252" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1b1a17">观察结果：够不够？</text>
+
+  <!-- 回到决定：再查一轮 -->
+  <path d="M572 247 L540 247 L540 138 L572 138" fill="none" stroke="#8a2b06" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arw)"/>
+  <text x="414" y="280" font-family="sans-serif" font-size="10.5" fill="#8a2b06">不够 → 再查一轮</text>
+  <text x="414" y="295" font-family="sans-serif" font-size="10.5" fill="#8a2b06">（预算没到顶才准走）</text>
+
+  <!-- 够 → 生成 -->
+  <line x1="768" y1="247" x2="784" y2="247" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+  <rect x="674" y="280" width="106" height="30" rx="4" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="727" y="300" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1b1a17">生成答案</text>
+  <path d="M670 264 L670 272 L727 272 L727 280" fill="none" stroke="#8a2b06" stroke-width="1.5" marker-end="url(#arw)"/>
+  <text x="684" y="269" font-family="sans-serif" font-size="10.5" fill="#8a2b06">够了</text>
+
+  <!-- 预算牌 -->
+  <rect x="414" y="166" width="122" height="96" rx="5" fill="#fdf3ec" stroke="#d8a98c"/>
+  <text x="428" y="186" font-family="sans-serif" font-size="10.5" fill="#8a2b06" font-weight="600">预算闸门</text>
+  <text x="428" y="204" font-family="sans-serif" font-size="10.5" fill="#1b1a17">轮数上限</text>
+  <text x="428" y="220" font-family="sans-serif" font-size="10.5" fill="#1b1a17">输入 token 上限</text>
+  <text x="428" y="236" font-family="sans-serif" font-size="10.5" fill="#1b1a17">墙钟时间上限</text>
+
+  <text x="410" y="322" font-family="sans-serif" font-size="10.5" fill="#6c675e">够了、没新证据、预算到顶、方向错了——</text>
+  <text x="410" y="340" font-family="sans-serif" font-size="10.5" fill="#6c675e">任意一条成立就停；停不下来时拒答或转人工。</text>
+
+  <!-- 底部收口 -->
+  <line x1="24" y1="360" x2="796" y2="360" stroke="#e4ded1"/>
+  <text x="24" y="382" font-family="sans-serif" font-size="11.5" fill="#1b1a17">多出来的自由度，要用预算和评测管住：循环本身不保证更好，只保证多花了钱和时间。</text>
+</svg>

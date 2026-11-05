@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · 第 11 课 · Agentic RAG：检索变成工具</title>
+<link rel="stylesheet" href="../../assets/base.css">
+<script src="../../assets/quiz.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="lesson-meta">RAG · 第 11 课 · 理论</div>
+  <h1>Agentic RAG：检索变成工具</h1>
+
+  <div class="goal">
+    <span class="label">从一次只答对一半的对话说起</span>
+    <p>用户问：「加班调休和年假申请分别要提前多久？」固定的 RAG 链查一次，取回年假申请（提前 3 个工作日）和一条没回答「提前多久」的调休规则（当月用完），回答年假那一半。</p>
+    <p>它漏了另一半：调休要提前 1 天在系统登记，和加班记录对应。用户问的是两件事，这条链只答了一件。</p>
+    <p>链没有坏。它按设计工作：查一次、塞进提示词、生成。坏的是那个假设——<b>一次检索就能拿到回答所需的全部资料</b>。Agentic RAG 改的就是这个假设：把检索从流水线里的固定一步，变成模型手里的一个工具。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>说出 agent 在 RAG 里做的四个决定，分清 Self-RAG 与 CRAG 各在哪一层动手，给循环设好预算和停止条件，也知道什么时候不该上它。</p>
+  </div>
+
+  <div class="note">
+    <span class="label">主线</span>
+    <p><b>固定流水线＝所有问题走同一条路；agentic＝把检索放进循环，模型按结果决定下一步。</b></p>
+    <p>自由度不是免费的：每一轮都要多一次检索、多一次模型调用、多一段上下文。所以预算和评测必须跟它一起上。</p>
+  </div>
+
+  <h2>1. 固定流水线，假设所有问题一样难</h2>
+  <p>第 2 课把 RAG 拆成六步：切块、变向量、存起来、查、组装、生成。前五步由代码按固定顺序调度，最后一步才是答题模型。固定流水线里，「查」只发生一次，就在生成之前；查完往下走，没有任何一步回头问「查到的够不够」。</p>
+  <p>这套设计在多数问题上够用。它不配合的是三类问题。</p>
+  <ul>
+    <li><b>不用查的。</b>「把刚才的回答整理成三行」「谢谢」，资料库里没有新东西可查。固定流水线照样查一次，多一次延迟，还可能把无关的制度塞进提示词。</li>
+    <li><b>一次不够的。</b>「加班调休和年假申请分别要提前多久」横跨两条制度。一次查询撞上「年假」和「调休」，拿回的是「调休当月用完」，不是「提前 1 天登记」；缺的那一半，不会因为多塞几段就自己长出来。</li>
+    <li><b>查回来的是噪音，或者根本没有。</b>「公司有班车吗」在资料库里没有答案。固定流水线照样生成，第 8 课的两道闸门能兜住一部分，但「要不要停、要不要说没有」本身就是一个决定。</li>
+  </ul>
+  <p>第 7 课的 Adaptive-RAG 已经指出这件事：简单查询被加上不必要的计算开销，复杂多步查询又处理不好。那一课做的是<b>查之前</b>的一次分流，查完就结束。这一课接的是<b>查完之后</b>：不满意，再决定查不查、查几次。</p>
+
+  <figure class="figure">
+    <img src="../../assets/agentic-rag-loop.svg" alt="固定流水线与 agentic RAG 的对比。左边固定流水线：问题、查一次（k 固定）、组装、生成、答，每条问题都走同一条路，查完就生成，不再回头。右边 agentic：问题进入循环，模型先决定查不查、查什么，调用检索工具，观察结果，再判断够不够；不够且预算没到顶就再查一轮，够了或预算到顶就生成答案；旁边挂着轮数、token、时间三个预算。底部注明：多出来的自由度，要用预算和评测管住。">
+    <figcaption><b>左边是一条路走到底，右边是走一步看一步。</b>右边多出来的不是「更聪明的模型」，是几个判断点和一道预算闸门。</figcaption>
+  </figure>
+
+  <h2>2. 把检索放进循环：四个决定</h2>
+  <p>在 agent 里，检索不是一个特殊阶段，而是一个工具。工具由三样东西描述：名字、一句说明、参数（查什么、取几段、查哪个库）。模型在循环里写一次调用，壳去执行，把结果塞回对话；下一轮模型看到结果，再决定下一步。壳（harness）＝包在模型外面的调度代码，负责执行工具调用、维护循环；这套循环在 Agent 篇第 1 课拆过，工具调用的来回在第 2 课拆过。这里只把工具的内容换成检索。</p>
+  <p>换完之后，多出来四个决定。</p>
+  <p><b>查不查。</b>问候、改写、翻译、整理上一轮的答案，不需要查。政策、价格、日期、条款，必须查——这类答案不在模型的权重里，跳过检索就是让它编。分界线不是「问题难不难」，是「答案在不在资料库里」。</p>
+  <p>运行时不必先知道答案在不在库里——那正是要查的东西。可执行的做法是反过来：把「政策、价格、日期、条款」写成规则或一个小分类器，拿不准就默认查一次；查完再让「够不够」接手。跳过检索只留给真正不需要资料的请求，比如问候、改写、翻译。</p>
+  <p><b>查什么。</b>第 7 课的四种加工（改写、拆开、升高、HyDE）在这里都能用；HyDE 是先写一段假答案再去查。区别是它们不必一次做完：第一轮看到结果后，可以只补缺的那一半，也可以换一个更贴文档用词的说法。</p>
+  <p><b>够不够。</b>这是 agentic 新增的核心动作。看三件事：<b>相关</b>（这段跟问题有关吗）、<b>支持</b>（答案的每句断言能在段里找到依据吗）、<b>覆盖</b>（问题的每个部分都有资料吗）。三个都要过：先看相关（不相关的直接丢），再看支持（相关的能不能撑住答案），最后看覆盖（所有方面是否都有依据）。任何一项不过，就不算够。比如问「请四天假」，资料里有「三天以内口头报备」和「三天以上提交申请单」：两段都相关；但如果回答写成「四天以内口头报备」，第一段并不支持这个结论（支持不够）；如果只取了三天以内那段，覆盖就不够（少了申请单那条）。真实系统里，「支持」通常拿模型先写的一句草稿去比，或者让评估器直接判「这段能不能回答这个问题」；「覆盖」则要先把问题拆成几个方面（多跳题天然有两三个），脚本里的 aspects 就是这张拆好的清单。拆方面可以用规则，也可以让模型拆，但要固定下来。第 9 课的忠实度和相关性是整批答案的尺子；这里是单次检索的即时判断，可以小得多：一个分类器、一次模型调用、一张关键词清单都行。</p>
+  <p><b>再查不查。</b>不够就再查，够了就停，查不到就拒答或转人工。注意「再查」不是把同一句查询重发一遍——那只会拿回同一批段。要改查询：补上缺的那一半、换成文档里的说法、拆成子问题。</p>
+  <p>Pinecone 把这套动作写成四句：agent 构造更有效的查询、访问更多检索工具、评估检索内容的相关性与准确性、用推理验证检索到的信息再决定信不信。翻成这一课的话，就是上面四个决定。</p>
+  <p>但「让模型决定」不等于「没有规则」。规则藏在四个地方：工具说明（什么时候该调）、提示词（查不到怎么说）、评估器（什么叫够）、预算（最多几轮）。只写一句「你自己决定」，得到的多半是绕圈。</p>
+
+  <h2>3. Self-RAG：把「要不要查」练成模型自己的输出</h2>
+  <p>Self-RAG 的做法更彻底：它不靠外部提示词让模型「自觉」，而是把「要不要查、查得够不够」练成模型会输出的特殊 token。论文先说了传统 RAG 的问题：不管检索是否必要、段落是否相关，都固定取一批，这会削弱模型的通用性。</p>
+  <p>它用四类<b>反思 token</b>（reflection token）把判断插进生成过程：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <colgroup><col style="width:18%"><col><col style="width:30%"></colgroup>
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">token</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">它回答的问题</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">取值</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Retrieve</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">这一步要不要去查？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">yes / no / continue</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>IsRel</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">这段资料跟问题有关吗？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">relevant / irrelevant</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>IsSup</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">回答里的断言，这段资料支持吗？</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">fully / partially / no support</td></tr>
+      <tr><td style="padding:0.45rem"><b>IsUse</b></td>
+          <td style="padding:0.45rem">这段回答对用户有用吗？</td>
+          <td style="padding:0.45rem">5 / 4 / 3 / 2 / 1</td></tr>
+    </tbody>
+  </table>
+  <p>前三个是「查」和「用」的检查，最后一个给整段回答打分。它们不是自然语言，是扩进词表（词表＝模型认识的所有 token 的清单）里的特殊 token；模型像生成普通字一样生成它们。<b>continue</b> 是给长回答用的：前面已经查过、拿到一段信息量很大的资料，后面几步还可以继续用这段，不必重新发起检索。</p>
+  <p>推理时，模型在写每一段之前都会预测一次 Retrieve。判 no 就照常生成，不再查；判 yes 就取 K 段，并行给每段生成一个候选（候选＝拿这一段当依据写出的一段回答草稿；K 段就出 K 个草稿），再用 IsRel、IsSup、IsUse 的概率给候选打分，挑最好的往下写；如果上一段已经查过、这一段还要接着用同一段证据，就输出 continue——不重新调检索器，直接接着写。所以「把判断插进生成过程」不是边写边改，而是每写一段之前先判一次：要不要查、要不要继续用刚才的证据。检索频率还能用一个阈值调：把 Retrieve=yes 的概率阈值调高，模型就更少查；调低，就更常查。这件事在推理时就能改，不用重训。</p>
+  <p>这套能力是练出来的。论文先用 GPT-4 标一批训练数据，再把这些判断蒸馏进一个 critic 模型（critic＝专门判「该输出哪个反思 token」的模型，用和生成器同一个底座 Llama 2-7B 初始化，不负责写答案；底座＝继续训练或微调的起点模型），让它学会后去标全量训练语料，最后训练生成器自己输出这些 token。为什么不每段直接问 GPT-4？成本和复现性都受不了；critic 把这份判断能力压进本地模型，离线跑一次，之后不再需要 GPT-4。蒸馏蒸的是「判断结果」（该给哪个 token），不是 token 的概率。critic 在多数类别上与 GPT-4 的一致率超过 90%。</p>
+  <p>所以别把「反思 token」当成提示词模板。CRAG 论文做过一个对照：把底座换成没学过这套 token 的 LLaMA2-7B，复现的 Self-RAG 在 PopQA（一个开放域问答测试集）上只有 29.0，低于普通 RAG 的 50.5；换回学过 token 的 7B 底座，Self-RAG 是 54.9。同一套方法，模型没练过，token 就不会按预期工作。</p>
+  <p>不能训练的话，能借的是它的问题清单：相关吗、支持吗、有用吗。让模型输出一段结构化的自检，壳按结果决定下一步。这叫仿其形，不叫 Self-RAG；对外报方案时别把两者混成一个词。</p>
+  <p>Self-RAG 管的是「查不查、这段资料支不支持」。它不管语料里根本没有的东西：评估器判「全都不相关」时，它没有「去网上找」这一支。那是 CRAG 补的。</p>
+
+  <h2>4. CRAG：在检索结果外面加一道质检和三岔路</h2>
+  <p>CRAG 的出发点是一句反问：检索错了怎么办？传统 RAG 默认取回来的文档相关；CRAG 先质检，再决定怎么用。</p>
+  <p>做法是一个轻量的<b>检索评估器</b>：逐对给「问题，文档」打相关性分，再汇成一个置信度。论文用的是 T5-large，0.77B 参数；Self-RAG 的 critic 是 7B。小模型便宜、快，代价是它会判错——这一点后面要用上。论文没有在主文里规定唯一的汇总公式；工程上可以取最高分、平均分，或让评估器直接给整组一个分。关键是固定一种，并写进你的评测。</p>
+  <p>置信度落在哪一段，触发不同的动作：</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <colgroup><col style="width:20%"><col style="width:34%"><col></colgroup>
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">判断</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">什么时候触发</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">动作</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Correct</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">至少一段高于上阈值</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">精炼：拆成小条，滤掉无关条，再按原文顺序拼回去</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>Incorrect</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">所有段都低于下阈值</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">丢掉，改写查询去网搜；优先权威页面</td></tr>
+      <tr><td style="padding:0.45rem"><b>Ambiguous</b></td>
+          <td style="padding:0.45rem">落在两条阈值之间</td>
+          <td style="padding:0.45rem">两条都做：精炼内部资料＋网搜，合并（论文只说「合起来」，具体怎么合要自己定并测）</td></tr>
+    </tbody>
+  </table>
+  <p>为什么要有「不确定」这一支？因为评估器不是百分百准。只留 Correct 和 Incorrect 两支时，系统把全部赌注压在评估器的判断上；判错一次，知识源就整个切错。Ambiguous 把「拿不准」变成一个动作，而不是硬选一边。论文的消融（ablation＝把某个部件拿掉再跑一遍，看分数掉多少）里，去掉任何一支都会掉分；去掉 Ambiguous，CRAG 在 PopQA 上从 54.9 掉到 54.0（这个 54.9 是 CRAG 在 LLaMA2-hf-7b 上的成绩，和前面 Self-RAG 的 54.9 只是数字碰巧一样，不是同一个模型）。</p>
+  <p>评估器本身有多准？在他们那组 PopQA 测试里，T5 评估器的判对率是 84.3%；同一个测试直接问 ChatGPT 是 58.0%，加思维链 62.4%，few-shot 64.7%。这是论文在 PopQA 上判「这组检索结果对不对」的判对率，不是三分支各自的准确率，也不是你的领域。小模型专门判相关性，能打赢大模型顺手判。反过来也要看清：它仍有约 16% 会判错，所以三分支和后面的兜底不是装饰。</p>
+  <p>代价没有想象中大。CRAG 论文的账：普通 RAG 每个实例 0.363 秒、26.5 TFLOPs/token（TFLOPs/token＝每生成一个 token 大约要算多少万亿次浮点运算，是算力开销的粗指标）；CRAG 0.512 秒、27.2；Self-RAG 0.741 秒、26.5～132.4（自适应计算，范围很宽；下限和固定流水线一样，是因为它可以不检索、按普通模型跑；一旦检索并给多段打分，平均耗时就会上去）。这是生成阶段的估算，不含检索和数据处理，也不是你机器上的实测。</p>
+  <p>CRAG 的边界也要说清：网搜引入外部依赖和延迟；精炼可能把有用的上下文一起滤掉；评估器是在他们的数据上微调的，换到你的领域，要重新标一批相关性样本。</p>
+
+  <h2>5. 多轮什么时候值得：从「再查一次」到「查几次」</h2>
+  <p>多轮最典型的收益在多跳题。IRCoT（交错检索与思维链）的原话是：该检索什么，取决于已经推出了什么；而这又可能取决于之前检索到了什么。它把检索和思维链步骤交错，在四个多跳数据集上，检索指标最多提高 21 点，下游问答最多提高 15 点（GPT-3）；小模型 Flan-T5-large 不用额外训练也有收益。第 7 课讲「拆开」时提过它，这里用的是它的交错版：下一轮查什么，由上一轮的结果决定。</p>
+  <p>配套脚本把这件事跑成了一条轨迹。还是那道「加班调休和年假申请分别要提前多久？」：</p>
+  <pre><code>[3] 换成 agentic：以「加班调休和年假申请分别要提前多久？」为例
+    轮  这一轮查什么                              取到    新块    还缺什么
+    1   加班调休和年假申请分别要提前多久？        [2, 4]  [2, 4]  加班调休
+    2   调休 登记                                 [2, 5]  [5]     （齐了）
+    结果：全中；共 2 次检索。
+    → 第一轮答了年假申请，评估器发现调休登记还没答，
+      改写查询再查一轮；第二轮取到调休登记，够了，停。</code></pre>
+  <p>第一轮用用户原话，取回两块：年假申请那条，加上调休的旧规则；覆盖了「年假申请」，缺「加班调休」里的「登记」。评估器把缺的方面拼成第二轮查询「调休 登记」，取回新的一块，补上登记规则。两轮结束。这就是多跳里的补缺：第一轮拿到一半，第二轮补上另一半；有些题是桥（拿实体查下一跳），有些题只是补另一个方面。</p>
+  <p>但多轮不是免费的。每一轮是串行的，下一轮要等上一轮；上下文变长；更多段可能把关键段埋得更深（第 8 课的 Lost in the Middle）。算一笔粗账：假设每轮取 3 段（脚本里是 2 段，这里取宽一点）、每段 500 token，三轮下来最后那屏是 4500 token 的资料；如果不走缓存、每轮都重读前面的上下文，读入量是 1500 ＋ 3000 ＋ 4500 ＝ 9000 token。公式就两句：每轮新增 token ＝ 段数 × 每段 token；第 r 轮读入 ＝ 前 r 轮新增之和。数字是假设，账的形状是真的：成本长得比线性快，延迟至少按轮数线性增加。</p>
+  <p>所以停止条件要写进代码，不要只写在提示词里：</p>
+  <ol>
+    <li><b>证据够了</b>：问题的每个方面都能在已取回的段里找到依据 → 停，去生成。</li>
+    <li><b>没有新证据</b>：这一轮拿回的都是旧块，或分数没升 → 停，别再换问法硬凑。</li>
+    <li><b>预算到顶</b>：轮数、输入 token、墙钟时间（wall-clock，从发请求到拿到结果的实际等待，包含网络和排队），三个上限先到先停。</li>
+    <li><b>方向错了</b>：评估器连续判无关 → 拒答或转人工，不要拿相似段落硬答。</li>
+    <li><b>资料冲突</b>：两段说法打架 → 停下来标出来，不要自己选一个。</li>
+  </ol>
+  <p>Agent 篇第 2 课的 <code>max_steps</code> 是同一道闸；RAG 这里多两道：token 和时间。三个预算的口径要先说死：token 按每轮请求的输入累加，时间从用户发问算到答案返回；轮数最容易设，token 最贴近账单，时间最贴近体验，先按最在意的那项设硬上限。五条里脚本只跑到了前三条；「方向错了」和「资料冲突」写进清单，是因为工程上必须处理，不是这六个场景都跑到了。表里的「拒答」走的是否定题的单独分支（资料库没有答案），不属于这五条。</p>
+  <p>脚本把上限从 1 放到 5，得到这张表：</p>
+  <pre><code>[4] 轮数上限：从 1 放到 5，看收益在哪一轮到顶
+    上限  检索次数  全中  拒答  部分/失败   白跑的轮次
+    1     5         1     1     3           0
+    2     8         3     1     1           0
+    3     9         3     1     1           1
+    5     9         3     1     1           1</code></pre>
+  <p>表里不含第 1 题：它不用查，被跳过，0 次检索；所以上限 1 是 5 次而不是 6 次。上限 1 时只有单跳题全中；放到 2，两个多跳题各多查一轮，全中从 1 到 3；再放到 3，只多了一次白跑的检索；放到 5 也一样，因为「没有新证据就停」先触发。收益在第 2 轮到顶——这是这六个场景的形状，不是通用规律。</p>
+  <p>还有一道题，查几轮都救不回来：</p>
+  <pre><code>    上限 2：第1轮取到[1, 0] -&gt; 第2轮取到[0, 4]；结果：预算到顶，缺 三天以内
+    上限 5：第1轮取到[1, 0] -&gt; 第2轮取到[0, 4] -&gt; 第3轮取到[0, 4]；结果：没有新证据，停（缺 三天以内）</code></pre>
+  <p>制度 3 的「口头报备」被 90 字的刀口切成「口头报」＋「备」，两个块里都不完整。agentic 能改查询，改不了已经切碎的文本。遇到这种，先回第 4 课修切块；加轮数只是多花钱。</p>
+
+  <h2>6. 几种做法，代价不一样</h2>
+  <p>把几种做法放在一张表里，选型就看三件事：谁决定下一步、要不要训练、每多一轮花什么。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.84rem">
+    <colgroup><col style="width:15%"><col style="width:22%"><col style="width:17%"><col style="width:18%"><col></colgroup>
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">做法</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">谁决定下一步</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">额外模型调用</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">要不要训练</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.4rem">论文里的单例耗时 · 适合</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>固定流水线</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">代码写死</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">0</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">不要</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">0.363 秒 · 问题简单、流程稳定</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>Self-RAG</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">模型用反思 token 决定</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">每段候选＋打分</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">要（critic＋生成器）</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">0.741 秒 · 有训练资源、要模型内建自评</td></tr>
+      <tr><td style="padding:0.4rem;border-bottom:1px solid var(--rule)"><b>CRAG</b></td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">小评估器＋三分支</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">1 次评估，可能网搜/精炼</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">生成器不用；评估器要微调</td>
+          <td style="padding:0.4rem;border-bottom:1px solid var(--rule)">0.512 秒 · 检索质量不稳、想插在现有链外面</td></tr>
+      <tr><td style="padding:0.4rem"><b>工具型 agentic</b></td>
+          <td style="padding:0.4rem">模型在循环里决定</td>
+          <td style="padding:0.4rem">每轮 1 次以上</td>
+          <td style="padding:0.4rem">不要</td>
+          <td style="padding:0.4rem">取决于轮数 · 多跳、问题类型杂</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.88rem;color:var(--muted)">耗时来自 CRAG 论文的 PopQA 设置，只算生成阶段，不含检索与数据处理；不是产品基准。</p>
+  <p>一条选型规则：用最便宜的那档，修你评测集里真实出现的失败。查询改写能修，就别训练；一次检索够，就别加循环；评估器能判，就别让大模型每轮重判。</p>
+  <p>选型时还别忘一件事：评估器自己也要评。CRAG 的 84.3% 就是提醒——抽一批标好的「问题，文档」对，量它的精确率（precision，判相关的里面真相关的比例）和召回（recall，该判相关的里面实际判出相关的比例）。它判错时，循环会追着噪音跑：比如把一段讲会议室预约的段落判成相关，下一轮就会拿这段去改写查询，越查越偏，最后生成一个像模像样但答非所问的答案。</p>
+
+  <h2>7. 什么时候不该上 agentic</h2>
+  <p>Agentic 不是质量徽章。下面几种情况，固定流水线更合适。</p>
+  <ul>
+    <li><b>评测集上固定流水线已经过线。</b>多查的轮次换不来可测的提升，就只是多花钱。</li>
+    <li><b>延迟敏感。</b>语音助手、输入联想、客服首响，每多一轮都是用户在那里等。</li>
+    <li><b>问题简单且重复。</b>FAQ、单一制度查询；第 7 课的一次分流已经够。</li>
+    <li><b>语料或切块还坏着。</b>先修检索，再谈自主；第 9 课的顺序是先分清哪一段坏了。</li>
+    <li><b>没有评测集。</b>多出来的自由度没法验收，只会把不确定性换成更贵的不确定性。</li>
+    <li><b>检索内容不可信。</b>网页、用户上传的文本都是未信任输入，agent 可能跟着里面的指令走；这是 Agent 篇第 6 课的注入问题，RAG 免不了。</li>
+  </ul>
+  <p>一份工程综述的经验口径是：基础 RAG＋混合检索（字面匹配和语义检索各排一个榜）＋重排（把候选逐段和问题拼起来再打分）＋干净切块（第 4、6 课），能解决 80% 的问题。这是二手经验，不是论文结论；它说的正是「先把便宜的四件做好，再考虑加循环」。</p>
+
+  <h2>8. 怎么评测：把多查的几次记进成绩单</h2>
+  <p>Agentic 的评测不能只看准确率。多查的轮次、更多的 token、更长的等待，都要记进同一张成绩单；否则「更准」可能只是「更贵」。</p>
+  <p>沿用第 10 课的做法：同一套题、同一把尺子、只动一个变量。变量从「切块大小」换成「控制策略」——固定流水线 vs agentic，其他钉死。成绩单在原来的检索指标旁边，多加四列：轮数、检索次数、输入 token、墙钟时间；否定题再加一列「有没有正确拒答」。把它想成一张逐题的表：一行一题，列就是上面说的轮数、检索次数、输入 token、墙钟时间，否定题再加正确拒答；最后按题型求平均。</p>
+  <p>题目要按类型拆开报：多跳、单跳、否定、不用查。平均值会把「多跳涨了、简单题多查了」抹平。先定验收线，比如「多跳 Recall 至少提高 0.1，且总检索次数不超过 1.5 倍」；这两个数只是示例，按你的基线定，原则是「质量提升要大到用户能感知，成本增加要小到账单能接受」。线在跑之前定，跑完再定容易自欺。</p>
+  <p>日志要记 trace（这次运行的逐步记录：第几轮、查了什么、拿回什么、为什么停）。没有 trace，agentic 坏了只能猜；Agent 篇第 2 课打印 trace 的做法照搬。</p>
+
+  <h2>9. 动手跑一遍</h2>
+  <p>脚本在工作区：<code>exercises/rag/0011-agentic-rag.py</code>。它不装包、不调任何模型：一份 20 条制度的员工手册、六个场景、一台按规则决策的「代理」，把上面几个决定跑成可数的轨迹。把场景换成你自己的问题，流程原样能用。</p>
+  <pre><code>python exercises/rag/0011-agentic-rag.py</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。检索器仍是玩具（二字组合＋点积），评估器是关键词清单的替身；量的是流程，不是这批数字。上面各节贴的是实跑输出的摘录：[2] 全表、[3] 全表、[4] 全表、[6] 两行；[1][5][7] 没贴，跑了就能逐行对上。</p>
+  <pre><code>[2] 固定流水线：每道题都查一次，然后生成
+    题  类型      取到的块    覆盖                          判定
+    1   不用查    [0, 1]      （没有可勾的方面）            不用查却查了
+    2   单跳      [0, 4]      年假天数                      全中
+    3   多跳      [0, 4]      年假没休完                    缺 离职
+    4   多跳      [2, 4]      年假申请                      缺 加班调休
+    5   否定      [6, 0]      （没有可勾的方面）            有硬答风险
+    6   切块坏了  [1, 0]      三天以上                      缺 三天以内
+    → 多跳题只查一次，缺的那一半不会自己长出来；否定题它照样会生成。</code></pre>
+  <p><b>三处值得多看一遍。</b></p>
+  <ul>
+    <li><b>固定 6 次检索，代理 8 次，全中从 1 题到 3 题。</b>总次数没降反升：省下的是简单题，多花的是多跳题。这笔账要分开记，不能只看一个总数。</li>
+    <li><b>上限 2 是拐点，上限 3 和 5 不再涨。</b>第 3 轮多出来的那一次是白跑；「没有新证据就停」比上限更早生效。停止条件不是给保险再加一道保险，它本身就在决定成本。</li>
+    <li><b>切块坏了那道题，查几轮都缺同一块。</b>Agentic 只能改查询，改不了已经切碎的文本。先修语料，再谈 autonomy。</li>
+  </ul>
+
+  <h2>10. 检查一下</h2>
+  <p>六道题，核心假设、四个决定、Self-RAG、CRAG、预算和边界各过一遍。</p>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q1</span> 固定流水线的核心假设是什么？</p>
+    <button class="quiz-option">一个模型能回答所有领域的问题</button>
+    <button class="quiz-option" data-correct="true">一次检索能拿到全部所需的资料</button>
+    <button class="quiz-option">一种切块尺寸适合所有文档</button>
+    <button class="quiz-option">一套提示词能覆盖所有问法</button>
+    <p class="feedback"
+       data-ok="对。链本身没坏，坏的是「一次就够」这个假设；多跳题和不用查的题都不配合它。"
+       data-no="固定流水线真正的假设是「查一次就够」；模型、切块和问法都不是这里的关键。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q2</span> 下面哪一项不是 agentic RAG 在运行时新增的决定？</p>
+    <button class="quiz-option">查不查</button>
+    <button class="quiz-option">查什么</button>
+    <button class="quiz-option" data-correct="true">用哪个嵌入模型</button>
+    <button class="quiz-option">够不够、再查不查</button>
+    <p class="feedback"
+       data-ok="对。嵌入模型是建库时的决定，第 5 课讲过；运行时的四个决定是查不查、查什么、够不够、再查不查。"
+       data-no="嵌入模型在入库时选，换它要全量重嵌；它不是循环里每一轮都会变的决定。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q3</span> Self-RAG 的「反思 token」是什么？</p>
+    <button class="quiz-option">提示词里让模型自评的一句话</button>
+    <button class="quiz-option" data-correct="true">模型学出来的特殊 token，用来控制检索和自评</button>
+    <button class="quiz-option">检索器返回的相关性分数</button>
+    <button class="quiz-option">人工标注的答案质量标签</button>
+    <p class="feedback"
+       data-ok="对。它们是扩进词表、像普通字一样生成的 token；模型没练过就不会按预期工作。"
+       data-no="它不是提示词、不是检索分数、也不是人工标签；它是模型自己生成的 token，能力来自训练。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> CRAG 里评估器「拿不准」时走哪一支？</p>
+    <button class="quiz-option">Correct：只精炼内部资料</button>
+    <button class="quiz-option">Incorrect：丢掉全部资料</button>
+    <button class="quiz-option" data-correct="true">Ambiguous：内部精炼和网搜都做</button>
+    <button class="quiz-option">直接跳过评估，交给生成器</button>
+    <p class="feedback"
+       data-ok="对。中间那一支的存在，是为了不让整个系统把赌注全压在评估器的准确率上。"
+       data-no="拿不准对应 Ambiguous：两条都做，再合并；硬选一边正是三分支要避免的。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 轮数上限设了 5，第 3 轮发现拿回的都是旧块，该怎么做？</p>
+    <button class="quiz-option">继续换问法，直到用满 5 轮</button>
+    <button class="quiz-option">把 top-k 调大再查</button>
+    <button class="quiz-option" data-correct="true">停：没有新证据，再查也是同一批</button>
+    <button class="quiz-option">把上限改成 10，给它更多机会</button>
+    <p class="feedback"
+       data-ok="对。「没有新证据」应该比轮数上限更早触发；否则上限只是在替白跑买单。"
+       data-no="拿回旧块说明查询没带来新信息；加轮数、加 k 都只是多花钱，先停下来改方向。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 一道多跳题在固定流水线和 agentic 下都缺同一段，最可能的原因是什么？</p>
+    <button class="quiz-option">模型不够大，换个更大的</button>
+    <button class="quiz-option">轮数上限设得太小</button>
+    <button class="quiz-option" data-correct="true">切块把那段切碎了，查几轮都找不到</button>
+    <button class="quiz-option">评估器的关键词写少了</button>
+    <p class="feedback"
+       data-ok="对。文本已经被切走，改查询救不回来；先回第 4 课修边界，再谈加循环。"
+       data-no="两种策略都缺同一段，说明问题在语料或切块，不在控制策略；加轮数只会多花钱。"></p>
+  </div>
+
+  <h2>11. 想往下读</h2>
+  <div class="source">
+    <b>这节课的一手资料</b>：<br>
+    <a href="https://arxiv.org/abs/2310.11511">Asai et al. — Self-RAG（ICLR 2024 · arXiv 2310.11511）</a>——四类反思 token（Retrieve / IsRel / IsSup / IsUse）、按需检索、用 token 概率给候选打分；critic 蒸馏与训练流程；7B／13B 的结果。<br>
+    <a href="https://arxiv.org/abs/2401.15884">Yan et al. — Corrective RAG（CRAG · arXiv 2401.15884）</a>——0.77B 检索评估器、Correct / Incorrect / Ambiguous 三分支、精炼与网搜兜底；评估器准确率 84.3% 对 ChatGPT 58.0%；单例耗时 0.363 / 0.512 / 0.741 秒与消融结果。<br>
+    <a href="https://www.pinecone.io/learn/retrieval-augmented-generation/">Pinecone — Retrieval-Augmented Generation</a>——传统 RAG 的一次性流水线，以及 agent 作为编排者的四个动作（构造查询、访问更多检索工具、评估相关性与准确性、推理验证）。<br>
+    <b>相关但本课不重复</b>：IRCoT（arXiv 2212.10509）的交错检索与 Adaptive-RAG（arXiv 2403.14403）的按复杂度分流，第 7 课已引。<br>
+    <b>经验值</b>：「基础 RAG＋混合检索＋重排＋干净切块解决 80% 问题」来自一份工程综述，是二手经验，不是论文结论。
+  </div>
+
+  <div class="ask-teacher">
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如「我的多跳题多，轮数上限该定几轮？」「评估器总把相关文档判成不相关，先修评估器还是先改查询？」「agentic 之后延迟翻倍，先砍哪一段？」
+  </div>
+
+  <p class="next">
+    <b>回上一课</b>：<a href="0010-eval-methods.html">RAG · 第 10 课 · 评测方法：切多大，好不好</a>（对照实验和标注集是这一课评测的地基）<br>
+    <b>顺着往下</b>：<a href="../agent/0002-build-an-agent.html">Agent 篇 · 第 2 课 · 手写一个 agent</a>（检索只是其中一个工具；循环、max_steps、trace 都在那一课）<br>
+    <b>相关</b>：<a href="0007-query-engineering.html">RAG · 第 7 课 · 查询工程</a>（循环里要用的改写、拆开、路由）· <a href="0009-two-failure-modes.html">RAG · 第 9 课 · 翻车诊断与评估</a>（先分清是检索还是生成）<br>
+    术语表：<a href="../../reference/glossary.html#agentic-rag">Agentic RAG / 反思 token / 检索评估器</a> · <a href="../../reference/glossary.html#rag-eval">RAG 评测</a>
+  </p>
+
+  <footer>AI Agent 原理与工程 · RAG · 第 11 课 · 理论 · <a href="../index.html">课程目录</a></footer>
+</div>
+</body>
+</html>
+

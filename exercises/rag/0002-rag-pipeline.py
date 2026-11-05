@@ -1,20 +1,20 @@
 """RAG · 第 2 课 配套脚本：一条 RAG 链，六步各在干什么、出问题会怎样。
 
 把一份原始文档一路走到「模型吐出答案」，每一步打印【手上的数据长什么样】。
-最后一段是关键：六步里只有最后一步是模型，前五步全是普通程序。
+最后一段是关键：六步里只有最后一步是答题模型，前五步由代码按固定顺序调度。
 
 你会看到：
   1. 切块（chunking）—— 一份文档切成小段；切在哪、切多大都有坑
   2. 变向量（embedding）—— 每段压成一根向量；用的是另一个模型
   3. 存起来（向量库）
   4. 查（retrieval）—— 问题也变向量，比相似度，排序，取 top-k
-  5. 塞进提示词
-  6. 生成 —— 唯一用到模型的一步
+  5. 组装（塞进提示词）
+  6. 生成 —— 唯一写最终答案的一步（答题模型）
 
 ⚠ 「变向量」仍是玩具：按【二字组合】出现几次算。真的用专门的文本嵌入模型。
 
 运行：  python exercises/rag/0002-rag-pipeline.py
-Windows 终端若中文乱码：先执行  chcp 65001
+Windows 终端若直接跑报 UnicodeEncodeError：先执行  chcp 65001 再跑
 """
 
 DOC = (
@@ -73,11 +73,11 @@ print("        切得不是地方 → 上下文被切碎，剩下的半句谁也
 vocab = sorted({p for t in chunks + [QUESTION] for p in [t[i:i + 2] for i in range(len(t) - 1)]})
 vectors = [to_vector_on(c, vocab) for c in chunks]
 print(f"\n[2] 第 2 步 · 变向量 embedding：每段压成一根 {len(vocab)} 维的向量")
-print("      这根向量是【每个「二字组合」出现几次】的一串数，例如：")
-for i, c in [(2, chunks[1]), (3, chunks[2])]:
-    pairs = [c[j:j + 2] for j in range(len(c) - 1)]
-    top = sorted({p: pairs.count(p) for p in set(pairs)}.items(), key=lambda kv: -kv[1])[:3]
-    print(f"        段 {i} → " + "、".join(f"「{p}」×{n}" for p, n in top) + " …")
+print("      这根向量是【每个「二字组合」出现几次】的一串数：")
+pairs2 = [chunks[1][j:j + 2] for j in range(len(chunks[1]) - 1)]
+pairs3 = [chunks[2][j:j + 2] for j in range(len(chunks[2]) - 1)]
+print(f"        段 2 里「三天」出现 {pairs2.count('三天')} 次")
+print(f"        段 3 里「请假」出现 {pairs3.count('请假')} 次，「证明」出现 {pairs3.count('证明')} 次")
 print("      ⚠ 用的是【另一个模型】（文本嵌入模型），不是 LLM 底层第 1 课那个词嵌入。")
 print("        词嵌入：一个 token 一根，喂给模型当输入。")
 print("        文本嵌入：整段一根，只用来排序，不喂给模型。")
@@ -100,17 +100,17 @@ print(f"      按分排序，取前 {TOP_K} 段（top-k，k = {TOP_K}）")
 print("      ⚠ 取太少会漏；取太多会把重点淹掉。k 是 RAG 里第一个要调的数。")
 
 # ============ [5] 塞进提示词 ============
-print(f"\n[5] 第 5 步 · 塞进提示词：把挑出来的 {len(chosen)} 段排在问题前面")
+print(f"\n[5] 第 5 步 · 组装（塞进提示词）：把挑出来的 {len(chosen)} 段排在问题前面")
 show_prompt([c for _, _, c in chosen], QUESTION)
 print("      ⚠ 这一步也有坑：【检索到 ≠ 用上】。")
 print("        塞进去不等于模型会用——排在中间的内容最不容易被用上。")
 
 # ============ [6] 生成 ============
 print("\n[6] 第 6 步 · 生成：模型读完提示词，吐出答案")
-print("      答：三天含在「三天以内」里，向直属主管口头报备即可，事后补一条消息。")
+print("      答：三天含在「三天以内」里，向直属主管口头报备即可。")
 
 # ============ [7] 收尾 ============
 print("\n[7] 记住一件事")
-print("      六步里，只有第 6 步是模型。前五步全是普通程序。")
-print("      RAG 的「技术性」全在前五步——切块、变向量、存、查、拼提示词。")
+print("      六步里，只有第 6 步是答题模型。前五步由代码按固定顺序调度。")
+print("      RAG 的「技术性」全在前五步——切块、变向量、存、查、组装。")
 print("      所以 RAG 出问题时，先别怪模型：多半是前五步里哪一步没做好。")

@@ -138,7 +138,7 @@ python exercises/agent/0002-build-an-agent.py
 | 课    | 标题                                                                                                                      |
 | ---- | ----------------------------------------------------------------------------------------------------------------------- |
 | 0001 | [为什么得「先查资料再回答」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0001-why-retrieval.html)                 |
-| 0002 | [一条 RAG 链长什么样](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0002-rag-pipeline.html) —— 六步里只有最后一步是模型   |
+| 0002 | [一条 RAG 链长什么样](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0002-rag-pipeline.html) —— 六步里只有最后一步是答题模型，第④步还分固定与循环   |
 | 0003 | [什么时候不该上 RAG](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0003-when-not-to-use-rag.html)             |
 | 0004 | [建库：清洗与切块](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0004-cleaning-and-chunking.html) —— 洗对、切对，答案才装得下 |
 | 0005 | [嵌入与相似度](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0005-embedding-and-similarity.html) —— 三把尺子各量什么，尺子跟模型走 |
@@ -147,6 +147,7 @@ python exercises/agent/0002-build-an-agent.py
 | 0008 | [上下文组装与生成](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0008-context-assembly.html) —— 放几段、怎么排、怎么约束、没有答案怎么说 |
 | 0009 | [翻车诊断与评估](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0009-two-failure-modes.html) —— 先看答案在不在提示词里，再分开量检索与生成 |
 | 0010 | [评测方法：切多大，好不好](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0010-eval-methods.html) —— 同一套题跑三个切块配置，只动一个变量 |
+| 0011 | [Agentic RAG：检索变成工具](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0011-agentic-rag.html) —— 查不查、查什么、够不够、再查不查；多轮用预算和停止条件管住 |
 
 ### 速查 · 课很少回看，速查会
 

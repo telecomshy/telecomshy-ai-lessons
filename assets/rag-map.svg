@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 344" width="860" height="344" role="img" aria-label="一条 RAG 链的六步地图。从左到右六个方框：切块（文档变块）、变向量（块变向量，用嵌入模型）、存起来（向量变索引）、查（问题变候选块，带分数）、组装（资料加问题变一屏提示词）、生成（一屏变答案，用答题模型）。前五步灰色，表示不写最终答案；第六步橙色，标为答题模型。第四步下方有一个岔口面板：固定流水线是查一次、组装、生成，大多数问题够用；Agentic 是查、判断够不够、再查，难问题才走，轮数、token、时间都要设上限。底部结论：前五步由代码调度，第六步才是答题模型，答错了先在前五步找。">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a2b06"/>
+    </marker>
+    <marker id="arw2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6c675e"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="860" height="344" fill="#fdfcf8"/>
+  <text x="30" y="26" font-family="sans-serif" font-size="14" font-weight="600" fill="#1b1a17">一条 RAG 链：六个动作，只有最后一个是答题模型</text>
+  <text x="30" y="45" font-family="sans-serif" font-size="10.5" fill="#6c675e">同一句「请三天假要走什么流程？」，数据换六种形状</text>
+
+  <!-- ① 切块 -->
+  <rect x="30" y="60" width="118" height="88" rx="6" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="89" y="88" text-anchor="middle" font-family="sans-serif" font-size="13.5" font-weight="600" fill="#1b1a17">① 切块</text>
+  <text x="89" y="116" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#1b1a17">文档 → 块</text>
+
+  <!-- ② 变向量 -->
+  <rect x="163" y="60" width="118" height="88" rx="6" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="222" y="88" text-anchor="middle" font-family="sans-serif" font-size="13.5" font-weight="600" fill="#1b1a17">② 变向量</text>
+  <text x="222" y="112" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#1b1a17">块 → 向量</text>
+  <text x="222" y="130" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#6c675e">（嵌入模型）</text>
+
+  <!-- ③ 存起来 -->
+  <rect x="296" y="60" width="118" height="88" rx="6" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="355" y="88" text-anchor="middle" font-family="sans-serif" font-size="13.5" font-weight="600" fill="#1b1a17">③ 存起来</text>
+  <text x="355" y="116" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#1b1a17">向量 → 索引</text>
+
+  <!-- ④ 查 -->
+  <rect x="429" y="60" width="118" height="88" rx="6" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="488" y="88" text-anchor="middle" font-family="sans-serif" font-size="13.5" font-weight="600" fill="#1b1a17">④ 查</text>
+  <text x="488" y="112" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#1b1a17">问题 → 候选块</text>
+  <text x="488" y="130" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#6c675e">（带分数）</text>
+
+  <!-- ⑤ 组装 -->
+  <rect x="562" y="60" width="118" height="88" rx="6" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="621" y="88" text-anchor="middle" font-family="sans-serif" font-size="13.5" font-weight="600" fill="#1b1a17">⑤ 组装</text>
+  <text x="621" y="112" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#1b1a17">资料＋问题</text>
+  <text x="621" y="130" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#1b1a17">→ 一屏提示词</text>
+
+  <!-- ⑥ 生成 -->
+  <rect x="695" y="60" width="118" height="88" rx="6" fill="#fff" stroke="#8a2b06"/>
+  <text x="754" y="88" text-anchor="middle" font-family="sans-serif" font-size="13.5" font-weight="600" fill="#1b1a17">⑥ 生成</text>
+  <text x="754" y="112" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#1b1a17">一屏 → 答案</text>
+  <text x="754" y="130" text-anchor="middle" font-family="sans-serif" font-size="9.5" fill="#8a2b06">答题模型</text>
+
+  <!-- 步与步之间的箭头 -->
+  <line x1="150" y1="104" x2="161" y2="104" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+  <line x1="283" y1="104" x2="294" y2="104" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+  <line x1="416" y1="104" x2="427" y2="104" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+  <line x1="549" y1="104" x2="560" y2="104" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+  <line x1="682" y1="104" x2="693" y2="104" stroke="#8a2b06" stroke-width="1.4" marker-end="url(#arw)"/>
+
+  <!-- 图例 -->
+  <rect x="30" y="166" width="10" height="10" fill="#f4f0e8" stroke="#e4ded1"/>
+  <text x="46" y="175" font-family="sans-serif" font-size="10.5" fill="#6c675e">灰：前五步，不写最终答案</text>
+  <rect x="206" y="166" width="10" height="10" fill="#fff" stroke="#8a2b06"/>
+  <text x="222" y="175" font-family="sans-serif" font-size="10.5" fill="#6c675e">橙：第六步，答题模型</text>
+  <text x="830" y="175" text-anchor="end" font-family="sans-serif" font-size="10.5" fill="#8a2b06">第④步有分岔 ↓</text>
+
+  <!-- 第④步的岔口 -->
+  <line x1="488" y1="148" x2="488" y2="190" stroke="#6c675e" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#arw2)"/>
+  <rect x="290" y="190" width="540" height="110" rx="7" fill="#ffffff" stroke="#c9c2b6"/>
+  <text x="306" y="212" font-family="sans-serif" font-size="12.5" font-weight="600" fill="#1b1a17">第④步不是直线：查一次，还是查几轮？</text>
+
+  <text x="306" y="238" font-family="sans-serif" font-size="11" font-weight="600" fill="#1b1a17">固定流水线</text>
+  <text x="390" y="238" font-family="sans-serif" font-size="10.5" fill="#1b1a17">查一次 → 组装 → 生成（大多数问题够用）</text>
+
+  <text x="306" y="264" font-family="sans-serif" font-size="11" font-weight="600" fill="#8a2b06">Agentic</text>
+  <text x="390" y="264" font-family="sans-serif" font-size="10.5" fill="#1b1a17">查 → 判断够不够 → 再查</text>
+  <text x="390" y="284" font-family="sans-serif" font-size="10.5" fill="#6c675e">难问题才走；轮数、token、时间都要设上限（第 11 课）</text>
+
+  <text x="30" y="330" font-family="sans-serif" font-size="10.5" fill="#6c675e">前五步由代码调度，第六步才是答题模型——答错了，先在前五步找。</text>
+</svg>

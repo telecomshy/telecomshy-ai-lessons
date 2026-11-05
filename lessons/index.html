@@ -175,7 +175,7 @@
     </div>
     <div class="pillar">
       <h3><a href="rag/0002-rag-pipeline.html">0002 · 一条 RAG 链长什么样</a></h3>
-      <p>切块 → 变向量 → 存 → 查 → 塞进提示词 → 生成。<b>六步里只有最后一步是模型</b>。</p>
+      <p>切块 → 变向量 → 存 → 查 → 组装 → 生成。<b>前五步由代码调度，只有最后一步是答题模型</b>；第④步还分固定查一次和 agent 循环。</p>
       <p>动手：<code>exercises/rag/0002-rag-pipeline.py</code></p>
     </div>
     <div class="pillar">
@@ -217,6 +217,11 @@
       <h3><a href="rag/0010-eval-methods.html">0010 · 评测方法：切多大，好不好</a></h3>
       <p>「切多大」没有通用答案。<b>同一套题、三个切块配置、只动一个变量</b>，三张成绩单的差距就是答案。</p>
       <p>动手：<code>exercises/rag/0010-eval-configs.py</code></p>
+    </div>
+    <div class="pillar">
+      <h3><a href="rag/0011-agentic-rag.html">0011 · Agentic RAG：检索变成工具</a></h3>
+      <p>固定流水线假设一次检索就够。<b>查不查、查什么、够不够、再查不查</b>——把检索放进循环，再用预算和停止条件管住它。</p>
+      <p>动手：<code>exercises/rag/0011-agentic-rag.py</code></p>
     </div>
   </div>
 

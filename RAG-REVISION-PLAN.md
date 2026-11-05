@@ -25,7 +25,7 @@
 | 号 | 课 | 类型 | 来路 | 主线内容 | 例子锚点 |
 |---|---|---|---|---|---|
 | 0001 | 为什么先查资料再回答 | 理论 | ✅ 已完成（2026-11-02，223 行） | 三短板各配展开案例；RAG 一句话定义（开卷考试）；参数没动的事实 | — |
-| 0002 | 一条 RAG 链长什么样 | 理论（地图课） | 原课终稿 | 六步每步：机制一句话＋手上数据长什么样＋翻车预告＋挂专门课 | 全程「六步→面板」对照（一句级） |
+| 0002 | 一条 RAG 链长什么样 | 理论（地图课） | ✅ 已完成（2026-11-06，285 行） | 六步每步：机制一句话＋手上数据长什么样＋翻车预告＋挂专门课；第④步标固定与 agentic 分岔 | 全程「六步→面板」对照（一句级） |
 | 0003 | 该不该上 RAG：三选一 | 理论 | 原 0003 扩充 | RAG vs 微调（知识 vs 行为，链 llm/0009）vs 长上下文（成本＋lost-in-the-middle，链 0008）；保留原决策表 | — |
 | 0004 | 建库：清洗与切块 | 理论 | 0002-deep 升格＋新内容 | 加载清洗三脏（页眉/表格换行/代码块）；三档切法＋重叠救什么；切块基准数字；解析模板怎么选 | 换模板 / chunk 大小的差异一句级点到 |
 | 0005 | 嵌入与相似度 | 理论 | 新课（0001-deep 失手清单收编） | 嵌入模型是另一个模型（区别于 llm/0001 词嵌入）；三算法（点积/余弦/欧氏）；失手清单（同名不同物/生僻词）；换模型＝全量重算 | 嵌入约束（兼容性抽查）一句级 |
@@ -81,7 +81,7 @@
 - 标题切块器两模式：**Hierarchy**（保留完整标题路径"Part 1>Chapter 3>Section 2"，适合法规/合同/技术规范） vs **Group**（同层相邻小节合并，适合书/手册/报告，重连续性）。
 - PDF 解析器：DeepDOC（默认，OCR＋表格结构＋版面）/ Naive（纯文本快）/ Docling / TCADP / MonkeyOCRv2 / 外接视觉模型（复杂版面更强但多花 token）。
 - Extractor（切块后增强）：自动关键词、**自动问题**（预生成该 chunk 能答什么问题，索引 Questions 字段可让用户问题直接命中）、标签、**Summary（原名 Augmented context，2026-11-03 复抓改名——给每 chunk 生成上下文摘要，与 Anthropic Contextual Retrieval 同思想）**、自动元数据。
-- Indexer：Embedding / Full-text / 双开（官方建议双开）；filename embedding weight；索引字段可选 Processed text/Questions/Augmented context。
+- Indexer：Search method **展示** Embedding / Full-text 两路（⚠ 2026-11-06 复抓：现行面板是展示标签，**不是可勾选框**；旧记的「官方建议双开」作废）；filename embedding weight；索引字段可选 Processed text/Questions/Augmented context。
 - **嵌入约束（⚠ 2026-11-03 复抓换口径）**：旧 0.17/rc2 时代官方原文"Once you have selected an embedding model and used it to parse a file, you are no longer allowed to change it"（选了就不许换）；**现行口径＝兼容性抽查**——有块之后换模型要过抽查（维度一致＋平均余弦 ≥0.9 才放行），**且保存后不自动重嵌旧块**。"换模型＝新建库＋全量重嵌"仍是 0005 的正确结论，但写课时不得再说"工具禁止换"。
 - 其他：数据集级 PageRank 权重、Tag sets、Table 列角色（索引/元数据/both）、自定义 Ingestion Pipeline、Knowledge Compilation（Wiki/Navigation/Graph）。
 
@@ -142,7 +142,9 @@
 - [x] 批 2 第四会话（2026-11-05）：**0009 翻车诊断与评估**开课（291 行；两类翻车→打印提示词→分开评/检索四尺→忠实度与相关性→LLM-as-Judge→单跳/多跳/否定三类评估集；新插图 `rag-diagnosis.svg`；收编旧 0009-deep 全部内容后关停，RAG 轨从此无 deep；顺手修 `0009-rag-eval.py` 的「8→10 个问题」与无出处 90/70 阈值）
 - [x] F5 验收（2026-11-05，本会话）：0009/0008/0004/0005 全文通读、小测点一遍、两脚本复跑对账、四张欠账 SVG＋`rag-diagnosis.svg` 页内目视全过；抓出并修两处——0009 §3「六个决定」→「五个决定」（对表 0008）、`0009-rag-eval.py` docstring 进阶版残留清除
 - [x] 批 3 第一会话（2026-11-05）：**0010 评测方法：切多大，好不好**开课（220 行；20 题标注集模板〔单跳 10/多跳 5/否定 5，标内容不标块号〕→ 三个切块配置〔45/90/180 字〕对照 → 三张成绩单 → 逐题对账〔4 题翻转全指向制度 3 被切碎〕→ 切碎 vs 没进前 k 两本账 → 盲区〔切大切坏无题的制度 18、分数全绿〕→ 否定题阈值重叠 → 判官提示词模板＋蓝本三教训〔相关性归零/参数非线性 0.2→0.35/拒答被判低忠实 0.025〕→ 结论模板；新插图 `eval-configs.svg`＋新脚本 `0010-eval-configs.py`〔确定性双跑验证、摘录逐字对账〕＋小测 6 题；术语表补「对照实验/标注集」；0009 下一课链接回填、0004 两处对表、主页 stats 26→27/35→36/24→25、README＋目录卡同步）
-- [ ] 批 3：0010 评测方法 → 0011 Agentic RAG → 0002 地图终稿 → 0003 三选一加厚
+- [x] 批 3 第二会话（2026-11-05）：**0011 Agentic RAG：检索变成工具**开课（固定流水线三类不配合→四个决定→Self-RAG 反思 token→CRAG 三分支→多轮收益与预算→三种 agentic 对照→何时不上→怎么评测；新插图 `agentic-rag-loop.svg`＋新脚本 `0011-agentic-rag.py`〔6 个场景、轮数 1/2/3/5 对照、确定性输出、课内 `<pre>` 逐行对账〕＋小测 6 题；术语表补「Agentic RAG / 反思 token / 检索评估器」；0010 next 回填真链接；README/目录卡/主页 stats 同步；RESOURCES 两条论文补四类 token、三分支、84.3%、开销数字）
+- [x] 批 3 第三会话（2026-11-06）：**0002 一条 RAG 链长什么样（地图终稿）**（285 行；六步每步＝机制一句＋手上数据＋坏法＋专课门牌；面板锚点 parsing method/recommended chunk size、Embedding model、Search method（展示标签非勾选框）、Retrieval testing、Top N/Show citations/Empty Response；第④步标固定与 agentic 分岔；新插图 `rag-map.svg`；0002 脚本改「组装/答题模型」，补 [2][3] 输出、删掉资料外的「事后补一条消息」；两轮学习审计抓出并修正：「前五步不生成文字」与建库模型生成摘要的矛盾（改「不写最终答案」并点名 Extractor）、Indexer 双开口径、排查表缺③、Top N 与 k 关系、脚本 GBK 崩溃提示；0001/0004/0006/0009/0011 接口句对表）
+- [ ] 批 3：0003 三选一加厚（引用 0008 的 lost-in-the-middle 落点）
 - [ ] 收尾：MISSION 边界句、progress.ps1 D/E 段补 RAG 覆盖、index/README 同步、并入 NEXT-SESSION.md、建存档、本文件退役
 
 ## 10. 新会话开工指引（回答"下次怎么接上"）
@@ -151,7 +153,7 @@
 
 1. **开场**：新会话按 AGENTS.md 标准流程会先读 NEXT-SESSION.md——其中已写"下一步：读 RAG-REVISION-PLAN.md 按批次施工"，走标准流程即可自动接上。
 2. **每轮收尾**：更新本文件 §9 进度一行；编号、映射有变同步 §3/§4 与 RESOURCES 索引表。
-3. **下一项**：0011 Agentic RAG（固定流水线 vs agent 决策、Self-RAG 反思 token、CRAG 评估器三分支、迭代上限与延迟代价；链 agent/0002）。0006～0010 可当文字手感对照样本；0010 的「在写」预告已回填真链接，0011 开课后记得把 0010 next 区的「在写」换真链接。
+3. **下一项**：0003 三选一加厚（引用 0008 的 lost-in-the-middle 落点）。0006～0011 可当文字手感对照样本。
 
 ## 变更履历
 
