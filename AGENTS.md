@@ -25,6 +25,7 @@
 | 写作标准·全局（零件 · 课型 · 讲法 · 互链＋交付检查单） | `internal/standards/COURSE-STANDARD.md` | 每次写课/改课前读；节号沿用原 1.2～1.6 |
 | 写作标准·轨道（分版 · 课型标识 · 受众 · 脚本分层 · 编号特例） | `internal/standards/tracks/<轨道>.md` | **写/改哪轨的课读哪轨**；审计 F 段盯存在与体量 |
 | 一手来源 | `RESOURCES.md` | 写任何知识点唯一取材处；顶部索引表按课查 |
+| 课件文字稿（markdown 镜像） | `lessons-md/` | 由 `tools/html2md.py` 从 `lessons/` 生成，结构与 `lessons/` 一致；学习者直改、回写 HTML 的底稿＋课件文字版；约定见其 `README.md`，改课件后重跑生成会覆盖未交回的修改 |
 | 学习证据 | `internal/learning-records/` | teach 技能的学习记录 |
 | 操作细节 | `internal/rules/` | 做那件事的时候读 |
 | 历史决策与教训 | `internal/history/` | 旧决策被质疑、续写同款工作时读 |

@@ -12,7 +12,7 @@
 
   <!-- 两栏标题 -->
   <rect x="30" y="24" width="380" height="42" rx="8" fill="#f4e9e2" stroke="#8a2b06" stroke-width="1.5"/>
-  <text x="48" y="51" font-family="sans-serif" font-size="15" fill="#8a2b06">你的壳（网页版 / TeleAgent / 你的脚本）</text>
+  <text x="48" y="51" font-family="sans-serif" font-size="15" fill="#8a2b06">你用的软件（网页版 / TeleAgent / 你的脚本）</text>
 
   <rect x="490" y="24" width="380" height="42" rx="8" fill="#e8f2ec" stroke="#1f6b3a" stroke-width="1.5"/>
   <text x="508" y="51" font-family="sans-serif" font-size="15" fill="#1f6b3a">模型供应商（API / 模型）</text>
@@ -29,7 +29,7 @@
   <rect x="490" y="86" width="380" height="230" rx="8" fill="#fff" stroke="#e4ded1" stroke-width="1.5"/>
   <text x="508" y="116" font-family="sans-serif" font-size="14" fill="#1b1a17">收下请求、跑模型</text>
   <text x="508" y="144" font-family="sans-serif" font-size="14" fill="#1b1a17">不知道你上一轮说过什么</text>
-  <text x="508" y="172" font-family="sans-serif" font-size="13.5" fill="#6c675e">（历史全靠你的壳带过来）</text>
+  <text x="508" y="172" font-family="sans-serif" font-size="13.5" fill="#6c675e">（历史全靠你这边的软件带过来）</text>
   <text x="508" y="226" font-family="sans-serif" font-size="14" fill="#1b1a17">回一段话，</text>
   <text x="508" y="250" font-family="sans-serif" font-size="14" fill="#1b1a17">或一组 tool_calls</text>
 

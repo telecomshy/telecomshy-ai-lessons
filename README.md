@@ -139,7 +139,7 @@ python exercises/agent/0002-build-an-agent.py
 | ---- | ----------------------------------------------------------------------------------------------------------------------- |
 | 0001 | [为什么得「先查资料再回答」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0001-why-retrieval.html)                 |
 | 0002 | [一条 RAG 链长什么样](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0002-rag-pipeline.html) —— 六步里只有最后一步是答题模型，第④步还分固定与循环   |
-| 0003 | [什么时候不该上 RAG](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0003-when-not-to-use-rag.html)             |
+| 0003 | [该不该上 RAG：三条路怎么选](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0003-when-not-to-use-rag.html) —— 一个建库查、一个整份塞、一个改行为 |
 | 0004 | [建库：清洗与切块](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0004-cleaning-and-chunking.html) —— 洗对、切对，答案才装得下 |
 | 0005 | [嵌入与相似度](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0005-embedding-and-similarity.html) —— 三把尺子各量什么，尺子跟模型走 |
 | 0006 | [多路召回：混合检索与重排](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/rag/0006-hybrid-and-rerank.html) —— 各排一个榜，用名次合成，再精挑 |

@@ -64,7 +64,7 @@
   <p>真要做多 agent，优先用成熟框架或产品，别自己手搓调度；这课只讲形状，不写编排脚本。</p>
 
   <h2>3. 连法不止一种：多 agent 的拓扑谱系</h2>
-  <p>编排者-工作者是最常见的形状，但不是唯一的连法。把<a href="0001-what-is-an-agent.html">第 1 课</a>第 5 节那张 workflow 谱系表拿来对照就清楚了：表里的链式、并行、编排者-工作者是<b>步骤写死的流程</b>，每一步是一次模型调用；多 agent 做的事，是把那些步骤换成<b>一个个自己转循环的 agent</b>。节点变重了，连法就从表里那几行长成一个谱系：</p>
+  <p>编排者-工作者是最常见的形状，但不是唯一的连法。对照 workflow 的骨架就清楚了：Anthropic 的工程文章（文末一手资料）列过链式、分流、并行、编排者-工作者、评估-优化五种，其中链式、并行、编排者-工作者是<b>步骤写死的流程</b>，每一步是一次模型调用；多 agent 做的事，是把那些步骤换成<b>一个个自己转循环的 agent</b>。节点变重了，连法就从那几种骨架长成一个谱系：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">连法</th>
@@ -275,6 +275,7 @@
 
   <div class="source">
     <b>这节课的一手资料</b>：<br>
+    <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — "Building effective agents"</a>：workflow 与 agent 的分界、五种骨架（链式／分流／并行／编排者-工作者／评估-优化）与「先找最简单可行解」（2024-12 发布，2026-10-21 复核）。<br>
     <a href="https://www.anthropic.com/engineering/multi-agent-research-system">Anthropic — "How we built our multi-agent research system"</a>：多 agent 的量级（1 agent 3～10 次调用 / 2～4 workers / token ×4·×15 / 复杂调研 +90.2%，<b>均为他们自报口径</b>）、派单四件（目标／输出格式／工具与来源／边界）、只回结论、收尾的 CitationAgent、同步执行的瓶颈与异步方向（2026-10-26 复抓）；<a href="https://platform.claude.com/cookbook/patterns-agents-orchestrator-workers">Anthropic — Orchestrator-workers 模式（Cookbook）</a>：动态派单与预定义并行的分界、N+1 次调用的账（2026-10-26 抓）。<br>
     <a href="https://www.teleai.com.cn/doc/7czHMDStGDQr1JsAMKcZ/Gik5VRTWAer7xDrqNBS7">天翼 AI — TeleAgent 桌面版操作手册</a>：任务监控里的「任务委派」＝子智能体执行过程（2026-10-18 抓）· <a href="https://opencode.ai/docs/agents/">OpenCode — Agents 文档</a>：primary/subagents、自动调用与 <code>@mention</code>、自定义 agent（2026-10-18 抓）。
   </div>

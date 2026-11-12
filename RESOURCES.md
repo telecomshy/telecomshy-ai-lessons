@@ -8,9 +8,9 @@
 
 | 要写／改的课 | 优先来源（按正文条目名定位） |
 |---|---|
-| `agent/0001`（是什么·循环·workflow 谱系·三柱·记忆） | Knowledge 通用段（Anthropic Building effective agents · Dify Workflow · Lilian Weng 三支柱 · Anthropic context engineering · ReAct）＋「记忆」小节 |
+| `agent/0001`（是什么·循环·三档·三柱·记忆） | Knowledge 通用段（Anthropic Building effective agents · Lilian Weng 三支柱 · Anthropic context engineering · OpenAI Function calling）＋「记忆」小节（2026-11-07 文章体重写后：workflow 五骨架改一句带过、Dify 条目不再用） |
 | `agent/0002`（实操·真模型接入） | 「Agent 篇 0002 实操」小节（全部当场抓）＋ OpenAI Function calling · Anthropic advanced tool use |
-| `agent/0003`（MCP） | MCP 系条目（MCP 官方文档 What is/Architecture · Anthropic 发布文 · 腾讯云 · 阿里云百炼 · ModelScope · npx）＋「TeleAgent 案例」小节的操作手册 |
+| `agent/0003`（MCP） | MCP 系条目（MCP 官方文档 What is/Architecture/Authorization/SDK · Anthropic 发布文 · 腾讯云 · 阿里云百炼 · ModelScope · npx）＋「TeleAgent 案例」小节的操作手册 |
 | `agent/0004`（Skill） | Anthropic Agent Skills ＋ 阿里云百炼 Skill · ModelScope Skills ＋「TeleAgent 案例」小节的操作手册（创建技能/导入） |
 | `agent/0005`（多 agent） | multi-agent research system · Orchestrator-workers Cookbook · TeleAgent 操作手册（任务委派）· OpenCode Agents ＋（workflow 谱系对照）Building effective agents |
 | `agent/0006`（提示词注入与护栏） | OWASP LLM Top 10（LLM01/03/05/06）· Anthropic memory 工具文档 · TeleAgent 操作手册（授权/YOLO/执行分档/工作空间） |
@@ -27,7 +27,7 @@
 | `llm/0009`＋附录（后训练） | 「蒸馏」小节的后训练条目（InstructGPT · DPO · GRPO · TRL · LoRA · PPO · Gudibande） |
 | `rag/0001`（为什么先查·三短板） | Lewis 原论文＋Pinecone RAG 指南（五局限·四组件） |
 | `rag/0002`（链路地图·六步） | Pinecone RAG 指南（四组件）＋RAGFlow quickstart/Dataset Configuration（六步→面板对照）＋管线实践 |
-| `rag/0003`（该不该上·三选一） | Lewis＋Pinecone RAG 指南（四条好处）＋llm/0009 微调课互链 |
+| `rag/0003`（该不该上·三选一） | Lewis＋Pinecone RAG 指南（四条好处）＋Liu（lost-in-the-middle）＋Gudibande（学得会腔调、学不会事实）＋Anthropic 上下文工程（context rot）＋llm/0009 微调课互链 |
 | `rag/0004`（建库·清洗与切块） | Pinecone Chunking＋RAGFlow Dataset Configuration＋Windows 部署（调参顺序） |
 | `rag/0005`（嵌入与相似度） | Pinecone Vector Similarity（三尺子）＋RAGFlow Dataset Configuration（嵌入约束新口径）＋0001-deep 失手清单收编 |
 | `rag/0006`（混合检索与重排） | Pinecone Hybrid/RRF 官方指南（融合名次不融合分数、k=60）＋Cohere Rerank（拼 token 机制）＋Anthropic 数字链＋管线实践（召回 50 精排 5） |
@@ -47,7 +47,7 @@
 - [OpenAI — "A practical guide to building agents"（PDF）](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/)
   面向产品/工程团队的实践指南，覆盖单 vs 多 agent、工具设计、护栏与人机协同。**用来**：从原理过渡到工程取舍。
 - [Dify 官方文档 — Workflow 与 Chatflow](https://docs.dify.ai/zh/cloud/use-dify/build/workflow-chatflow) ／ [编排逻辑](https://docs.dify.ai/zh/cloud/use-dify/build/orchestrate-node)
-  workflow 档的产品正源。**2026-10-21 抓（`agent/0001` §5「三处能摸到」用）**：Workflow 自我定位「可靠、可重复的流程」；节点族含<b>问题分类器、If-Else、迭代/循环、Agent 节点</b>（Agent 节点定义「将 Agent 作为工作流中的一步运行」——流程里嵌自主循环的公开实例）；编排页含「串行与并行」。<b>同类平台（二手口径，仅提及不展开）</b>：扣子 Coze＝字节旗下一站式智能体开发与工作流编排平台（百科口径）；n8n 偏自动化集成。
+  workflow 档的产品正源。**2026-10-21 抓（原 `agent/0001` §5「三处能摸到」用；2026-11-07 0001 文章体重写后不再引用，条目保留备用）**：Workflow 自我定位「可靠、可重复的流程」；节点族含<b>问题分类器、If-Else、迭代/循环、Agent 节点</b>（Agent 节点定义「将 Agent 作为工作流中的一步运行」——流程里嵌自主循环的公开实例）；编排页含「串行与并行」。<b>同类平台（二手口径，仅提及不展开）</b>：扣子 Coze＝字节旗下一站式智能体开发与工作流编排平台（百科口径）；n8n 偏自动化集成。
 - [Chip Huyen — "Agents"（博客，2025-01）](https://huyenchip.com/2025/01/07/agents.html)
   《AI Engineering》作者对 agent 的清晰拆解，尤其擅长讲**失败模式**与评估。**用来**：讲"会在哪里失败"。
 - [Chip Huyen —《AI Engineering》(O'Reilly)](https://www.oreilly.com/library/view/ai-engineering/9781098166298/)
@@ -345,6 +345,10 @@
   **0003 铺垫的痛点原话**："Every new data source requires its own custom implementation, making truly connected systems difficult to scale."（每接一个数据源都要单独写一套对接，真正连得起来的系统根本铺不开）；MCP 定位是"universal, open standard… replacing fragmented integrations with a single protocol"；发布时带规范/SDK、Claude Desktop 本地 server 支持、开源 server 仓库三件。**用来**：0003 §1「工具写不完」的出处与"没有标准"的定性。
 - [Model Context Protocol — 官方文档（Architecture + Connect to local servers）](https://modelcontextprotocol.io/docs/2026-07-28/learn/architecture)（2026-10-18 抓；配置页 [connect-local-servers](https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers)）
   **角色**：MCP host（AI 应用）给每个 server 建一个 MCP client；本地 stdio server 通常单客户端，远程 Streamable HTTP server 可服务多个客户端。**传输**：stdio（本机进程标准输入/输出）／Streamable HTTP（远程，支持 Bearer/API key/OAuth）。**数据层**：JSON-RPC 2.0、**无状态**（每个请求自带版本与能力）；发现 `server/discover`、`tools/list`，执行 `tools/call`；server 公布 **tools / resources / prompts**；工具清单变化可通知。**配置**：本地 server 的 JSON 形状是 `mcpServers` → 服务名 → `command` / `args` / `env`（env 放 key）；官方示例是 filesystem server。**安全**：本地 server 以你的用户权限运行，只给需要的目录。**用来**：0003 三个角色、传输、发现/调用、配置字段与安全；0004「MCP 还是 Skill」里"标准接口/多客户端/发现"那一列。
+- [Model Context Protocol — 规范：Authorization](https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization)（2026-11-08 抓）
+  **鉴权的一手口径**：MCP「provides authorization capabilities at the transport level」，且「Authorization is **OPTIONAL** for MCP implementations」——HTTP 传输 SHOULD 遵循此规范（OAuth 2.1），STDIO 传输 SHOULD NOT、改从环境取凭据。**用来**：0003 §2「协议自带鉴权机制，远程可启用可不启用，本地没有这一步」。
+- [Model Context Protocol — SDKs](https://modelcontextprotocol.io/docs/sdk)（2026-11-08 抓）
+  **官方 SDK 清单**：TypeScript／Python／C#／Go／Rust／Ruby（Tier 1）、Java（Tier 2）、Swift／PHP／Kotlin（Tier 3），「Official SDKs for building with Model Context Protocol」。**用来**：0003 §2「不需要研究底层协议，官方提供了各种语言的 SDK」。
 - [腾讯云开发者 — MCP 广场介绍（官方文档）](https://cloud.tencent.cn/document/product/1212/123193)（2026-10-18 抓）
   **本地 vs 托管的一手口径**：MCP 广场提供 **Local 模式**（部署在本地设备，适合依赖本地文件/服务的 server，如文件系统；配置是 `mcpServers` 里的 `command`/`args`/`env`，示例用 `uvx` 启动）和 **Hosted 模式**（部署在广场的免费云资源上，远程连接、跨端友好，是主推模式）。广场还提供安全扫描、免费托管、远程连接。**用来**：0003「本地 server / 远程 server」对照、`npx`/`uvx` 只属于本地、资源广场一例。
 - [腾讯云 — MCP 广场（入口）](https://cloud.tencent.com/developer/mcp)（2026-10-18 抓）
@@ -416,14 +420,14 @@
 
 ### RAG 系列（2026-10-21 重构扩充）
 
-> RAG 轨 2026-10-21 起改制，**2026-11-03 v5 修订为单轨理论课**（工具安装与操作不进课，RAGFlow 只当例子锚点；学习者拍板），新课表与施工批次见根目录 `RAG-REVISION-PLAN.md`。本节前两段（原论文、切块与评估）为旧制时代存量，其后四段为改制当日扩充（课号已按 v5 前移）。
+> RAG 轨 2026-10-21 起改制，**2026-11-03 v5 修订为单轨理论课**（工具安装与操作不进课，RAGFlow 只当例子锚点；学习者拍板），2026-11-06 已收尾，课表与决策见 [`internal/history/5.79-rag-0003-and-revision-close.md`](internal/history/5.79-rag-0003-and-revision-close.md)。本节前两段（原论文、切块与评估）为旧制时代存量，其后四段为改制当日扩充（课号已按 v5 前移）。
 
 - [Lewis et al. — "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"（NeurIPS 2020）](https://arxiv.org/abs/2005.11401)
   **RAG 这个名字的原始出处**。核心说法："模型对知识的访问与精确操控能力仍然有限""给出来源、更新世界知识仍是未解问题"。最值钱的一句结论：<b>换掉那份资料索引就能更新知识，不用重新训练</b>。**用来**：讲"RAG 到底在补什么、它不改模型"。
 - [Anthropic — "Introducing Contextual Retrieval"（2024-09）](https://www.anthropic.com/engineering/contextual-retrieval)
   工业界怎么做检索那一步，带**实测数字**：取前 20 段时没取到正确那段的比例，普通 RAG **5.7%** → 给每段补一句"这段在讲什么" **3.7%** → 叠上关键词检索 **2.9%** → 再加重排序 **1.9%**。**用来**：证明"RAG 的技术性全在前五步、没有一步是换更强模型"。
 - [Liu et al. — "Lost in the Middle: How Language Models Use Long Contexts"（2023）](https://arxiv.org/abs/2307.03172)
-  **"检索到 ≠ 用上"的出处**：2,655 个 NaturalQuestions 问题，每个配 10/20/30 段 Wikipedia（只有一段能答），只改答案位置。**GPT-3.5-Turbo 闭卷 56.1%、开卷（只给正确段）88.3%**；20/30 段设置里答案放中间时**低于闭卷**，最好与最差差 **20 多个点**。16K 版本在同为 10/20 段时曲线几乎重合（长窗口≠会用）；基座模型也有 U 形；编码器-解码器在训练长度内较稳、超出也出现 U 形。开放域问答里 20→50 篇仅 **+1.5%**（GPT-3.5）/ **+1%**（Claude-1.3），延迟与成本照涨。**用来**：0008 位置与段数（也支撑 0002/0009 的"顺序要管、别一味堆资料"）。
+  **"检索到 ≠ 用上"的出处**：2,655 个 NaturalQuestions 问题，每个配 10/20/30 段 Wikipedia（只有一段能答），只改答案位置。**GPT-3.5-Turbo 闭卷 56.1%、开卷（只给正确段）88.3%**；20/30 段设置里答案放中间时**低于闭卷**，最好与最差差 **20 多个点**。16K 版本在同为 10/20 段时曲线几乎重合（长窗口≠会用）；基座模型也有 U 形；编码器-解码器在训练长度内较稳、超出也出现 U 形。开放域问答里 20→50 篇仅 **+1.5%**（GPT-3.5）/ **+1%**（Claude-1.3），延迟与成本照涨。**用来**：0008 位置与段数（也支撑 0002/0009 的"顺序要管、别一味堆资料"）＋0003 长上下文这笔账。
 
 **上下文组装（0008 用 · 2026-11-05 抓）**
 
@@ -588,5 +592,6 @@
 - ~~缺一份可靠的、跨框架的 agent 评估资料~~ **已补（2026-09）**：见上面 **Knowledge** 里的四条，首选 Anthropic《Demystifying evals for AI agents》
 - 缺中文的高质量一手资料（目前几乎全是英文）
 - ~~缺 **多 agent 协作**的高可信工程资料~~ **已补（2026-10-18）**：Anthropic《How we built our multi-agent research system》（带实测量级、派单与失败教训）＋Orchestrator-workers Cookbook——`agent/0005` 已开课（2026-10-26 拆分后课号）。
+- **0003 学习者重写稿的新增事实待核（2026-11-08）**：① 百度 MCP World（mcpworld.com）的运营方与定位——页面 JS 渲染抓不到内容；② 火山引擎工具商店「与火山方舟、Trae 联动」细节——只核到入口页（运营方/「企业级」定位 ✓，联动说法待核）。~~高德收费 MCP~~（2026-11-08 学习者精简正文，该例已随鉴权段删除，不再入课）。课文中未核条目以学习者提供的经验为准，回写来源清单未收录。
 
 > AI生成

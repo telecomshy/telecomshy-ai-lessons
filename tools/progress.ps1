@@ -93,6 +93,7 @@ function Load {
   }
   $script:doneCards = @($script:cards | Where-Object { $_.completed })
   $script:doneHrefs = @($script:doneCards | ForEach-Object { $_.href })
+  $script:ragCards = @($script:cards | Where-Object { $_.href -match '^rag/' })
 
   # README 清单块：锚点句 → 空行 → 连续的 "- " 行（正则定位，不靠换行符假设）
   # ⚠️ 本仓库换行符混用：README.md / lessons/index.html 是 CRLF，根 index.html 是 LF
@@ -116,6 +117,8 @@ $nDeep    = @($lessonFiles | Where-Object { $_.Name -match  '-deep\.html$' }).Co
 $nPy      = @(Get-ChildItem (Join-Path $root 'exercises') -Recurse -File -Filter *.py | Where-Object { $_.Name -notmatch '^appendix-' }).Count
 $llmBasic = @($lessonFiles | Where-Object { $_.Name -notmatch '-deep' -and $_.Directory.Name -eq 'llm' }).Count
 $llmDeep  = @($lessonFiles | Where-Object { $_.Name -match  '-deep' -and $_.Directory.Name -eq 'llm' }).Count
+$ragFiles = @($lessonFiles | Where-Object { $_.Directory.Name -eq 'rag' })
+$ragPy    = @(Get-ChildItem (Join-Path $root 'exercises/rag') -File -Filter *.py)
 
 function Audit {
   Write-Output "== A. 三处落点互相一致 =="
@@ -152,6 +155,26 @@ function Audit {
   ChkNum 'stat 门课'   '<b>(\d+)</b><span>门课'        ($nBasic+$nDeep)
   ChkNum 'stat 脚本'   '<b>(\d+)</b><span>个脚本'       $nPy
   ChkNum 'LLM 轨道'    "$llmBasic 门基础 · (\d+) 门进阶" $llmDeep
+
+  # RAG 轨覆盖（2026-11-06 收尾补）：卡片 ↔ 课文件 ↔ 脚本 三条链都要对上。
+  # 以前只有总盘计数，RAG 删一门或漏一张卡没人发现。
+  $ragFileHrefs = @($ragFiles | ForEach-Object { "rag/" + $_.Name })
+  $ragCardHrefs = @($script:ragCards | ForEach-Object { $_.href })
+  if ($script:ragCards.Count -eq $ragFiles.Count) {
+    Ok "RAG 卡片 $($script:ragCards.Count) 张 == 课文件 $($ragFiles.Count) 个"
+  } else {
+    No "RAG 目录有 $($ragFiles.Count) 个课文件，目录页只有 $($script:ragCards.Count) 张卡"
+  }
+  $ragNoCard = @($ragFileHrefs | Where-Object { $ragCardHrefs -notcontains $_ })
+  if ($ragNoCard.Count -eq 0) { Ok "RAG 每个课文件都有目录卡" } else { No "RAG 课文件没有卡: $($ragNoCard -join ', ')" }
+  $ragDead = @($ragCardHrefs | Where-Object { -not (Test-Path (Join-Path $root ("lessons/" + $_))) })
+  if ($ragDead.Count -eq 0) { Ok "RAG 每张卡都指向真实文件" } else { No "RAG 死链: $($ragDead -join ', ')" }
+  $ragScriptOrphans = @($ragPy | Where-Object { $script:idx -notmatch [regex]::Escape($_.Name) })
+  if ($ragScriptOrphans.Count -eq 0) {
+    Ok "RAG $($ragPy.Count) 个脚本都至少被目录页引用一次"
+  } else {
+    No "RAG 脚本没进目录页: $(($ragScriptOrphans | ForEach-Object { $_.Name }) -join ', ')"
+  }
 
   Write-Output "== E. 进阶版：别名三处一致 ＋ Q 编号连续 ＋ 问数对得上 =="
   $deepCards = @($script:cards | Where-Object { $_.href -match '-deep\.html$' })
@@ -193,6 +216,20 @@ function Audit {
     }
 
     if ($bad -eq 0) { Ok "$($c.href) = $al（带编号 Q $($nums.Count) 个）" }
+  }
+
+  # deep 是 LLM 轨专属（COURSE-STANDARD 1.4）：RAG/Agent 出现 deep 页即 FAIL
+  $nonLlmDeep = @($lessonFiles | Where-Object { $_.Name -match '-deep\.html$' -and $_.Directory.Name -ne 'llm' })
+  if ($nonLlmDeep.Count -eq 0) {
+    Ok "deep 页只在 LLM 轨（RAG/Agent 无 deep）"
+  } else {
+    No "非 LLM 轨出现 deep 页: $(($nonLlmDeep | ForEach-Object { $_.FullName.Substring($root.Length + 1) }) -join ', ')"
+  }
+  $nonLlmDeepCards = @($script:cards | Where-Object { $_.href -match '-deep\.html$' -and $_.href -notmatch '^llm/' })
+  if ($nonLlmDeepCards.Count -eq 0) {
+    Ok "目录页没有非 LLM 轨的 deep 卡"
+  } else {
+    No "目录页出现非 LLM 轨 deep 卡: $(($nonLlmDeepCards | ForEach-Object { $_.href }) -join ', ')"
   }
 
   Write-Output "== F. NOTES 卫生：历史进 internal/history/，NOTES.md 只留规矩与索引 =="

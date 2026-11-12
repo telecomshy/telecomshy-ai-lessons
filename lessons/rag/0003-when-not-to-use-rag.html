@@ -3,31 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAG · 第 3 课（初学版）· 什么时候不该上 RAG</title>
+<title>RAG · 第 3 课 · 该不该上 RAG：三条路怎么选</title>
 <link rel="stylesheet" href="../../assets/base.css">
 <script src="../../assets/quiz.js" defer></script>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="lesson-meta">RAG · 第 3 课 · 初学版</div>
-  <h1>什么时候不该上 RAG</h1>
+  <div class="lesson-meta">RAG · 第 3 课 · 理论</div>
+  <h1>该不该上 RAG：三条路怎么选</h1>
 
   <div class="goal">
     <span class="label">先别急着学，聊两句</span>
-    <p>RAG 现在很热，很多人一有文档就想到它。</p>
-    <p>但有些场景上 RAG 是<b>纯亏</b>：更慢、更贵，还更容易错。</p>
-    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：面对一个具体需求，说清该不该上 RAG、不上该用什么。</p>
+    <p>同事把三份合同全贴进模型，问了两句，答得挺好。他说：「以后都这么干，还建什么知识库？」</p>
+    <p>三份合同、偶尔问，他这样做没问题。可换成公司制度汇编，情况就不一样：几百份文件、每月改版、几百人天天问，还要答得出出处。全塞进去开始不划算，每次都为全书付钱，资料越长越容易漏中间。</p>
+    <p style="margin-top:0.7rem">所以答案不是「该」或「不该」，是看这份资料有多大、多常改、多少人问。<b>学完这课，你能</b>分清 RAG、微调、长上下文各自解决什么问题，拿到一个需求，按顺序问几句话就选出路线；也知道三条路什么时候该一起用。</p>
   </div>
 
   <div class="note">
     <span class="label">记住一条主线，后面就不会晕</span>
-    <p><b>RAG 解决的只有一个问题：模型手上没有那份资料。</b></p>
-    <p>别的问题——要精确值、要实时、要推理——<b>它解决不了，甚至会更糟</b>。</p>
+    <p><b>三条路不是一回事：RAG 和长上下文都在补「资料不在手边」，只是一个建库查、一个整份塞；微调改的是「怎么答」。</b></p>
+    <p>前两条在选「资料怎么递过去」，微调跟它们是两件事，可以叠加。</p>
   </div>
 
-  <h2>1. 先问一句：你到底在解决什么问题？</h2>
-  <p>用户说"它答不准"，可能是三种完全不同的毛病：</p>
+  <h2>1. 先别问「上不上 RAG」，先问「毛病出在哪」</h2>
+  <p>用户说「它答不准」，背后可能是三件完全不同的事。还是那份年假制度，还是那句「请三天假要走什么流程」。</p>
+  <p>第一种，制度是公司内网的 PDF，模型训练时一个字都没见过。它答得头头是道，流程却是编的。第二种，你要的是「我账户里还有多少钱」「今天仓库里还有几件」，这种数每分钟都在变。第三种，老板让你把三份合同的付款条款摆在一起看差异，这要的是对比和推理。</p>
+  <p>三类毛病，各有各的解法。先把它们摆开：</p>
   <table style="border-collapse:collapse;width:100%;font-size:0.92rem">
     <thead><tr>
       <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">症状</th>
@@ -37,8 +39,8 @@
     <tbody>
       <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">答案在<b>你的私有资料</b>里，模型没见过</td>
           <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">信息不在它手边</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>✅ 这才是 RAG</b></td></tr>
-      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">要<b>精确的数</b>或<b>此刻的状态</b>（余额、库存、今天几号）</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>✅ 这是 RAG / 长上下文的地盘</b></td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">要<b>会变的数</b>，或<b>此刻的状态</b>（余额、库存、今天几号）</td>
           <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">资料会变，存起来就过期</td>
           <td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>用工具查</b>，不是检索</td></tr>
       <tr><td style="padding:0.45rem">要<b>推理、对比、总结、改写</b></td>
@@ -46,93 +48,239 @@
           <td style="padding:0.45rem">换更强的模型，或把活拆细</td></tr>
     </tbody>
   </table>
-  <div class="goal" style="background:#fff;border-color:var(--ink)">
-    <p><b>只有第一行该上 RAG。</b>后两行上了只会更糟。</p>
-  </div>
+  <p>第二行回答的是「资料会不会过期」，第三行回答的是「模型本身够不够用」。这两行都不是「资料怎么递」的选择；第三行尤其容易读岔：三份合同对比仍然需要资料，只是别指望检索替模型做对比，资料怎么递到它眼前，是下一层的事。</p>
+  <p>第一行才是「资料不在手边」，它里面还藏着一个分岔：建库检索，还是直接把资料塞进提示词。前者是 RAG，后者是长上下文。选哪条，看资料有多大、多常改、多少人问。</p>
+  <p>另有一件跟「递资料」无关的事：模型答得合不合规矩。语气、格式、什么话不能说，这些不靠检索，也不靠塞资料，靠微调。微调跟上面两条不是一组选项，它管的是「怎么答」。下一节先说它，因为它是三条路里最容易被派错活的一条。</p>
 
-  <h2>2. 四种不该上的场景</h2>
-  <ul>
-    <li><b>文档很短。</b>500 字整个塞进提示词就行。<b>切块只会额外引入两种新毛病</b>（切碎、检索不到）——你为了省事，反而买了两个麻烦。</li>
-    <li><b>要精确值。</b>检索回来的是"相关的几段"，模型可能顺手把 2107 总结成 2100。<b>要精确，就让它去调工具拿原文那一行。</b></li>
-    <li><b>要实时数据。</b>向量库里存的是<b>建库那天的快照</b>。余额、天气、今天的汇率——查出来必错，而且错得很有说服力。</li>
-    <li><b>要跨段推理。</b>"三份合同的付款条款有什么差异"——检索只能各给你"相关的几段"，<b>做不了对比</b>，还可能漏掉某一份。</li>
-  </ul>
-  <p style="color:var(--muted)">（RAG 还有个成本：每次请求多几步、多几段 token。<b>能不用就不用。</b>）</p>
+  <h2>2. 微调：改的是「怎么答」，不是「答什么」</h2>
+  <p>微调（fine-tuning）是拿一批「问题 ＋ 标准回答」继续训练模型，让它的输出往这批回答上靠。它要训练，要动模型的权重（模型里那套训练出来的数），不是改一段提示词。具体怎么练，<a href="../llm/0009-post-training-recipes.html">LLM 底层 · 第 9 课</a>拆过；这里只留它跟 RAG 的分工。</p>
+  <p>它擅长的是行为。比如制度问答助手，你希望它每次先引条款号、再给结论，末尾加一句「以最新版为准」，任何情况下都不承诺赔偿。这些是「怎么答」：口径（统一的标准说法）、格式、语气、红线（不能越过的规矩）。写几百到几千条示范，微调就能把这些规矩练进模型。</p>
+  <p>这些规矩也可以先写进系统提示词（每次请求开头那段总规矩）。提示词改起来快，但每次都要带在请求里，长了会被稀释；微调把规矩写进权重，不用每次带在请求里，代价是要训练、要维护数据。规则少、改得勤，先用提示词；规则多、要在各种输入下都守住，才值得微调。</p>
+  <p>权重里有了规矩，不等于每个场景都会触发；没练到的输入，它仍可能退回老样子。</p>
+  <p>它不擅长的是事实条目。报销上限多少、年假满三年几天、流程第三步找谁批，这些是「答什么」。微调的数据是一问一答的示范，不是一本随时能翻的账本。模型学到的是答法，不是每条制度的准确值；不是一条都记不住，是记得少、不可靠，制度一改，训练数据就过期，还得重新练一遍。</p>
+  <p>这不是感觉，有一组实测。Gudibande 等人拿 1.5B 到 13B 的底座模型（微调前的基础模型；B 是十亿），用 0.3M 到 150M token（M 是百万）的模仿数据（拿强模型的回答当教材）练，让它们学 ChatGPT 的回答。人来看，这些模型的输出已经「跟 ChatGPT 差不多」；换自动评测（有标准答案、机器自动判对错）一考，尤其是模仿数据没覆盖到的任务，从底座模型到 ChatGPT 的那段差距，它们「几乎没有补上」。论文的说法是：学到了风格，没学到事实。这组实验里，人评高分，机器一考就露。</p>
+  <p>所以「我微调了，效果不好」多半不是方法坏了，是活派错了。想让模型知道新制度，用 RAG；想让模型按你的规矩说话，微调正对路。两件事不冲突：微调定口径，RAG 供条目，这是制度问答最常见的一组搭配。</p>
 
-  <h2>3. 带走一句口诀</h2>
-  <pre><code>第一问：模型手上有没有这份资料？
-        没有 → 往下问；有 → 别上 RAG。
+  <h2>3. 长上下文：塞得进去，不等于用得上</h2>
+  <p>长上下文（long context）是一条更省事的路：不建库、不切块、不检索，把整份资料拼进提示词，让模型一次看完。上下文窗口就是模型一次能看的 token 上限（token 是模型处理文字的单位），这个数近年涨得很快，一本手册、几份合同，常常真的塞得下。</p>
+  <p>什么时候该走这条？文档不长、资料不常改；问的人不多时更省，但小到几十页，就算很多人问，直接塞也常常比建库省事。如果任务还要读全文，就更合适。比如老板让你对比三份各 30 页的合同，付款条款散在不同章节。三份合同常见窗口装得下，具体拿你用的模型的实际窗口核一下；检索只会给你「和付款最相关的几段」，可能漏掉某一份的附加条款；三份一起塞进去，模型能同时看到全文，反而更合适。对比本身靠模型，长上下文只负责把三份合同递到它眼前。</p>
+  <p>但它有两笔账，绕不过去。</p>
+  <p><b>第一笔是钱。</b>每次请求都要把整份资料再送一遍。API 按输入 token 计费，资料有多长，每次就付多长；前缀缓存（把不变的开头存下来复用）能便宜一些（<a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课</a>），但缓存读取照样计费，资料一改缓存就作废。RAG 每次只送检索回来的几段，输入短得多。建库本身也要花解析、嵌入的成本；资料改一次，相关的块就要重新解析、嵌入，这笔钱要再付一次。问得越多，它越摊得薄。</p>
+  <p><b>第二笔是注意力。</b>塞进去，不等于模型会用。Liu 等人的实验从 NaturalQuestions 里取 2,655 个问题，每个问题配 10、20 或 30 段 Wikipedia 文字，只有一段能回答，其余都是干扰项。实验只改一处：答案那段放开头、中间还是结尾。</p>
+  <p>结果是一条 U 形曲线。放开头或结尾，成绩最好；放中间，明显掉下来。GPT-3.5-Turbo 完全不给资料的闭卷条件答对 56.1%，只给正确那一段的开卷条件答对 88.3%；到了 20 段和 30 段的设置，答案放中间，成绩比 56.1% 还低。换 16K 窗口的版本，在同样装得下的 10 段、20 段上，曲线几乎重合。窗口更大，没有自动解决这件事。</p>
+  <p>段数也有同样的饱和。同一篇论文在开放域问答（不限定领域、答案散在开放语料里）里把检索文档从 20 篇加到 50 篇，GPT-3.5-Turbo 只提升约 1.5 个百分点，Claude-1.3 只提升约 1 个百分点，延迟和 token 成本却跟着涨。多出来的段，大多是干扰项。</p>
+  <p>位置是一条轴，总长度是另一条。Anthropic 在讲<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">上下文工程</a>时用了「context rot」这个说法：原文大意是，上下文窗口里的 token 越多，模型准确取回信息的能力越弱，而且这个特征在所有模型上都出现。他们把长上下文的表现形容成「梯度，不是断崖」：不是过了某个长度突然坏掉，而是一路慢慢变差；这里的梯度说的是缓坡，不是训练里的梯度下降。窗口再大，也逃不开这条缓坡。</p>
+  <p>所以长上下文的适用面很清楚：资料一次读得完，问得越少越省；任务要读全文时，它更合适。几十页以内的小册子，就算问的人多，直接塞也常常比建库省事。全公司天天问几百页的大册子，就不在这个面里。那本册子该建库，每次只把相关的几段递过去；怎么摆那几段，是<a href="0008-context-assembly.html">第 8 课</a>的事。</p>
 
-第二问：我要的是【查得到的事实】，还是【要推理】？
-        事实、会变 / 很精确 → 用工具查，别用检索
-        事实、稳定、量大    → 这才是 RAG 的地盘
-        要推理              → RAG 只当资料入口，别指望它给结论</code></pre>
+  <h2>4. 三条路摆在一张表上</h2>
+  <p>把前面三节收拢，差异落在四个地方：改不改模型、更新一次要动什么、每次请求付多少、最适合什么活。RAG 这边的几个词前两课出现过，这里只复述一句：块是检索的最小单位，向量是块压出来的一串数，索引是存向量和原文、等着被查的地方。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.84rem">
+    <colgroup><col style="width:11%"><col style="width:23%"><col style="width:20%"><col style="width:20%"><col></colgroup>
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">路线</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">它改什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">更新一次要动什么</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">每次请求的成本</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">最适合 / 主要翻车点</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule);vertical-align:top"><b>RAG</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">不改答题模型；资料进外部索引</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">换文档、重新解析和嵌入（把每块文字压成向量），付一次重建，不用重训</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一次检索，只送几段资料</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">量大、很多人问、要能追到条款；翻车在切碎、检索不到、塞进去没用上（第 4～9 课）</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule);vertical-align:top"><b>长上下文</b></td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">不改答题模型；资料全在提示词里</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">换提示词里的文档，几乎不花重建钱</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">整份资料每次都送一遍</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">短、问得少、要读全文；翻车在中间漏、贵、超窗口</td></tr>
+      <tr><td style="padding:0.45rem;vertical-align:top"><b>微调</b></td>
+          <td style="padding:0.45rem">改模型权重；把行为写进参数</td>
+          <td style="padding:0.45rem">重训一轮</td>
+          <td style="padding:0.45rem">不额外带资料，但事实仍要 RAG 供</td>
+          <td style="padding:0.45rem">口径、格式、红线、固定套路；翻车在拿它灌知识、学新忘旧（新学的把旧的挤掉）、没覆盖的场景退回老样子</td></tr>
+    </tbody>
+  </table>
+  <p>表里「要出处」这一条还得看资料量：长上下文也能让模型引原文，前提是你把每份资料的来源标在提示词里；资料一多，标注和核对引文都更费劲。RAG 的块天然带来源，追到具体条款更省事。</p>
+  <p>所以这张表不是三选一：RAG 和长上下文选一条，微调随时可加。「选一条」是按任务选的，不是每个系统只能留一种；同一个系统可以日常问答走 RAG，读全文的活走长上下文。</p>
+  <p>这四问只管「资料怎么递」和「行为怎么定」；如果模型本身推理不够，换模型或拆活，不在这四问里。</p>
+  <p>拿到一个具体需求，按下面四问走，通常几十秒就能定路线：</p>
+  <pre><code>第一问：要的是「此刻的值」或「会变的数」吗？
+        是 → 用工具查（API、数据库、搜索），不是检索
+        否 → 往下
 
-  <h2>4. 动手：判 6 个场景</h2>
-  <p>脚本在工作区：<code>exercises/rag/0003-when-not-to-use-rag.py</code>。<b>它不调任何模型</b>，就是一个判断练习——<b>先自己想，再看答案</b>。</p>
+第二问：毛病在「答什么」，还是「怎么答」？
+        「怎么答」：口径、格式、语气、红线 → 微调（事实仍走下面）
+        「答什么」：制度、条款、数字、案例 → 往下
+
+第三问：资料塞得下吗？
+        塞不下 → RAG
+        塞得下 → 往下
+
+第四问：值得为它建库吗？
+        几十页以内 → 长上下文
+        上百页：很多人问，或者资料多到需要逐条追来源 → RAG
+                只是少数人偶尔问 → 长上下文</code></pre>
+  <p>第四问给的是方向，最后还要算一笔账。「常改」不是自动投给 RAG：长上下文换文档几乎不要钱，但每次请求都为全书付 token；RAG 换文档要重新解析、嵌入，付一次重建的钱，之后每次只送几段。资料越大、问的人越多，重建越摊得薄；问得越少，长上下文越省。几十页的说明书，就算很多人问，直接塞也比建库省事；三百页的册子，每月改版但一年只问二十次，也可以先全塞，等问的人多起来再建库。拿不准时先算这笔账，再拿自己的问题集量过（<a href="0010-eval-methods.html">第 10 课</a>）。</p>
+
+  <h2>5. 四种最常见的派错活</h2>
+  <p>判断顺序在真实项目里最常被跳过。下面四种误判，每一种都能在开头那份制度汇编上找到影子。</p>
+  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
+    <colgroup><col style="width:26%"><col style="width:38%"><col></colgroup>
+    <thead><tr>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">误判</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">为什么错</th>
+      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">怎么改</th>
+    </tr></thead>
+    <tbody>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">文档只有二十页、问的人也不多，却先建个库</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">切块、嵌入、检索会引入新毛病，而二十页直接塞得下</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">先塞；等它涨到几百页、问的人多了再建库</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">用微调把制度灌进模型</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">学到的是答法，不是条目；改版还要重训</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">条目交给 RAG，微调只留口径和红线</td></tr>
+      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)">窗口够大，整本手册每次全塞</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">每次为全书付钱，中间内容还容易漏</td>
+          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">改成检索几段；只有要读全文的任务才全塞</td></tr>
+      <tr><td style="padding:0.45rem">余额、库存也建库</td>
+          <td style="padding:0.45rem">建库那天就过期，查出来必错</td>
+          <td style="padding:0.45rem">用工具查「此刻」的值</td></tr>
+    </tbody>
+  </table>
+  <p>四种误判背后是同一个动作：把「资料在不在手边」当成了唯一问题。钱、注意力、更新频率，是另外几笔账。少算哪一笔，路线就会选偏。</p>
+
+  <h2>6. 三条路可以一起用</h2>
+  <p>真实系统很少只走一条。最常见的组合是「微调定口径 ＋ RAG 供条目」：微调教模型先引条款、后给结论、不承诺赔偿；RAG 在每次提问时把「满三年 10 天」这一段递过去。行为和事实各归各管。</p>
+  <p>RAG 和长上下文不是同一次请求里各做一半，而是按任务切换。日常问答走 RAG，只把检索到的几段放进窗口；遇到「把这三份合同通读一遍」的活，这次请求绕过检索，直接把三份全文塞进去。同一个系统可以两种都留，按任务选。</p>
+  <p>微调跟长上下文也能搭：微调教模型「读长文档时先摘原文、再下结论」的格式，长上下文负责把文档递进去。一个管怎么读，一个管读什么。</p>
+  <p>要小心的是把组合当成默认。每加一条路，就多一份维护成本：多一个索引要重建，多一份训练数据要更新，多一套提示词要调。先从一条路开始，量出不够，再叠下一条。</p>
+
+  <h2>7. 动手：八个场景，你先判一遍</h2>
+  <p>脚本在 <code>exercises/rag/0003-when-not-to-use-rag.py</code>。它不调任何模型，只把八个场景摆出来：先让你自己判，再给路线和理由。</p>
   <pre><code>python exercises/rag/0003-when-not-to-use-rag.py</code></pre>
-  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是其中两条的答案（跑了就有全部六条）。</p>
+  <p style="font-size:0.9rem;color:var(--muted)">Windows 终端若中文乱码，先执行 <code>chcp 65001</code>。下面是场景 2、5、6、7 四条答案的摘录，省略了场景 1、3、4、8（跑了就有全部八条）。</p>
   <pre><code>  场景 2：一份 500 字的产品说明书，用户会围绕它提问。
-    → 不该上，直接塞
-    理由：500 字整个塞进提示词就行。切块只会额外引入「切碎 / 检索不到」两种新毛病。
+    → 长上下文（直接塞）
+    理由：500 字整个塞进提示词就行。建库会额外引入「切碎 / 检索不到」两种新毛病，为省事反而买麻烦。
+
+  场景 5：老板要你把三份合同的付款条款差异列成一张表，每份约 30 页。
+    → 长上下文（直接塞）
+    理由：三份都塞得下，而且对比要同时看到全文。检索只给「相关的几段」，可能漏掉某一份的附加条款。
 
   场景 6：查错误码 E-2107 是什么意思。文档里有 3000 个错误码。
-    → 该上，但要用「按词匹配」
-    理由：错误码是精确编号，语义相似度反而抓不准（它连 2107 和 2108 都分不太清）。</code></pre>
-  <p><b>场景 6 值得多看一眼</b>：它是"该上 RAG"，但<b>要换一种比法</b>（按词匹配的稀疏检索）——见<a href="0001-why-retrieval.html">第 1 课</a>动手那节。<b>"该不该上"和"怎么上"是两个问题。</b></p>
+    → RAG，但要用「按词匹配」
+    理由：错误码是精确编号，语义相似度反而抓不准（它连 2107 和 2108 都分不太清）。该上 RAG，但要开稀疏检索。
 
-  <h2>5. 检查一下你懂了没</h2>
+  场景 7：客服回复必须先带免责声明、语气统一、任何情况下不承诺赔偿。
+    → 微调（改行为）
+    理由：这是「怎么答」的规矩，微调正对路。具体条款和金额仍由 RAG 提供——微调搬不动事实条目。</code></pre>
+  <p><b>三处值得多看一眼</b>：</p>
+  <ul>
+    <li><b>场景 2 和场景 5 都走长上下文，理由不同。</b>一个是 500 字，塞进去最省事；一个是三份合同，检索反而会漏掉对比需要的全文。同样是「塞」，一个图省事，一个图看全。</li>
+    <li><b>场景 6 是「该上 RAG，但要换一种比法」。</b>错误码是精确编号，语义相似度分不清 2107 和 2108，得靠按词匹配的稀疏检索（看原文里的词有没有出现，不看意思像不像；两种检索怎么分工，第 6 课讲）。该不该上和怎么上是两个问题。</li>
+    <li><b>场景 7 只该微调一半。</b>语气、免责声明、不承诺赔偿是行为，微调正对路；具体条款仍然要 RAG 供。判成「微调」就完事，又会回到「拿微调灌知识」的老路。</li>
+  </ul>
+  <p>八个场景判完，你手上就有一套自己的判断顺序了。下一课开始拆第一条路：资料进了库，怎么洗、怎么切。</p>
+
+  <h2>8. 检查一下你懂了没</h2>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q1</span> 用户问「我账户里还有多少钱」，该用什么？</p>
-    <button class="quiz-option">让模型自己估算一下数额</button>
-    <button class="quiz-option">上 RAG 把余额存进向量库</button>
-    <button class="quiz-option" data-correct="true">用工具去实时查，别用检索</button>
-    <button class="quiz-option">把余额写进系统提示里去</button>
+    <p class="q"><span class="num">Q1</span> 公司有几百份制度文件，员工每天问不同条款，制度每月改版，答完还要能追到具体条款。该走哪条路？</p>
+    <button class="quiz-option">把全部文件塞进上下文，每次提问都带上</button>
+    <button class="quiz-option">用微调把制度条目写进模型参数</button>
+    <button class="quiz-option" data-correct="true">建库检索，答前查相关条款并标出处</button>
+    <button class="quiz-option">让模型凭常识回答，答完再人工核对</button>
     <p class="feedback"
-       data-ok="对。余额每分钟都在变，向量库里是建库那天的快照。"
-       data-no="会变的数据不能存起来查——要用工具拿「此刻」的值。"></p>
+       data-ok="对。几百份、常问、常改、要出处，四条都指向 RAG；改版换文档即可，不用重训。"
+       data-no="全塞每次都为全书付钱；微调搬不动条目；凭常识答就是让它编。四条要求指向建库检索。"></p>
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q2</span> 一份 500 字的说明书，用户会围绕它提问，怎么办？</p>
-    <button class="quiz-option">让用户自己去翻那份文档</button>
-    <button class="quiz-option">切成十个小段再上 RAG</button>
-    <button class="quiz-option">专门训练一个问答模型</button>
-    <button class="quiz-option" data-correct="true">整个塞进提示词，别上 RAG</button>
+    <p class="q"><span class="num">Q2</span> 客服回复要求语气统一、必须先带免责声明、任何情况下不承诺赔偿。规矩已经写进系统提示词，但长对话里模型经常忘。接下来该用什么？</p>
+    <button class="quiz-option">继续加长系统提示词，把规矩再写一遍</button>
+    <button class="quiz-option" data-correct="true">微调，把行为和红线练进模型</button>
+    <button class="quiz-option">建一个知识库，每次检索免责声明</button>
+    <button class="quiz-option">换一个上下文窗口更大的模型</button>
     <p class="feedback"
-       data-ok="对。短就直接塞——切块只会额外引入两种新毛病。"
-       data-no="RAG 是为「塞不进去」准备的；塞得进去就别绕这一圈。"></p>
+       data-ok="对。规则已经写在提示词里还守不住，才轮到微调；具体制度条目仍由 RAG 提供。"
+       data-no="再加长提示词只会让它更稀释；免责声明不是要查的资料；换窗口也管不住行为。"></p>
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q3</span> 哪一种才是 RAG 真正的地盘？</p>
-    <button class="quiz-option" data-correct="true">量大、稳定、模型没见过的资料</button>
-    <button class="quiz-option">每分钟都在变的实时数字</button>
-    <button class="quiz-option">需要跨文档推理和对比的活</button>
-    <button class="quiz-option">需要模型自己发挥的创意活</button>
+    <p class="q"><span class="num">Q3</span> 在上下文窗口装得下的前提下，要把三份各 30 页的合同付款条款放在一起对比，最合适的做法是？</p>
+    <button class="quiz-option" data-correct="true">把三份合同一起塞进上下文再问</button>
+    <button class="quiz-option">先建库，每次只取最相关的三段</button>
+    <button class="quiz-option">用微调让模型记住三份合同</button>
+    <button class="quiz-option">先让模型凭印象列一版再核对</button>
     <p class="feedback"
-       data-ok="对。模型手上没有、又塞不进去、且内容稳定——这才轮到 RAG。"
-       data-no="会变的用工具，要推理的靠模型本身，创意活跟检索无关。"></p>
+       data-ok="对。对比要同时看到三份全文；三份塞得下，长上下文比只取几段更合适。合同多到几百份，就该走 RAG：先检索出相关合同，再让模型对比，这仍然是 RAG，不是两种路各做一半。"
+       data-no="这道题要的是三份之间的差异，检索只给「相关的几段」，会漏掉对比需要的全文。"></p>
   </div>
 
-  <h2>6. 想往下读</h2>
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 用户问「我账户里还有多少钱」，为什么不该建库检索？</p>
+    <button class="quiz-option">余额的数字太长，向量装不下</button>
+    <button class="quiz-option" data-correct="true">建库那天的快照会过期</button>
+    <button class="quiz-option">检索会把余额算错一位</button>
+    <button class="quiz-option">模型不认识「余额」这个词</button>
+    <p class="feedback"
+       data-ok="对。这是「此刻的值」，要用工具查；存进库里的那一刻就开始过期。"
+       data-no="跟数字长短、模型词汇都无关；问题是余额会变，检索给不了「现在」。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 拿公司制度做微调，为什么常常记不住具体条款？</p>
+    <button class="quiz-option">微调的数据太少，模型装不下</button>
+    <button class="quiz-option" data-correct="true">微调学的是答法，不是可查的账本</button>
+    <button class="quiz-option">微调只能用于英文，中文效果差</button>
+    <button class="quiz-option">微调会把模型的上下文窗口变小</button>
+    <p class="feedback"
+       data-ok="对。Gudibande 的实验里，人看着像，自动评测里从底座到 ChatGPT 的差距几乎没补上；制度一改还得重训。要条目用 RAG。"
+       data-no="微调改的是行为；具体条目要一条条查。数据量、语言、窗口都不是主因。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 把一整本手册塞进超长上下文，最该担心哪两件事？</p>
+    <button class="quiz-option">模型会拒绝读长文档，直接报错</button>
+    <button class="quiz-option" data-correct="true">每次都为全书付 token，中间内容容易漏</button>
+    <button class="quiz-option">手册会被自动切成块，检索不到</button>
+    <button class="quiz-option">模型会把手册背下来，之后不再更新</button>
+    <p class="feedback"
+       data-ok="对。长上下文不是免费的全知：输入 token 每次照付，Lost in the Middle 实测中间位置最容易被跳过。"
+       data-no="模型不会因为长就报错，也不会自动切块或背下来；两笔账是钱和注意力。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q7</span> 三条路的关系，下面哪句对？</p>
+    <button class="quiz-option">三选一，选了 RAG 就不能再微调</button>
+    <button class="quiz-option" data-correct="true">微调管行为，资料递法另选，可叠加</button>
+    <button class="quiz-option">长上下文是 RAG 的升级版，会取代它</button>
+    <button class="quiz-option">微调是 RAG 的备用方案，效果差时切换</button>
+    <p class="feedback"
+       data-ok="对。微调管「怎么答」，RAG 和长上下文管「资料怎么递」，两件事可以同时做。"
+       data-no="微调不改资料的递法，RAG 也不改回答的规矩；它们解决的是两层问题。"></p>
+  </div>
+
+  <h2>9. 想往下读</h2>
   <div class="source">
     <b>这节课的一手资料</b>：<br>
-    <a href="https://arxiv.org/abs/2005.11401">Lewis et al., NeurIPS 2020 — Retrieval-Augmented Generation</a>——RAG 原论文。它给 RAG 划的范围就是<b>知识密集型</b>任务，不是所有任务。
+    <a href="https://arxiv.org/abs/2005.11401">Lewis et al., NeurIPS 2020 — Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</a>——RAG 原论文。它给 RAG 划的范围是<b>知识密集型</b>任务（答案主要靠知识，不是靠推理），不是所有任务。<br>
+    <a href="https://arxiv.org/abs/2307.03172">Liu et al., 2023 — Lost in the Middle: How Language Models Use Long Contexts</a>——2,655 个问题、10/20/30 段、闭卷 56.1% 对开卷 88.3%、中间低于闭卷、20 到 50 篇只有约 1.5% / 1% 提升。第 8 课还会用它讲摆法。<br>
+    <a href="https://arxiv.org/abs/2305.15717">Gudibande et al., 2023 — The False Promise of Imitating Proprietary LLMs</a>——「学得会腔调，学不会事实」的原文出处：模仿数据没覆盖的任务上，从底座到 ChatGPT 的差距几乎没有补上。
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如"那文档一万多字怎么办？""能不能先检索再用工具？""多模态的（图片、表格）算哪一类？""我不确定我这场景，能描述给你听吗？"
+    <b>我是你的老师，随时打断我。</b>问得越具体越好。比如「我们的文档只有十几页，但每天几百人问，该建库还是全塞？」「这些规矩写进系统提示词不就行了，为什么还要微调？」
   </div>
 
   <p class="next">
-    <b>顺着往下</b>：<a href="0009-two-failure-modes.html">RAG · 第 9 课 · 两种典型翻车</a><br>
-    <b>回前两课</b>：<a href="0001-why-retrieval.html">第 1 课 · 为什么得"先查资料再回答"</a> · <a href="0002-rag-pipeline.html">第 2 课 · 一条 RAG 链长什么样</a><br>
-    术语表：<a href="../../reference/glossary.html#text-embedding">文本嵌入</a> · <a href="../../reference/glossary.html#sparse-dense">稀疏 / 稠密检索</a>
+    <b>回上一课</b>：<a href="0002-rag-pipeline.html">RAG · 第 2 课 · 一条 RAG 链长什么样</a><br>
+    <b>顺着往下</b>：<a href="0004-cleaning-and-chunking.html">RAG · 第 4 课 · 建库：清洗与切块</a><br>
+    <b>相关</b>：<a href="../llm/0009-post-training-recipes.html">LLM 底层 · 第 9 课 · 后训练的几种练法</a>（微调到底改什么）· <a href="0008-context-assembly.html">RAG · 第 8 课 · 上下文组装与生成</a>（长上下文里怎么摆资料）<br>
+    术语表：<a href="../../reference/glossary.html#long-context">长上下文</a> · <a href="../../reference/glossary.html#sft">监督微调</a> · <a href="../../reference/glossary.html#context">上下文窗口</a>
   </p>
 
-  <footer>AI Agent 原理与工程 · RAG · 第 3 课（初学版）· <a href="../index.html">课程目录</a></footer>
+  <footer>AI Agent 原理与工程 · RAG · 第 3 课 · 理论 · <a href="../index.html">课程目录</a></footer>
 </div>
 </body>
 </html>

@@ -14,80 +14,41 @@
   <h1>Agent 是什么：循环、工具、记忆</h1>
 
   <div class="goal">
-    <p>“用 AI”和“用 agent”，差别不在模型，在模型外面那层软件。</p>
-    <p>你在网页上打字，软件把输入打包成请求，发给模型供应商的 API，拿回一段话显示给你；TeleAgent 这类软件拿到回复后，还可能去调工具、把结果塞回去、再发一次。两边后台都是同一次“请求 → 回复”，分岔在拿到回复之后。</p>
-    <p>同一个模型，套上不同的壳，表现可以差很远：一个只会一问一答；另一个能自己查资料、读文件、一步步把活干完，中间不用你盯着。差别在三个东西：一个“决定了做、做了再看、看了再决定”的循环，外加工具和记忆。</p>
-    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：说清“用 AI”和“用 agent”差在哪，中间还隔着哪一档；知道网页版和 harness 后台都是同一次请求/回复；分清模型、harness、agent 三个词；说清循环怎么转、什么时候停，工具从哪来，记忆为什么没有标准做法。</p>
+    <p>过去一年，agent 这个词你大概没少听，中文叫「智能体」。各家产品都在用：能替你订机票的，能自己写代码的。听着挺神，可真打开一看——不也是个聊天框吗？打字进去，回答出来。</p>
+    <p>差别不在模型，在模型外面那层软件。同一次「请求 → 回复」的后台，网页版的软件把回复显示给你就结束；TeleAgent 这类软件拿到回复会接着干——调工具、看结果、再发一次，把事办完才回来。这类会自己转循环的软件有正式的名字，叫 harness（壳）。</p>
+    <p style="margin-top:0.7rem"><b>学完这课，你能</b>：说清用 AI 和用 agent 差在哪，中间还隔着哪一档；分清模型、harness、agent 三个词；说清循环怎么转、什么时候停，工具从哪来，记忆为什么没有标准做法。</p>
   </div>
 
   <div class="note">
     <p><b>一次 API 调用＝一次请求换一次回复。</b>agent 多出来的，就是把这些请求串成一个循环：推理 → 行动 → 观察 → 再推理，直到任务完成，或者被护栏拦下。</p>
   </div>
 
-  <h2>1. 先看清后台：你在发请求，不是在和模型聊天</h2>
-  <p>先看两个场景，都是同一句话：<b>"查明天上海到北京最便宜的机票，合适就订。"</b></p>
+  <h2>1. 两个几乎一样的对话框</h2>
+  <p>先看两个场景，用的是同一句话：「查明天上海到北京最便宜的机票，合适就订。」</p>
+  <p>第一个场景，你打开 ChatGPT、豆包这类网页，把话打进去。它回一段文字：建议看哪几家航司、什么时段便宜、怎么比价。然后就没有然后了——查航班、比价、付款，还是你自己来。它可能能上网搜两下，但那些本事是产品方给死的，你想添一个「订票」，添不进去。</p>
+  <p>第二个场景，你把同一句话交给 TeleAgent 这类软件，然后去倒杯水。回来时它已经查完航班（看到 23 个），自己决定只看直飞、按价格排，也比好了价，正等你一句话：「最便宜的是 620 元那班，加 20 元能选靠窗，订哪个？」你说「订 620 的」，它下单，把出票信息交给你。</p>
+  <p>两个界面几乎一样：一个输入框，打字，回话。但一件是你接着办，一件是它替你办完了。差的真是模型的脑子吗？</p>
 
-  <h3>在网页对话框里</h3>
-  <p>你打开 ChatGPT、豆包这类网页，把这句话打进去。它回你一段文字：建议看哪几家航司、什么时段便宜、怎么比价。然后——到此为止。查航班、比价、付款，还是你自己来；它可能能上网搜两下，但那是产品里预置的能力，你没法把"订票"接进去。</p>
-
-  <h3>对 TeleAgent 这类 harness 说</h3>
-  <p>你把同一句话交给它，然后去倒杯水。它自己查航班（看到 23 个）→ 决定只看直飞、按价格排 → 调比价、下单 → 回来："订好了，620 元那班。要不要加 20 元选个靠窗？"</p>
-  <p>两者的区别一眼看去很大；但<b>从和模型打交道的角度看，它们只是用的客户端软件不同</b>——网页版是浏览器里的客户端，TeleAgent 是装在电脑上的客户端。这类软件正式的名字叫<b>壳 / harness</b>。模型可能是同一个，每一次"打包请求 → 调 API → 拿回复"的过程也一样。真正的差别在客户端拿到回复之后：网页版显示给你，harness 可能执行工具、再发一次。</p>
-
-  <h3>后台只有一件事：发请求，拿回复</h3>
-  <p>不管界面长什么样，后台都是同一件事：<b>软件把你的输入打包成一个请求，发给模型供应商的接口（API），拿回一段回复，再决定怎么显示、或者接着做什么</b>。API 是厂商开放的一个受理窗口：软件照约定往里递单子、拿回结果。你以为在“和模型对话”，实际是<b>你的软件在替你和 API 打交道</b>。</p>
+  <h2>2. 后台没有聊天，只有请求和回复</h2>
+  <p>答案在后台。不管界面长什么样，软件干的都是同一件事：把你的输入打包成一个请求，发给模型供应商的接口（API），拿回一段回复。API 像厂商开放的受理窗口，软件照约定往里递单子、拿回结果。你以为在和模型聊天，其实是软件在替你和 API 打交道：网页版是浏览器里的软件，TeleAgent 是装在你电脑上的软件，两边跑的甚至可能是同一个模型。差别在拿到回复之后做什么。TeleAgent 这类软件会接着干活——执行工具、管上下文、装护栏，把一次问答变成一个自己转的循环——这样的软件才有正式的名字，叫<b>壳（harness）</b>；网页版那种拿到回复只能显示的客户端，算不上壳。</p>
 
   <figure class="figure">
-    <img src="../../assets/request-reply.svg" alt="两栏图：左边是你的壳，包括网页版、TeleAgent、你自己的脚本；右边是模型供应商的 API 与模型。壳把 messages、tools、model 打包成请求发过去，API 回一段话或一组 tool_calls。网页版把回复显示给人；harness 在收到工具调用时执行工具，把结果塞回 messages，再发一次请求。">
-    <figcaption>网页版把回复直接显示；harness 收到工具调用会执行工具、把结果塞回去再发一次请求。</figcaption>
+    <img src="../../assets/request-reply.svg" alt="两栏图：左边是你用的软件，包括网页版、TeleAgent 这类 harness、你自己写的脚本；右边是模型供应商的 API 与模型。软件把 messages、tools、model 打包成请求发过去，API 回一段话或一组 tool_calls。网页版把回复显示给人；harness 在收到工具调用时执行工具，把结果塞回 messages，再发一次请求。">
+    <figcaption>网页版把回复直接显示；壳收到工具调用会执行工具、把结果塞回去再发一次请求。</figcaption>
   </figure>
 
-  <p>请求和回复都是<b>结构化的数据</b>（通常是 JSON），不是一句人话。请求里装什么？</p>
-  <ul>
-    <li><code>messages</code>：对话记录，一条一条，带角色（system / user / assistant / tool）；</li>
-    <li><code>tools</code>：这个壳允许模型用的工具清单（第 8 节展开）；</li>
-    <li><code>model</code>：用哪个模型，以及温度、最大输出长度这类参数。</li>
-  </ul>
-  <p>写成伪代码，一次来回大概长这样：</p>
+  <p>请求和回复都是<b>结构化的数据</b>，不是一句人话。一次请求里装着对话记录（<code>messages</code>）、允许模型用的工具清单（<code>tools</code>）、用哪个模型（<code>model</code>）；拿回来的回复只有两种形状——一段话，或者一组「要调哪个工具、参数是什么」的调用。写成伪代码，一次来回就这几行：</p>
   <pre><code>请求 = {
   "model": "deepseek-flash",
-  "messages": [
-    {"role": "user", "content": "北京今天多少度？"}
-  ],
-  "tools": [ ... ]            # 可选：这个壳允许用的工具
+  "messages": [ {"role": "user", "content": "北京今天多少度？"} ],
+  "tools": [ ... ]           # 允许模型用的工具
 }
+回复 = 调接口(请求)          # 回复只有两种形状：一段话，或一组工具调用</code></pre>
+  <p style="font-size:0.9rem;color:var(--muted)">（字段名各家略有出入，形状就这两类。）</p>
+  <p>网页版拿到回复，显示给你，结束。壳拿到的回复却常常是第二种——一串工具调用。它照着执行，把结果塞回对话，再发一次请求。又查航班、又比价、又下单，这一连串动作是谁安排的呢？</p>
 
-回复 = 调接口(请求)           # 一次请求，只换一次回复
-
-# 对循环来说，回复只有两种形状：
-{"type": "text", "content": "北京今天 26 度"}
-{"type": "tool_calls", "calls": [
-    {"name": "get_weather", "arguments": {"city": "北京"}}
-]}</code></pre>
-  <p style="font-size:0.9rem;color:var(--muted)">（字段名各家略有出入，形状就这两类。真正的调用第 2 课写。）</p>
-  <p>这就是"结构化输入输出"：<b>你发过去的是一组字段，拿回来的也是一组字段，双方都按格式来。</b>壳按字段判读：看到 <code>text</code> 就当回答，看到 <code>tool_calls</code> 就去执行。</p>
-  <p>三件事记住：<b>① 一次请求只换一次回复</b>，模型不会自己接着做下一步；<b>② 模型不替你记上一轮</b>，每轮看到什么，全靠壳把 <code>messages</code> 重新发一遍；<b>③ 拿到回复先看类型字段</b>：<code>text</code> 还是 <code>tool_calls</code>，不能当成连续的正文来读。</p>
-  <p>那"自己查、比价、下单"是怎么发生的？一次请求只会回一段话或一组工具调用，不会自己转起来。答案是下一节：<b>壳把很多次请求串成了一个循环。</b></p>
-
-  <h2>2. 一次调用 ≠ 一个 agent</h2>
-  <p>上一节说过：一次请求只换一次回复。那 agent 多出来的是什么？<b>多出来的是"再来一次"。</b></p>
-  <p>网页版：一次请求 → 一段回复 → 显示给你，结束。</p>
-  <p>TeleAgent：壳拿到回复，发现里面带着"要查航班"的工具调用，就真的去调；把结果塞回 <code>messages</code>，<b>再发一次请求</b>；模型决定接下来做什么（比价、下单）……直到某次回复不再要工具，才把最后那段话交给你。这个"请求 → 看回复 → 做事 → 再请求"的反复，就是 <b>agent 循环</b>（第 4 节拆开讲它怎么转、什么时候停）。</p>
-  <p>把话说完整：你给 agent 一个<b>目标</b>，它会自己决定"现在该做什么"；做完看到结果，再决定下一步。这个"决定了做、做了再看、看了再决定"的过程，就是 agent 和单次调用最本质的差别。</p>
-  <p>差别说成三点：<b>谁安排下一步</b>（你 vs 它）、<b>它能不能用上你的工具</b>（产品预置的 vs 你能配的）、<b>你要不要盯着</b>（全程在场 vs 交代完就走）。两个场景里跑的甚至可能是同一个模型：差的只是外面那层壳，和壳里转的那个循环。</p>
-  <p><b>agent 答错的代价也更大</b>：AI 对话答错了，无非回一句错话；agent 答错了，可能是<b>真订错一张票</b>。所以 agent 一定要有护栏，比如下单前先问你一声。护栏是后面反复出现的零件。</p>
-
-  <h2>3. 三个词各指什么：模型、壳（harness）、agent</h2>
-  <p>日常说"我装了一个 agent"，严格说装的不是 agent。拆开是三样东西：</p>
-  <ul>
-    <li><b>模型（Model）</b>：只会算的那个零件，给它输入，它吐下一个字。它自己不会挑工具、不会动手、不会记事。</li>
-    <li><b>壳（客户端软件 / <a href="../../reference/glossary.html#harness">harness</a>，运行外壳）</b>：套在模型外面的那套软件，拼提示词、递工具清单、执行工具、管上下文、装护栏。<b>你下载安装的，是它。</b></li>
-    <li><b>agent（智能体）</b>：不是软件，是<b>行为</b>——壳把"模型＋工具＋循环"装好、跑起来之后，表现出来的那种"自己决定下一步"的本事。</li>
-  </ul>
-  <p>所以口语里说的"装一个 agent"，装的其实是 harness；agent 是它跑起来的样子。这层壳里到底装了什么、为什么值得单独拆开看——<b>第 7 课</b>把几个产品放在同一张零件表上对照。</p>
-
-  <h2>4. 核心循环</h2>
-  <p>循环长这样：</p>
+  <h2>3. 多出来的那一步：再来一次</h2>
+  <p>是一个循环。模型在循环里每次只做一件事：看着对话记录，决定下一步做什么——接着查、该比价了、可以下单了，或者活干完了，说一段收尾的话。决定调工具，回复就是一串工具调用；壳执行工具，把结果塞回对话，再发一次请求。这样推理 → 行动 → 观察 → 再推理，转到模型不再要工具为止。</p>
 
   <div class="loop">
     <div class="loop-node">推理 / 规划<small>Reason：下一步做什么？</small></div>
@@ -98,110 +59,70 @@
     <div class="loop-back">↺ 把观察结果喂回去，继续下一轮推理</div>
   </div>
 
-  <h3>循环什么时候停</h3>
-  <p>出口只有一个：<b>某一次回复里，模型不再要求调工具，而是给出一段话</b>。没有"完成"按钮，也没有一个叫 <code>done</code> 的动作——它不调工具了，壳就认为这一轮收尾了。</p>
-  <p>所以每一轮壳只做一个判断：这次回复是<b>「一段话」</b>还是<b>「要调哪个工具、参数是什么」的结构化数据</b>。前者收尾，后者继续。</p>
-  <p>如果它一直调工具、一直不收尾，就会<b>卡死在循环里</b>。所以工程上一定要有 <a href="../../reference/glossary.html#guardrail">护栏</a>：最常见的是「最大步数」，走满就强制停。一步就是问一次模型，前面说的「一轮」也是它。一次回复里可以打包好几个工具调用，比如查天气加查航班，合起来算一步。所以步数按<b>调用模型的次数</b>算，不按工具次数（第 2 课真跑会看到）。</p>
-  <p><b>但"停"不代表"做对了"</b>：模型可能提前收工（活没干完就说完了），也可能绕圈（一直说还要调）。这两种情况循环自己判断不了，得靠外面的检查：看 trace、看结果、关键动作让人确认。</p>
-
-  <h3>谁在转这个循环：不是模型，是壳</h3>
-  <p>第 1 节已经说过：一次调用只换一次回复，模型也不替你记上一轮。所以<b>转圈的不是模型，是 harness</b>：它决定还调不调、调哪个工具，把结果塞回 <code>messages</code>，再发下一次请求。</p>
-  <p>写成伪代码，就这么几行：</p>
-  <pre><code>messages = [系统提示, 用户的问题]
-工具清单 = [查天气, 列城市]              # 每一轮都随请求发出去
+  <p>出口只有一个：某一次回复里，模型不再要工具，改给一段话。没有「完成」按钮，也没有一个叫 done 的动作——它不调工具了，壳就认为这轮活干完了。反过来，如果它一直要工具、一直不停，循环就停不下来。所以工程上要有 <a href="../../reference/glossary.html#guardrail">护栏</a>，最常见的是最大步数，走满就强制停。一步就是问一次模型；一次回复里可以打包好几个工具调用，合起来算一步。</p>
+  <p>但停了不等于做对了。模型可能活没干完就说完了，也可能绕着圈反复查。这两种情况循环自己判断不了，得靠外面的检查——看执行记录、看结果，关键动作让用户确认。护栏也不止步数一种：agent 答错的代价比聊天大，聊天答错无非一句错话，agent 答错可能是真订错一张票，所以下单这类动作常配一条「先问过用户再执行」。</p>
+  <p>把循环写出来，其实就这几行：</p>
+  <pre><code>messages = [系统提示, 用户的问题]         # 系统提示＝幕后写给模型的要求，用户看不见
+工具清单 = [查天气, 查航班]              # 每一轮都随请求发出去
 
 for step in range(1, 最多步数 + 1):
-    reply = 调用模型(messages, 工具清单)  # 一次 API 调用，只换回一次回复
+    reply = 调用模型(messages, 工具清单)  # 问一次模型 = 一步
 
-    if reply 没有要求调工具:              # 模型用一段话收尾
-        return reply.text                # ← 循环的出口
+    if reply 没有要求调工具:
+        return reply.text               # ← 循环的出口：模型用一段话收尾
 
-    messages.append(reply)               # 模型说的那句，原样放回
+    messages.append(reply)              # 模型说的那句，原样放回
     for call in reply.工具调用:
-        result = 执行工具(call)           # ← 这一步是 harness 干的，不是模型
+        result = 执行工具(call)          # ← 壳干的活，模型只说要调
         messages.append(工具结果(call.id, result))
+        # ↑ 结果带上编号塞回去，模型才知道对上哪一次调用
 
-raise 超过最大步数                        # 护栏：模型一直不收尾</code></pre>
-  <p>那个 <code>return</code> 返回的 <code>reply.text</code>，就是壳最后交给用户的回答。</p>
-  <p>三件事顺着读一遍：<b>①</b> 出口是"没有工具调用"，不是某个神奇的完成标志；<b>②</b> 每一轮都把全部历史＋工具清单重新发一遍，模型自己不留状态；<b>③</b> 执行工具、把结果塞回、决定再调一次、走满步数强制停——全是壳的活。<b>模型只负责"下一步做什么"这一个判断。</b></p>
+raise 超过最大步数                       # 护栏：模型一直不收尾</code></pre>
+  <p>代码里还有一处值得停一下：每一轮都把全部对话记录和工具清单重新发一遍。模型自己不留状态，这轮能看到什么，全靠壳递进来。这些摊在模型眼前的记录，行话叫<a href="../../reference/glossary.html#context">上下文</a>。</p>
 
-  <h2>5. 放手三档：不是所有活都值得让模型定步骤</h2>
-  <p>到这里，agent 的特别之处可以收成一句：<b>把「下一步做什么」交给了模型</b>。顺着这句话就有一个新问题：这个「下一步」，是全交给模型，还是留一部分给代码？答案是分三档：</p>
+  <h2>4. 转圈的是壳：三个词各归各</h2>
+  <p>再看一遍那段代码就会现出原形：转圈的不是模型。模型每轮只做一个判断——下一步做什么；执行工具、把结果塞回去、决定再发请求、走满步数强制停，全是壳的活。模型（Model）和壳（harness）就此分开：模型是只会算的零件，给它输入，它吐下一个字，自己不会挑工具、不会动手、不会记事；壳是套在模型外面的那套软件，拼提示词、递工具清单、执行工具、管上下文、装护栏——<b>你下载安装的就是它</b>。</p>
+  <p>第三个词 agent（<a href="../../reference/glossary.html#agent">智能体</a>）指的不是软件，是壳把「模型＋工具＋循环」装好、跑起来之后，表现出的那种「自己决定下一步」的行为。口语里说「装了一个 agent」，装的其实是 harness；agent 是它跑起来的样子。壳里还装了什么、几款产品差在哪，<a href="0007-harness.html">第 7 课</a>摆在同一张零件表上对照。</p>
+
+  <h2>5. 放手三档：步骤写不写得死</h2>
+  <p>「下一步交给模型」，这就是 agent 和单次调用的分界。不过这不是全有或全无——按交出去多少，分三档：</p>
   <ul>
-    <li><b>单次调用</b>：一问一答，谈不上流程——第 1 节看过的样子。</li>
-    <li><b>workflow（工作流）</b>：<b>步骤由代码写死，模型只填每一步的内容</b>。「读表格 → 算汇总 → 按模板写周报」，三步顺序永远不变，每一步内部才轮到模型说话。</li>
-    <li><b>agent</b>：连「下一步做什么」也交给模型临场决定——就是上面那个循环，一步一判断，走到它认为做完为止。</li>
+    <li><b>单次调用</b>：一问一答，网页版的样子。</li>
+    <li><b>workflow（<a href="../../reference/glossary.html#workflow">工作流</a>）</b>：步骤由代码写死，模型只填每一步的内容。「读表格 → 算汇总 → 按模板写周报」，顺序永远不变，每步内部才轮到模型说话。</li>
+    <li><b>agent</b>：连「下一步做什么」也交给模型临场决定，就是上一节那个循环。</li>
   </ul>
-  <p>后两档有个统称：<b>agentic system</b>（代理式系统），出自 Anthropic《Building effective agents》——只要流程里有模型参与干活，就算这一类；到第三档，才算狭义的 agent。</p>
-  <p>判据还是第 2 节那个：谁安排下一步。你在产品里看到的「工作流编排／自动化」和「智能体」，差的也是这一层。workflow 在生产里有五种常见骨架，都出自同一篇文章（文末一手资料第一条）：</p>
-  <table style="border-collapse:collapse;width:100%;font-size:0.88rem">
-    <thead><tr>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">骨架</th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">形状</th>
-      <th style="text-align:left;border-bottom:1px solid var(--rule);padding:0.45rem">一个例子</th>
-    </tr></thead>
-    <tbody>
-      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>链式</b>（prompt chaining）</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一串步骤，前一步的输出是后一步的输入；中间可设「关卡」，不合格就打回</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">先写文案、检查过关，再翻译成英文</td></tr>
-      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>分流</b>（routing）</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">先给输入分类，再送进各管一摊的专用提示或工具</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">客服提问分成咨询、退款、故障三条路</td></tr>
-      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>并行</b>（parallelization）</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">拆成几路同时干完再汇总；或同一件事多跑几遍再表决</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一路答用户，另一路检查内容出不出格</td></tr>
-      <tr><td style="padding:0.45rem;border-bottom:1px solid var(--rule)"><b>编排者-工作者</b>（orchestrator-workers）</td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">中心模型现场拆活、派几个工作者、汇总收工，<b>子任务不是预先定的</b></td>
-          <td style="padding:0.45rem;border-bottom:1px solid var(--rule)">一次改动横跨多个文件的编码任务</td></tr>
-      <tr><td style="padding:0.45rem"><b>评估-优化</b>（evaluator-optimizer）</td>
-          <td style="padding:0.45rem">一个模型先做，另一个模型挑刺给意见，循环到合格</td>
-          <td style="padding:0.45rem">文学翻译：译者模型初翻，审校模型提意见再改</td></tr>
-    </tbody>
-  </table>
-  <p>这张表不是用来背的，是用来回答一个真问题：<b>我的活，步骤写不写得死？</b>写得死就用 workflow：每步固定，可预测，出了错好排查，花多少钱也事先算得出。写不死（比如「要改哪些文件取决于任务本身」）才轮到 agent。Anthropic 的工程建议（大意）：<b>先找最简单的可行解，只在不够用时再加复杂度；有时这意味着根本不用上 agent</b>。</p>
-  <p>为什么劝得这么狠？agent 用延迟和成本换任务表现；错误还会逐步放大：一步走岔，后面每一步都建立在这一步的结果上。所以要么测够，要么上护栏——护栏第 4 节刚出现过，最大步数就是一种。</p>
+  <p>后两档有个统称：agentic system（代理式系统），出自 Anthropic 的工程文章——只要流程里有模型参与干活就算这一类；到第三档，才算狭义的 agent。</p>
+  <p>选哪一档，判据就一句：<b>谁安排下一步</b>。落到手头的活，先问步骤写不写得死。写得死就用 workflow：每步固定，可预测，出了错好排查，花多少钱事先算得出；生产里的 workflow 常见五种骨架——链式、分流、并行、编排者-工作者、评估-优化——都在文末 Anthropic 那篇里。</p>
+  <p>写不死——比如要改哪些文件取决于任务本身——才轮到 agent。Anthropic 的建议（大意）是先找最简单的可行解，不够用再加复杂度，有时这意味着根本不用上 agent。代价摆在那：agent 拿延迟和成本换任务表现，一步走岔，后面每一步都建立在错的结果上。再往上一层，是一个 agent 还是一群：什么时候值得上、怎么分工，<a href="0005-multi-agent.html">第 5 课</a>接着讲；帮手越多风险面越大，安全面留给<a href="0006-injection-and-guardrails.html">第 6 课</a>。</p>
 
-  <h3>这些骨架在哪能摸到？三处</h3>
-  <p>Anthropic 那篇是工程博客，不写代码的人读它，会觉得像纯理论。但在产品里，这些骨架有三处摸得到：</p>
-  <ul>
-    <li><b>①可视化编排平台</b>：Dify、扣子（Coze）、n8n 这类产品，把骨架做成画布上的节点，拖拽连线就是「把步骤写死」。Dify 官方对 Workflow 的定位原话是<b>「可靠、可重复的流程」</b>。</li>
-    <li><b>②Agent harness</b>：正相反。OpenCode（开源的编程工具，在终端里替人写和改代码）、TeleAgent 这类，把「下一步」整个交给模型，界面上找不到「工作流」这个词。这不是缺功能，是选了三档里的另一档。</li>
-    <li><b>③自己写</b>：门槛比听起来低。第 4 节的循环去掉「判断要不要继续」这个环节，剩下的就是按固定顺序调几次 API——这正是链式。Anthropic 的建议也是同一个方向（大意）：先用 API 直连，多数模式几行代码就够。</li>
-  </ul>
-  <p>现实中三档经常<b>套着用</b>：Dify 流程图里就有一个 Agent 节点，把一小段自主循环嵌进固定步骤；agent 干活之前，也常有固定的开场步骤。所以听到「用 Dify 搭一个××」，可以直接翻译成：那多半是一个 workflow。哪几步写死、哪一步放给模型，看节点连线就知道。</p>
-  <p>再往上还有一层：用一个 agent，还是一群？多 agent 的形状，就是表里第四行那个「编排者-工作者」。什么时候值得上、怎么分工，<a href="0005-multi-agent.html">第 5 课</a>接着讲；帮手越多，风险面越大，多 agent 的安全面留给<a href="0006-injection-and-guardrails.html">第 6 课</a>。往下看，先把 agent 本身拆开：领域里常把它分成三块——规划、记忆、工具。</p>
-
-  <h2>6. 把循环拆成三块：规划、记忆、工具</h2>
-  <p>领域里常用一张地图来拆 agent：规划、记忆、工具（出处见 Lilian Weng 那篇<a href="https://lilianweng.github.io/posts/2023-06-23-agent/">《LLM Powered Autonomous Agents》</a>）。这三块不是循环之外的三件东西，而是分别落在循环的不同位置：规划在“推理”那一步，工具是“行动”那一步的手段，记忆管“观察到的结果放哪、下次还认不认得”。下面三节一块一块看。</p>
+  <h2>6. 循环里的三样装备</h2>
+  <p>循环是骨架，模型在循环里干活，靠三样装备。领域里常把它们画成一张地图：规划、记忆、工具——Lilian Weng 那篇<a href="https://lilianweng.github.io/posts/2023-06-23-agent/">《LLM Powered Autonomous Agents》</a>提出的分法。三样装备不是挂在循环外面，而是各占一个环节：</p>
 
   <div class="pillars">
     <div class="pillar">
-      <h3>① 规划 Planning</h3>
-      <p>怎么把大目标拆成能一步步执行的子任务？怎么在失败后改主意？</p>
+      <h3>规划 Planning</h3>
+      <p>落在推理那一步。大目标怎么拆成一步步能执行的子任务？失败了怎么改主意？</p>
     </div>
     <div class="pillar">
-      <h3>② 记忆 Memory</h3>
-      <p>当前上下文里放什么？跨会话的东西怎么存、怎么取回来？</p>
+      <h3>工具 Tool Use</h3>
+      <p>落在行动那一步。模型怎么伸出手去调 API、查库、改文件，把结果读回来？</p>
     </div>
     <div class="pillar">
-      <h3>③ 工具 Tool Use</h3>
-      <p>如何让模型"伸出手"去调 API、查库、改文件，并把结果读回来？</p>
+      <h3>记忆 Memory</h3>
+      <p>落在观察之后。看到的结果放哪、下次还认不认得？跨会话的东西怎么存、怎么取？</p>
     </div>
   </div>
 
-  <h2>7. ① 规划：拆任务，和改主意</h2>
-  <p>模型里没有一个单独的“规划模块”。它是一个字一个字往外写的；所谓计划，也是它写出来的一段文字。比如开头那个订机票的任务，它先写“先查直飞，太贵再看中转；都不合适就回来问”，再照着这段话往下做。计划不是模型内部存着的某个状态，而是它自己写下的中间产物；写出来以后，后面的每个字都会受这段话影响。</p>
-  <p>会“规划”，就是它能生成“先做什么、再做什么、失败了怎么办”这样的文字，并在下一步照着走。拆任务（拆子目标）、失败后换路（自我反思），都是这类文字的内容。它也可以不写出来，直接在行动里体现；写出来你能看见、能改、能存。</p>
-  <p>遇到错误为什么能改？因为错误先变成了“观察”，回到了上下文：工具报错、测试失败、你说“不对”，下一轮它才可能写出不同的下一步。它不会自动知道自己错了；没有错误信号，它就会沿着原来的路继续走。也正因为它只是按上下文往下写，改主意不保证改对——可能反复试同一个错，也可能改出新问题。所以外面还要有检查，怎么检查第 4 节讲过。</p>
-  <p>这种本事怎么来的？不是单独训练了一个叫“规划”的模块。预训练让它见过大量步骤和代码；后训练教它按指令做事，推理模型还会用强化学习（RL）强化“检查、回溯、改写”。RL 不是唯一来源，也不是每个模型都经过；它仍然是同一个下一个 token 预测器，只是把计划写进了上下文。细节见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>。</p>
-  <p>壳（harness）在这里做什么？它不替模型规划，但能决定计划怎么用。最轻的是在系统提示里要求“先出计划，别执行”；再硬一点是收窄工具：切到 Plan 模式时只给只读工具，写文件、跑命令的工具先不给，或者每次都要你批准；再进一步是把计划写进待办清单或文件，每轮重新塞回上下文（<a href="0007-harness.html">第 7 课</a>会展开）。</p>
-  <p>产品里的 Plan 模式通常不是一句提示词，而是“提示词 + 工具/权限 + 界面”一起做。只靠提示词也能做，但模型仍可能误调工具。计划还是模型写的，壳决定它什么时候写、写完能做什么。</p>
+  <h2>7. 规划：计划是写出来的文字</h2>
+  <p>模型里没有一个单独的「规划模块」。它是一个字一个字往外写的，所谓计划，也是它写出来的一段文字。订机票的任务，它会先写「先查直飞，太贵再看中转；都不合适就回来问」，再照着这段话往下做。拆任务、失败后换路，都是这类文字的内容；写出来你能看见、能改，不写出来就直接体现在动作里。</p>
+  <p>遇到错误为什么能改？因为错误先变成了观察，回到上下文里：工具报错、你说「不对」，下一轮它才可能写出不同的下一步。它不会自动知道自己错了；没有错误信号，它会沿着原来的路一直走。也因为它只是按上下文往下写，改主意不保证改对——可能反复试同一个错。所以外面的检查不能省，循环那一节说过要看什么。</p>
+  <p>壳在这里不替模型规划，但能决定计划怎么用：轻则在系统提示里要求「先出计划，别执行」，重则切到 Plan 模式，只给只读工具（细节<a href="0007-harness.html">第 7 课</a>展开）。至于这种本事哪来的——它仍是那个预测下一个字的模型，只是把计划写进了上下文；训练上怎么来的，见 <a href="../llm/0005-reasoning-models.html">LLM 底层 · 第 5 课</a>，不读也能走完本课。</p>
 
-  <h2>8. ② 工具：给模型一双手</h2>
-  <p>最原始的工具，就是<b>你自己在程序里写的一个普通函数</b>：</p>
+  <h2>8. 工具：给模型一双手</h2>
+  <p>行动那一步靠的是工具。最原始的工具，就是你在程序里写的一个普通函数：</p>
   <pre><code>def get_weather(city: str) -&gt; dict:
     return {"city": city, "temp_c": 26, "cond": "晴"}</code></pre>
-  <p>但模型看不见这个函数，也调不动它。你得再给模型一张<b>说明卡</b>：名字、一句话说明、参数。模型照着这张卡挑工具、填参数：</p>
+  <p>但模型看不见这个函数，也调不动它。你得再给它一张<b>说明卡</b>：名字、一句话说明、参数。</p>
   <pre><code>{
   "name": "get_weather",
   "description": "查某个城市今天的天气。返回气温（摄氏度）和天气状况。",
@@ -211,158 +132,33 @@ raise 超过最大步数                        # 护栏：模型一直不收尾
     "required": ["city"]
   }
 }</code></pre>
-  <p><b>说明卡是模型挑工具的主要依据</b>：写"什么时候该用、返回什么"，不是写给人看的注释。写得含糊，它就调得不准。</p>
-  <p><b>这张卡每一轮都要随请求发出去</b>，不是只发一次。所以工具越多，每一轮为它们付的 token 越多。好在这些卡每次都原样排在请求的开头：开头不变，服务器就能复用上次算过的部分，不用从头重算。这就是缓存：省钱，也更快（机制拆解见 <a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课</a>，另一条轨道，不读也能走完本课）。反过来：别中途增删工具——一改，开头就变了，缓存就接不上了。</p>
-  <p><b>模型只"说要调"，不执行。</b>它输出的是一段按约定格式写的文字（行话叫 <b>tool_use</b>，OpenAI 那边叫 <b>tool_calls</b>："我要调 X，参数是 Y"）。<b>真正去执行的，是壳里的程序</b>——程序调完，把结果（<b>tool_result</b>）塞回对话，模型才知道发生了什么。所谓"agent 能做事"，全靠这个来回反复转。</p>
-  <p>为什么非要给它手？因为它伸手去拿的，往往是<b>生来没有的三样东西</b>：现在的信息（今天的航班，模型只学到旧闻）、动手算的能力（它只会吐字）、你公司的数据（它训练时没见过）。</p>
+  <p>模型照着这张卡挑工具、填参数。卡是模型挑工具的主要依据，写得含糊，它就调得不准。</p>
+  <p>卡还有一个代价：它每一轮都随请求发出去，工具越多，每轮付的 token（模型数着计费、计长度的字词单位）越多。好在卡每次都原样排在请求开头，服务器对没变的开头会复用上次算过的结果——这套机制叫<b>缓存</b>，省钱也更快（拆解见 <a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课</a>，不读也能走完本课）。所以工具清单别中途增删：一改，开头就变了，缓存也接不上了。</p>
+  <p>要紧的是：模型只「说要调」，不执行。它输出的是一段按约定格式写的文字——「我要调 X，参数是 Y」，行话叫 tool_use，OpenAI 那边叫 tool_calls。真正执行的，是壳里的程序；调完把结果（tool_result）塞回对话，模型才知道发生了什么。</p>
+  <p>为什么非要给它手？因为它伸手去拿的，往往是它<b>生来没有的三样东西</b>：现在的信息（今天的航班，模型只学到旧闻）、动手算的能力（它只会吐字）、你公司的数据（训练时没见过）。</p>
+  <p>三五个工具自己写还行；再多，麻烦就不在写函数，而在维护——换个应用、换个壳，函数、参数说明、认证、错误处理都得重新搬一遍。所以工具后来演化出两种新形态：<a href="../../reference/glossary.html#mcp">MCP</a> 把工具做成标准插口，写一次，任何支持的壳都能接；Skill 把「怎么做一类事」打包成文件。这两个，<a href="0003-mcp.html">下一课</a>和<a href="0004-skill.html">再下一课</a>专门讲。</p>
 
-  <h3>自己写函数，写到什么时候是个头</h3>
-  <p>三五个工具还能自己写；再多，麻烦就不在写函数，而在维护：</p>
-  <ul>
-    <li><b>不能复用</b>：这个函数只能在你的程序里被调用。换个应用、换个 harness，函数、参数说明、认证、错误处理都得重新搬一遍。</li>
-    <li><b>每接一家都要重写</b>：N 个应用接 M 个工具，最笨的做法是写 N×M 份适配。</li>
-    <li><b>工具一多，管理全归你</b>：谁能用、要不要审批、版本怎么升、别人怎么发现你的工具。</li>
-  </ul>
-  <p>所以工具后来演化出两个新形态：<b>MCP</b> 把工具做成「标准插口」，写一次，任何支持 MCP 的 harness 都能接；<b>Skill</b> 把「怎么做一类事」打包成文件，不是函数。这两个下一课专门讲。</p>
-
-  <h2>9. ③ 记忆：模型只看得见上下文</h2>
-
-  <h3>它为什么会忘</h3>
-  <p>模型每来一轮，都要把上下文<b>从头读一遍</b>。它不是"接着上次往下想"，而是每次把摊在眼前的记录重看一遍。<b>上下文里没有的事，它就不知道。</b>而且不是"装满才出事"：上下文越长，它从里面找回信息的准确度越低（Anthropic 管这叫 <b>context rot，上下文腐烂</b>）。它像一个每天失忆的员工，工作台上摊着一圈便签——<b>要紧的不是他记性好不好，是谁在替他写便签、换便签。</b></p>
-
-  <h3>两层记忆：这次的，和跨会话的</h3>
-  <p><b>短时记忆＝上下文</b>：这一轮里放了什么，会话结束就散了。<b>长时记忆＝存在外面的东西</b>：你的偏好、上次的结论，写在文件或数据库里，<b>用到时再取回来</b>，塞回上下文它才"想起来"。所谓记忆，是<b>外面的程序替它存、替它取</b>——模型自己什么都存不了。</p>
-
-  <h3>四种真实做法：存、取、管，产品之间差得很远</h3>
-  <p><b>长期记忆没有行业标准</b>。研究文献常按内容分成<b>经历／事实／做法</b>，但产品不一定照这个分：怎么分、存哪、怎么取、怎么管，全是各家自己的<b>设计选择</b>。看四个真实取向（按四家产品 2026-10-18 的文档，会变）：</p>
-  <ul>
-    <li><b>不存</b>：OpenCode 不内置长期记忆，跨会话靠项目里的规则文件和代码库。写代码的活，状态本来就该落在文件和 git（程序员的版本管理工具，改动历史全在里面）里——这不是缺陷，是取向。</li>
-    <li><b>存成文件</b>：TeleAgent 按来源＋时间存成几份 Markdown。底层就是文件，不是什么数据库。</li>
-    <li><b>存成服务</b>：Supermemory 把内容抽成一张带时间的记忆图。新事实更新、补充旧事实，不重要的自动遗忘。</li>
-    <li><b>存成事实库</b>：Mem0 把对话抽成一条条小事实，检索时多路打分（按语义、关键词、时间等几路各打一次分）取回。</li>
-  </ul>
-  <p>四家具体的存、取、管各什么样，<a href="../../reference/memory-products.html">速查里有一张四产品对照表</a>和文档链接；这里只记结论：四条路没有谁更先进，要不要跨会话、记忆要不要可读可改、过期了谁来清，用你的场景答。</p>
-
-  <p>还有一路更彻底的：<b>记忆本身就是给模型的工具</b>——Anthropic 的 <a href="https://platform.claude.com/docs/en/agents-and-tools/tool-use/memory-tool">memory tool</a> 让模型自己调一组文件命令读写"记忆文件夹"，用到才读回（just-in-time）。工具和记忆的边界，在这里就模糊了。</p>
-
-  <h3>该记什么，要不要上</h3>
-  <p><b>该进长时记忆的</b>：稳定的偏好（"我住浦东"）、做过的结论、你纠正过它的话——<b>下次还会用到、而且不会过期</b>的东西。<b>不该进的</b>：一次性细节、全部流水账（存了也取不准，还越存越贵）、<b>会过期的事实</b>（今天的票价，记下来就是给将来埋雷）、敏感信息。</p>
-  <p>要不要上长期记忆，三个问题过一遍：<b>忘掉的那件事下次真的还会用到吗？用到时能不能一句话补回来？存错了谁收拾？</b>多数场景里，上下文＋让用户补一句就够用；真正值得存的，是"反复要用、而且稳定"的东西。</p>
+  <h2>9. 记忆：谁在替它写便签</h2>
+  <p>工具解决了动手，还剩一件事：干过的活、看到的结果，模型记不记得住？模型为什么会忘呢？它每来一轮，都要把上下文从头读一遍——不是「接着上次往下想」，而是每次把摊在眼前的记录重看一遍。上下文里没有的事，它就不知道。而且不用等装满才出事：上下文越长，它从里面找回信息的准确度越低——注意力就那么点，摊在越多内容上越薄。Anthropic 管这叫 <b>context rot</b>（上下文腐烂）。它像一个每天失忆的员工，工作台上摊着一圈便签——<b>要紧的不是他记性好不好，是谁在替他写便签、换便签</b>。</p>
+  <p>所以记忆分两层。短时记忆就是上下文：这一轮放了什么，会话结束就散了。长时记忆是存在外面的东西：你的偏好、上次的结论，写在文件或数据库里，用到时取回来、塞进上下文，它才「想起来」。存也好取也好，都是外面的程序在办——模型自己什么都存不了。</p>
+  <p>长时记忆没有行业标准。同一件事，四家产品的做法差得很远（按四家 2026-10-18 的文档，会变）：<b>OpenCode</b> 干脆不存，跨会话靠项目里的规则文件和代码库——写代码的活，状态本来就该落在文件里；<b>TeleAgent</b> 按来源和时间存成几份 Markdown 文件；<b>Supermemory</b> 把内容抽成一张带时间的记忆图，新事实更新旧的，不重要的自动遗忘；<b>Mem0</b> 把对话抽成一条条小事实，取回时按语义、关键词、时间几路各打一次分。四家的存、取、管各是什么样，<a href="../../reference/memory-products.html">速查里有对照表</a>。四条路没有谁更先进：要不要跨会话、记忆要不要可读可改、过期了谁来清，用你的场景答。</p>
+  <p>该进长时记忆的，是下次还会用到、又不会过期的东西：稳定的偏好（「我住浦东」）、做过的结论、你纠正过它的话。不该进的：一次性细节、全部流水账（存了也取不准，越存越贵）、会过期的事实（今天的票价，记下来就是给将来埋雷）、敏感信息。要不要上长期记忆，动手前问自己：忘掉的那件事下次真的还用得到吗？能不能一句话补回来？存错了谁来收拾？多数场景，上下文加一句补充就够用了。</p>
 
   <h2>10. 检查一下你懂了没</h2>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q1</span> Agent 与单次 LLM 调用最本质的区别是什么？</p>
-    <button class="quiz-option" data-correct="true">会循环地做决策并调用工具</button>
-    <button class="quiz-option">使用了参数规模更大的模型</button>
-    <button class="quiz-option">总是需要联网才能正常工作</button>
-    <button class="quiz-option">必须由多个模型协同来完成</button>
-    <p class="feedback"
-       data-ok="对。区别在「循环 + 行动」，不在模型大小或联网与否。"
-       data-no="关键在：它会反复决策、并调用外部的工具。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q2</span> 在核心循环中，一次「行动」之后紧接着发生什么？</p>
-    <button class="quiz-option">把模型的权重按结果来调整</button>
-    <button class="quiz-option" data-correct="true">把结果作为观察喂回给模型</button>
-    <button class="quiz-option">把整个任务从头重新做一遍</button>
-    <button class="quiz-option">把结果直接当成答案来返回</button>
-    <p class="feedback"
-       data-ok="对。行动的结果变成观察，回喂给模型，开始下一轮推理。"
-       data-no="结果不会直接变成答案，也不会改模型权重——它作为「观察」回喂，再推理。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q3</span> 为什么循环要设一个最大步数上限？</p>
-    <button class="quiz-option">为了减少需要调用的工具数</button>
-    <button class="quiz-option">为了让模型的推理速度更快</button>
-    <button class="quiz-option" data-correct="true">防止智能体陷入死循环卡住</button>
-    <button class="quiz-option">为了让答案长度保持得一致</button>
-    <p class="feedback"
-       data-ok="对。模型不会自己保证停下来，护栏必须由工程来兜底。"
-       data-no="护栏的作用是兜底：模型可能一直不认为任务完成，必须有东西强制它停。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q4</span> 下面哪种情况是"用 agent"，不是"用 AI 对话"？</p>
+    <p class="q"><span class="num">Q1</span> 下面哪种情况是「用 agent」，不是「用 AI 对话」？</p>
     <button class="quiz-option">让它把周报改得更通顺，改完你自己复制回文档里</button>
     <button class="quiz-option">在网页上问哪家航司便宜，它回一段文字建议给你参考</button>
     <button class="quiz-option">把你的行程描述翻译成英文，方便发给国外的同事</button>
-    <button class="quiz-option" data-correct="true">说完就走开，它自己查航班、比价、订票，回来向你汇报</button>
+    <button class="quiz-option" data-correct="true">说完就走开，它自己查航班、比价，订票前问你一声</button>
     <p class="feedback"
-       data-ok="对。判断标准是「谁安排下一步、有没有手」——它自己循环着把事办完，才是 agent。"
+       data-ok="对。它自己循环着把事办完——下一步谁安排、能不能动手，两点都在它身上。"
        data-no="看两点：下一步谁安排，以及它能不能真的动手。只回一段文字建议的，还是用 AI 对话。"></p>
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q5</span> agent 的「短时记忆」和「长时记忆」差在哪？</p>
-    <button class="quiz-option" data-correct="true">短时是这次上下文里的内容，长时跨会话存、用到再取回</button>
-    <button class="quiz-option">短时只能存一句话的量，长时能存一整本书那么多</button>
-    <button class="quiz-option">短时是模型自己记住的，长时是你手动一条条输入的</button>
-    <button class="quiz-option">短时是免费的，长时要额外付一笔存储的费用</button>
-    <p class="feedback"
-       data-ok="对。短时＝这一次上下文里放了什么；长时＝跨会话存下来、用到再取回。"
-       data-no="两层的分界是「这次的」还是「跨会话的」，跟容量、谁输入、收费无关。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q6</span> 从网上下载、双击打开的那个软件，严格说是什么？</p>
-    <button class="quiz-option">是 agent 本身，装完就会自己干活</button>
-    <button class="quiz-option" data-correct="true">harness，承载 agent 的软件</button>
-    <button class="quiz-option">就是一个参数很多的大号语言模型</button>
-    <button class="quiz-option">是一整套已经训练好的模型权重文件</button>
-    <p class="feedback"
-       data-ok="对。你装的是 harness 这套软件；agent 是它跑起来后表现出的行为。"
-       data-no="模型只是被壳套着的那个零件；装下来的软件是 harness，agent 是行为。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q7</span> 「能不能动手调工具」这件事，由谁决定？</p>
-    <button class="quiz-option">由模型的权重决定</button>
-    <button class="quiz-option">由上下文的长度决定</button>
-    <button class="quiz-option" data-correct="true">由 harness 决定</button>
-    <button class="quiz-option">由提示词的语气决定</button>
-    <p class="feedback"
-       data-ok="对。模型只会吐字，动手能力全是 harness 给的。"
-       data-no="模型不执行任何东西。工具执行是 harness 的活。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q8</span> 模型「调用工具」的时候，它到底做了什么？</p>
-    <button class="quiz-option">直接连上外部接口，替模型执行调用</button>
-    <button class="quiz-option">在自己内部模拟出那个工具的结果</button>
-    <button class="quiz-option">把工具的代码改写成自己能用的</button>
-    <button class="quiz-option" data-correct="true">写一段「调哪个工具、参数是什么」的文字</button>
-    <p class="feedback"
-       data-ok="对。它只吐字，动手的是壳里的程序。"
-       data-no="模型没有执行能力。它输出的只是一段按约定格式写的文字（tool_use）。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q9</span> 关于「agent 的长期记忆怎么存」，哪个说法是对的？</p>
-    <button class="quiz-option" data-correct="true">没有统一标准，文件和数据库都有人用</button>
-    <button class="quiz-option">都按「经历、事实、做法」三类打标签存</button>
-    <button class="quiz-option">行业已有统一标准，照标准实现就行</button>
-    <button class="quiz-option">都得把对话原样存下来，用时再整段塞回来</button>
-    <p class="feedback"
-       data-ok="对。分法、存储、取法都是设计选择——不同 harness 的取舍也不一样。"
-       data-no="三分法是一种分法；整段全存是正文劝你别做的——流水账存了也取不准、越存越贵。真实产品各走各的路，没有统一标准。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q10</span> 模型这一次回复里没有任何工具调用，说明什么？</p>
-    <button class="quiz-option">模型出错了，应该重试</button>
-    <button class="quiz-option" data-correct="true">壳该结束循环，把这段回复交给用户</button>
-    <button class="quiz-option">工具全都坏了，调不了</button>
-    <button class="quiz-option">必须再调一次模型确认</button>
-    <p class="feedback"
-       data-ok="对。出口就是「不再要工具」；壳把这段文字当最终答案。"
-       data-no="没有工具调用正是收尾信号，不是故障——当然，收尾了不等于活干对了。"></p>
-  </div>
-
-  <div class="quiz">
-    <p class="q"><span class="num">Q11</span> 网页版和 harness 的后台，共同点是什么？</p>
+    <p class="q"><span class="num">Q2</span> 网页版和 agent 软件（harness）的后台，共同点是什么？</p>
     <button class="quiz-option">都让模型直接在你的电脑上运行，不用联网</button>
     <button class="quiz-option">网页版不调 API，只有 harness 才调</button>
     <button class="quiz-option" data-correct="true">都把输入打包成请求，发给供应商 API 取回复</button>
@@ -373,7 +169,40 @@ raise 超过最大步数                        # 护栏：模型一直不收尾
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q12</span> 一个任务每次都是固定的三步：读表格 → 算汇总 → 按模板写周报。哪种结构最合适？</p>
+    <p class="q"><span class="num">Q3</span> 从网上下载、双击打开的那个软件，严格说是什么？</p>
+    <button class="quiz-option">是 agent 本身，装完就会自己干活</button>
+    <button class="quiz-option" data-correct="true">harness，承载 agent 的软件</button>
+    <button class="quiz-option">就是一个参数很多的大号语言模型</button>
+    <button class="quiz-option">是一整套已经训练好的模型权重文件</button>
+    <p class="feedback"
+       data-ok="对。你装的是 harness 这套软件；agent 是它跑起来后表现出的行为。"
+       data-no="模型只是被壳套着的那个零件；装下来的软件是 harness，agent 是行为。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q4</span> 模型「调用工具」的时候，它到底做了什么？</p>
+    <button class="quiz-option">直接连上外部接口，替模型执行调用</button>
+    <button class="quiz-option">在自己内部模拟出那个工具的结果</button>
+    <button class="quiz-option">把工具的代码改写成自己能用的</button>
+    <button class="quiz-option" data-correct="true">写一段「调哪个工具、参数是什么」的文字</button>
+    <p class="feedback"
+       data-ok="对。它只吐字，动手的是壳里的程序。"
+       data-no="模型没有执行能力。它输出的只是一段按约定格式写的文字（tool_use）。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q5</span> 模型这一次回复里没有任何工具调用，说明什么？</p>
+    <button class="quiz-option">模型出错了，应该重试</button>
+    <button class="quiz-option" data-correct="true">壳该结束循环，把这段回复交给用户</button>
+    <button class="quiz-option">工具全都坏了，调不了</button>
+    <button class="quiz-option">必须再调一次模型确认</button>
+    <p class="feedback"
+       data-ok="对。出口就是「不再要工具」；壳把这段文字当最终答案。"
+       data-no="没有工具调用正是收尾信号，不是故障——当然，收尾了不等于活干对了。"></p>
+  </div>
+
+  <div class="quiz">
+    <p class="q"><span class="num">Q6</span> 一个任务每次都是固定的三步：读表格 → 算汇总 → 按模板写周报。哪种结构最合适？</p>
     <button class="quiz-option">agent：让模型自己决定接下来做哪一步</button>
     <button class="quiz-option" data-correct="true">workflow：步骤写死，模型只填每一步的内容</button>
     <button class="quiz-option">单次调用：不给工具，一次生成整份周报</button>
@@ -384,32 +213,31 @@ raise 超过最大步数                        # 护栏：模型一直不收尾
   </div>
 
   <div class="quiz">
-    <p class="q"><span class="num">Q13</span> agent 查不到上周的数据，自己换了来源重算一遍。在规划、记忆、工具这三块里，这落在哪？</p>
-    <button class="quiz-option">记忆——把这次的教训存进长时记忆</button>
-    <button class="quiz-option">工具——往工具清单里加一个新来源</button>
-    <button class="quiz-option" data-correct="true">规划——自我反思，失败后改主意</button>
-    <button class="quiz-option">护栏——被步数上限拦下，被迫换路</button>
+    <p class="q"><span class="num">Q7</span> agent 的「短时记忆」和「长时记忆」差在哪？</p>
+    <button class="quiz-option" data-correct="true">短时是这次上下文里的内容，长时跨会话存、用到再取回</button>
+    <button class="quiz-option">短时只能存一句话的量，长时能存一整本书那么多</button>
+    <button class="quiz-option">短时是模型自己记住的，长时是你手动一条条输入的</button>
+    <button class="quiz-option">短时是免费的，长时要额外付一笔存储的费用</button>
     <p class="feedback"
-       data-ok="对。查不到就换路，是「失败后改主意」——规划这一块的本职。"
-       data-no="换路发生在「下一步做什么」的判断里，那是规划；清单和记忆它都没动，护栏也没到。"></p>
+       data-ok="对。短时＝这一次上下文里放了什么；长时＝跨会话存下来、用到再取回。"
+       data-no="两层的分界是「这次的」还是「跨会话的」，跟容量、谁输入、收费无关。"></p>
   </div>
 
   <div class="source">
     <b>这节课的一手资料</b>：<br>
-    <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — "Building effective agents"</a>。「什么时候别上 agent」和第 5 节五种 workflow 骨架的出处（2024-12 发布，2026-10-21 复核；文首有官方勘误注：工具生态部分已变旧，概念框架仍是正源）。读的时候带着一个问题：作者为什么反复劝你别急着上 agent？<br>
-    <a href="https://docs.dify.ai/zh/cloud/use-dify/build/workflow-chatflow">Dify 官方文档 — Workflow 与 Chatflow</a> ／ <a href="https://docs.dify.ai/zh/cloud/use-dify/build/orchestrate-node">编排逻辑</a>：「三处能摸到」第①条与「套着用」的产品侧出处——Workflow 定位、画布节点与 Agent 节点（2026-10-21 抓）。<br>
-    <a href="https://developers.openai.com/api/docs/guides/function-calling">OpenAI — Function calling（官方指南）</a>：把函数写成 JSON schema 传给模型，模型返回"要调哪个函数、参数是什么"的结构化输出，由你的应用去执行——第 8 节的出处。<br>
-    <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic — "Effective context engineering for AI agents"</a>：上下文为什么会"腐烂"、结构化笔记（把笔记写到上下文之外、用时拉回来）——第 9 节的出处。
+    <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic — "Building effective agents"</a>：三档的分界、「先找最简单可行解」「错误滚动放大」的劝告出处，五种 workflow 骨架也在这篇（2024-12 发布，2026-10-21 复核；文首有官方勘误注：工具生态部分已变旧，概念框架仍是正源）。读的时候带着一个问题：作者为什么反复劝你别急着上 agent？<br>
+    <a href="https://developers.openai.com/api/docs/guides/function-calling">OpenAI — Function calling（官方指南）</a>：把函数写成 JSON schema 传给模型，模型返回「要调哪个函数、参数是什么」的结构化输出，由你的应用去执行——工具一节的出处。<br>
+    <a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents">Anthropic — "Effective context engineering for AI agents"</a>：上下文为什么「腐烂」、长时记忆为什么存外面、用时取回——记忆一节的出处。
   </div>
 
   <div class="ask-teacher">
-    <b>我是你的老师，随时打断我。</b>任何一步不清楚——比如"工具到底是谁执行的？""循环为什么有时候停不下来？""记忆为什么没有标准做法？"——直接问我。搞不懂就往下学，是最贵的学费。
+    <b>我是你的老师，随时打断我。</b>哪一步不清楚——比如「工具到底是谁执行的？」「循环为什么有时候停不下来？」——直接问。搞不懂就往下学，是最贵的学费。
   </div>
 
   <p class="next">
     <b>前置</b>：没有，本轨道从这一课开始；想先弄懂模型本身怎么工作，看 <a href="../llm/0000-how-models-learn.html">LLM 底层 · 第 0 课 · 模型是怎么学出来的</a>。<br>
     <b>顺着往下</b>：<a href="0002-build-an-agent.html">Agent 篇 · 第 2 课 · 手写一个 agent</a>（把这课的循环写出来跑起来）<br>
-    <b>其它轨道</b>：<a href="../llm/0001-from-token-to-next-token.html">LLM 底层 · 第 1 课 · 从「token」到「下一个 token」</a>（整条流水线怎么走）· <a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a>（模型为什么"记得快"）· <a href="0007-harness.html">第 7 课 · Harness</a>（上下文里放什么——上下文管理那一节）<br>
+    <b>其它轨道</b>：<a href="../llm/0001-from-token-to-next-token.html">LLM 底层 · 第 1 课 · 从「token」到「下一个 token」</a>（整条流水线怎么走）· <a href="../llm/0003-kv-cache-and-prompt-caching.html">LLM 底层 · 第 3 课 · KV Cache 与「缓存命中」</a>（工具清单为什么影响费用）· <a href="0007-harness.html">第 7 课 · Harness</a>（壳里装了什么）<br>
     术语表：<a href="../../reference/glossary.html#api">API</a> · <a href="../../reference/glossary.html#agent">Agent</a> · <a href="../../reference/glossary.html#loop">Agent 循环</a> · <a href="../../reference/glossary.html#workflow">Workflow</a> · <a href="../../reference/glossary.html#harness">Harness</a> · <a href="../../reference/glossary.html#planning">规划</a> · <a href="../../reference/glossary.html#memory">记忆</a> · <a href="../../reference/glossary.html#tool">工具</a> · <a href="../../reference/glossary.html#guardrail">护栏</a>
   </p>
 
