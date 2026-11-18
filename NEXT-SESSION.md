@@ -1,65 +1,57 @@
 # 下一会话交接
 
 > 用途：把开发状态从当前会话交接到新会话，避免重读整段对话。只记状态与下一步，不复制课程内容。
-> **每轮开发结束重写本文件**（不是追加）；与 `NOTES.md` 第 4 节的分工见 `AGENTS.md`「文件职责」。
+> **每轮开发结束重写本文件**（不是追加）。长期欠账也写在这里，不再散在 `NOTES.md` 或标准里。
 
 ## 先读这些（按顺序）
 
 1. `AGENTS.md`：会话规则（会话自动加载）。
-2. 本文件：当前状态与下一步。**当前只有一条主线：全库精修**——开工前先读下面「当前主线」一节。
-3. [`NOTES.md`](NOTES.md) 第 1 节（流程纪律）＋ [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md)（全局写作标准）＋要回写的那一轨 [`internal/standards/tracks/<轨道>.md`](internal/standards/tracks/)。
-4. 回写约定与标记说明：[`lessons-md/README.md`](lessons-md/README.md)。
-5. 开工前跑 `pwsh tools/progress.ps1` 拿基线。
+2. 本文件：当前状态与下一步。
+3. [`NOTES.md`](NOTES.md)：学习者画像与教学偏好。
+4. [`internal/standards/PROCESS.md`](internal/standards/PROCESS.md)（开发流程与核验纪律）＋ [`internal/standards/COURSE-STANDARD.md`](internal/standards/COURSE-STANDARD.md)（页面结构、讲法、互链、交付检查单）＋ [`internal/standards/ARTICLE-STYLE.md`](internal/standards/ARTICLE-STYLE.md)（文章体，正文文字以此为准）＋ [`internal/standards/REVISION.md`](internal/standards/REVISION.md)（改课／精修流程）＋要动的那一轨 [`internal/standards/tracks/<轨道>.md`](internal/standards/tracks/)。
+5. 回写约定：[`lessons-md/README.md`](lessons-md/README.md)。
+6. 开工前跑 `pwsh tools/progress.ps1` 拿基线。
 
-## 当前主线：全库精修（2026-11-08 学习者定）
+## 当前主线：全库精修（2026-11-17 更新）
 
-**39 门课全部精修一遍**：学习者逐课**手改** [`lessons-md/`](lessons-md/) 下对应课的 markdown 文字稿 → 交回 → 主代按稿回写 `lessons/<轨道>/<课>.html`。**这是当前唯一主线，其它活全部让路。**
+37 门课、39 篇正文（agent 7＋rag 11＋llm 21，含两篇附录），逐篇按**文章体**重过，再回写 `lessons/` 的 HTML。这是当前唯一主线。
 
-- **进度**：✅ agent/0003（2026-11-08 回写完成）。**待精修 38 门**：agent 6（0001/0002/0004～0007）· rag 11 · llm 21（含两篇附录）。
-- **主代不代写正文、不催进度**——学习者改完哪课交回哪课。若某课想让主代先按风格卡出初稿再由他改，他会点名（流程不预设这一步）。
-- **回写时学习者说什么算什么**：他的文字稿是唯一事实来源；主代只做表现层映射（`**`→`<b>`、字段/命令→`<code>`、quiz→`.quiz` 结构、UI 文字加「」＋加粗、节号重排＋「第 N 节」引用同步、图与 alt 不动、图注随稿）＋口径把关（见下）。
+**精修的意思**：学习者手改 `lessons-md/` 的 md，或由 agent 按 `ARTICLE-STYLE.md` 重写 md；定稿后由主代回写 HTML。正文只改 md，不直接改 HTML。流程见 [`REVISION.md`](internal/standards/REVISION.md)。
 
-### 单课回写流程（主代执行，每次一样）
+- **已完成 0 篇**：新标准从 2026-11-17 起算，还没有哪篇按 `ARTICLE-STYLE.md` 定稿。
+- **进行中**：`agent/0004`（Skill）。已按学习者指示把 round4 稿 `internal/drafts/0004-skill/round4/variant-deepseek-flash.md` 原样覆盖到 `lessons-md/agent/0004-skill.md`（SHA256 一致，24773 字节）。该稿尚未按 `lessons-md/README.md` 的标记约定整理（无文件头、meta 重复行、Q 标题未加粗），学习者手改时顺手对齐。**暂不回写 HTML**。
+- **待精修 38 篇**：agent 7 · rag 11 · llm 21。
+  - **`agent/0003`（MCP）明确算未精修**：文字稿已经比 HTML 新（md 219 行／6 题 vs HTML 178 行／5 题），说明有一版改稿尚未回写；按 `ARTICLE-STYLE.md` 整课重过后再回写，不因过去做过一轮而跳过。此时跑 `html2md --check` 会因文字稿领先报 FAIL，属正常待回写，不是数据损坏。
+  - **`llm/0003`（KV Cache）同样算未精修**，与其他 llm 课一起排，不因旧的完成标记跳过。
+  - `agent/0001` 在 2026-11-07 按旧文章体重写过（5.81），有底稿、改起来快，但仍算未精修。
+- **主代不代写正文、不催进度**：学习者交回哪篇做哪篇。要主代先出初稿，他会点名；写作必须给 `ARTICLE-STYLE.md` 全文加一两段范文，不给禁令清单。
 
-1. **备份**：`lessons/<轨道>/<课>.html` → `backup/<轨道>/<课>.html`（**backup/ 下只有 agent／llm／rag 三个子目录**，同名覆盖，不放快照副本；backup 里存的是该课回写前的原件）；
-2. **逐段映射回 HTML**（见上）；
-3. **新事实当场抓一手来源**＋抓取日期 → 补进课件一手资料框＋`RESOURCES.md`（含索引行）；抓不到的记 `RESOURCES.md` Gaps，**不编造、不留空引**；
-4. **口径自查**：机制口径与前课一致（0003 的教训：tools 字段），术语表、「官方」注明哪家、弯引号/属性直引号、markdown 残留、每题恰好一个 ✅；
-5. **核验**：`html2md` 的 validate()（**只读**；永远别跑 convert_all——会覆盖学习者未交回的 md）＋ `check-links.py` ＋ `progress.ps1` 七段 ＋ HTML 专项对账（反馈/选项逐字对 md）；
-6. **报告**＋请学习者 F5 验收页面。
+## 已拍板的口径
 
-### 已拍板的口径（2026-11-08）
-
-- **排版**：中英文之间统一有空格（0003 已落地；其余课回写时对齐）。
-- **来源**：当场抓（1.1 纪律）。
-- **小测**：按精修后的正文重出（题量 5～10、选项等长、顺序打乱、✅ 位置均衡）。
-- **LLM 轨 19 门已标 completed 的课也精修**：学习者本人手改＝completed 含义（本人逐课改过）的再兑现，标记保留。
-- **backup 结构**：`backup/{agent,llm,rag}/<课文件名>.html`，2026-11-08 学习者定（旧的按日期建快照目录的做法作废，旧快照已清空）。
-
-### 学习者风格卡（八条，回写自查与可能的主题初稿用）
-
-① 开场＝上一课刚做的事＋日常经验，连环提问，不编排故事；② 新课从上一课的具体机制里长出来；③ 机制讲到底层实现；④ 概念用「两条路」对比引出，不先甩定义；⑤ 实操给全路径（去哪找→配置长什么样→依赖什么→捷径）；⑥ 补生态信息（鉴权/收费/SDK）；⑦ 提示类内容大幅精简；⑧ 口语连接词＋中英空格规则。
+- **排版**：中英文之间统一有空格（0003 已落地）。
+- **来源**：当场抓（`PROCESS.md` 第 1 节）。
+- **小测**：按精修后的正文重出（5～10 题、选项等长、顺序打乱、✅ 位置均衡）。
+- **backup 结构**：`backup/{agent,llm,rag}/<课文件名>.html`（2026-11-08 定，旧的按日期快照作废）。
+- **不再有完成标记（2026-11-17 学习者定）**：目录页徽章、README 进度节、主页「门已定稿」计数全部移除；所有课一律按 `REVISION.md` 与交付检查单改，没有「定稿课受保护」这一档。
 
 ## 当前状态
 
-- **课程总盘**：37 门 / 28 基础 / 9 进阶 / 26 脚本；19 门已标 completed（全在 LLM 轨）；audit 全绿（2026-11-08 收工实跑）。
-- **⚠ 未提交**（六轮叠加，`git status` 可见）：① 年假语料口径统一（[5.80](internal/history/5.80-annual-leave-caliber.md)）② agent/0001 文章体重写（[5.81](internal/history/5.81-agent-0001-article-rework.md)）③ agent/0002 整课重过（[5.82](internal/history/5.82-agent-0002-article-pass.md)）④ agent/0003 标准核查＋F5 轮 1–3（[5.83](internal/history/5.83-agent-0003-standards-check.md)）⑤ agent/0004 整课重过（[5.84](internal/history/5.84-agent-0004-article-pass.md)）⑥ lessons-md 镜像＋0003 精修回写＋backup 重构＋RESOURCES 增补。
-- **✅ agent/0003 精修已回写（2026-11-08，含同日二次精简）**：学习者手改稿（8 节并 3 节＋小测定稿 5 题）→ 回写。要点：口径修正三处（工具描述进请求的 `tools` 字段——§1/§2 各一处；「工具注册表」弱化为「可以把它理解成」；skill 调脚本＝「就是用这种方式实现」）；鉴权段精简为一句（「MCP 协议也包含相应的鉴权机制」——规范 Authorization 仍佐证，高德收费例随精简删除）；新事实来源已抓（MCP 规范 Authorization＋官方 SDK，2026-11-08，入 RESOURCES）；两处待核记 Gaps（百度 MCP World／火山引擎联动细节）；UI 文字加「」＋加粗；一手资料 3→4 条。备份：`backup/agent/0003-mcp.html`（回写前原件，哈希与内容特征双验证）。
-- **lessons-md 镜像**：40 个 md（`tools/html2md.py` 生成，约定见 README，AGENTS.md 已登记）。0003 的 md 已是精修终稿、与 HTML 一致；**其余 39 个仍是镜像原状**（学习者逐课手改时才变化）。
-- **RAG 0007 年假档位是第三种「满 1/10/20 年」版**——精修到那课时顺手判要不要统一成 5/10/15。
-- **旧 F5 验收清单（agent 0001/0002/0004、RAG 全轨）不再单列**：精修本身就是学习者逐课重过，改到哪课就并进那课的精修验收。
+- **课程总盘**：37 门、28 基础、9 进阶、26 脚本。
+- **文档结构（2026-11-17 重整）**：`NOTES.md` 只留学习者偏好；流程纪律在 `internal/standards/PROCESS.md`；改课标准在 `internal/standards/REVISION.md`；操作手册从 `internal/rules/` 迁到 `internal/playbooks/`；历史索引从 NOTES 第 5 节迁到 `internal/history/INDEX.md`；过时的 Agent 重构蓝图归入 `internal/history/archive/`。
+- **lessons-md**：40 个 md。0003 是旧标准回写稿，待按新标准重过；0004 已换成 round4 稿，学习者手改中；其余是镜像原状。
+- **待核数字**：TeleAgent 的启用上限（50 还是 100）、导入包限制（1MB／300 文件）。三份草稿都写了 100，但没有独立核实。
 
 ## 下一步
 
-1. **等学习者交回下一份 md 修改稿**（他挑课、他改）→ 按上面「单课回写流程」执行。交回后先对拍（哪些段动了、哪些事实是新断言），再动 HTML。
-2. **学习者改稿期间，主代可配合的事（他要求才做）**：该课入链/锚点预检（`grep <课名>.html#`）＋该课事实断言与来源清单，供他改稿参考。
-3. **主线完成后再排**：拍板欠账（速查区补卡／「Agent 原理篇」旧轨道名残留 9 处课件＋4 处文档／全库出镜句轮——LLM 轨精修时出镜句判据顺手过）。
-4. 每轮结束重写本文件时，更新「进度」行的已完成课清单。
+1. **0004 手改中**：学习者改完 `lessons-md/agent/0004-skill.md`（round4 稿）后交回，备份 HTML、逐段回写、核验。
+2. **agent/0003（MCP）按新标准重过**：2026-11-08 的旧回写稿可当底稿，整课按 `ARTICLE-STYLE.md` 重写，再回写。
+3. **逐篇交稿**：学习者改哪篇做哪篇，按 `REVISION.md` 的单篇流程走。0001 有旧稿，也可点名先做。
+4. **主线完成后再排**：速查区补卡（`agent-eval-checklist`、`context-budget`、`memory-products` 三页没进目录页底部速查区）、「Agent 原理篇」旧轨道名残留（9 处课件＋4 处文档）、全库出镜句轮（精修时顺手过）、各课 `note` 框按「只装两类」过一遍（没过的课在精修时顺手清）。
 
 ## 待确认
 
-- 精修流程（含 backup 结构）要不要写进 NOTES 1.8——再跑几课、稳了再写，避免过早固化。
-- RESOURCES.md「腾讯云广场」条目里引用的 `backup/agent-track-20261026/` 快照已随 2026-11-08 清空删除，历史注记里的指向失效（要不要清理该注记，待定）。
+- 0004 round4 稿里的 `Q1` 等标题还没加粗成 `**Q1　…**`、文件头与元信息未按 md 约定整理——是让学习者手改时顺手对齐，还是回写前由主代统一补。
+- `RESOURCES.md`「腾讯云广场」条目引用的 `backup/agent-track-20261026/` 快照已删，历史注记指向失效，清不清待定。
 - 学习者每周可投入时间（影响精修节奏预估，还没收集）。
 
 > AI生成

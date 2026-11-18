@@ -2,13 +2,13 @@
 """
 html2md.py —— 把 lessons/ 下的课件 HTML 转成 markdown 文字稿（lessons-md/，结构与 lessons/ 一致）。
 
-用途：学习者直接在 md 上改，主代理再按 internal/drafts/agent-0003-f5-markdown.md 的既定约定
+用途：学习者直接在 md 上改，主代理再按 lessons-md/README.md 的既定约定
 逐段映射回 HTML 并跑核验。标记约定（✅ / 答对时 / 答错时 / 【图】 / 【选读框】……）
 见 lessons-md/README.md。
 
 用法：
-    python tools/html2md.py            # 全量转换 lessons/*.html -> lessons-md/
-    python tools/html2md.py --check    # 转换后做一致性校验（题数/标记数/链接可达）
+    python tools/html2md.py            # 全量转换 lessons/*.html -> lessons-md/（会覆盖未交回的 md，慎用）
+    python tools/html2md.py --check    # 只读：不写 md，只校验现有 md（题数/标记数/链接可达）
 
 只读 lessons/，不改任何课件；输出只进 lessons-md/。
 """
@@ -154,10 +154,6 @@ def inline(node, ctx: Ctx) -> str:
     if tag in ('sub', 'sup', 'small'):
         return f'<{tag}>{inline_all(node.children, ctx)}</{tag}>'
     if tag == 'span':
-        cls = node.cls
-        if cls == 'badge':  # 目录页 completed 徽章
-            inner = inline_all(node.children, ctx).strip()
-            return f'（{inner}）' if inner else ''
         return inline_all(node.children, ctx)
     if tag in VOID:
         return ''
@@ -582,6 +578,9 @@ def render_block(el: El, ctx: Ctx, mainline_note_used=None) -> list:
             return render_next(el, ctx)
         return [render_para(el, ctx)]
     if tag == 'div':
+        # lesson-meta 已在文件头单独写【meta】，不要在正文里再渲染一遍
+        if 'lesson-meta' in cls:
+            return []
         if 'goal' in cls:
             if not ctx.goal_seen:
                 ctx.goal_seen = True
@@ -715,13 +714,21 @@ def convert_all(check: bool) -> int:
     errors = 0
     for src in srcs:
         md_path = md_for(src)
-        md_path.parent.mkdir(parents=True, exist_ok=True)
         text = convert_file(src, md_path)
+        if check:
+            # --check 只读：绝不覆盖 md（学习者可能正在手改、尚未交回）
+            if not md_path.exists():
+                print(f'[FAIL] 缺文件 {md_path.relative_to(ROOT)}')
+                errors += 1
+            else:
+                print(f'ok  {md_path.relative_to(ROOT)}')
+            continue
+        md_path.parent.mkdir(parents=True, exist_ok=True)
         md_path.write_text(text, encoding='utf-8', newline='\n')
         print(f'ok  {md_path.relative_to(ROOT)}')
-    print(f'\n共转换 {len(srcs)} 个文件 -> lessons-md/')
+    print(f'\n{"检查" if check else "共转换"} {len(srcs)} 个文件{"" if check else " -> lessons-md/"}')
     if check:
-        errors = validate()
+        errors += validate()
     return errors
 
 

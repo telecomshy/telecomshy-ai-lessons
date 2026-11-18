@@ -20,31 +20,6 @@
 
 教程基于 [mattpocock 的 `teach` 技能](https://github.com/mattpocock/skills/blob/main/docs/productivity/teach.md) 开发，因此一开始就有一个现成的骨架：AI 先生成课件，我再一课一课地修改和调整。
 
-### 课程进度怎么标记
-
-整个教程的课件是 **AI 辅助生成**的，我一课一课地改。所以进度分三档，目录页上一眼能分清：
-
-| 标记                          | 含义                              |
-| --------------------------- | ------------------------------- |
-| 标题后带 <code>completed</code> | **已经逐课改过一遍**，内容定稿，可以直接照着读       |
-| 普通卡片                        | 已经写出来了，但**还在改** —— 措辞、举例、配图都可能变 |
-| 虚线卡片，标着「下一步开」               | **还没写**                         |
-
-目前标为 `completed` 的是：
-
-- **LLM 底层 · 第 0 课**（[模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html)）
-- **LLM 底层 · 第 1 课**（[从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html)）＋ [进阶版「十一个追问」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)
-- **LLM 底层 · 第 2 课**（[一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html)）＋ [进阶版「里面到底在转什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)
-- **LLM 底层 · 第 3 课**（[KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)）＋ [进阶版「三个绕人的细节」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)
-- **LLM 底层 · 第 4 课**（[一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html)）＋ [进阶版「批从哪来、拐点、工业界的招」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)
-- **LLM 底层 · 第 5 课**（[它真的在思考吗？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html)）＋ [进阶版「谁写的、怎么切的、谁收着、怎么练出来的」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)
-- **LLM 底层 · 第 6 课**（[量化：把模型压小，把字吐快](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization.html)）＋ [进阶版「压法是什么、误差怎么救回来、KV 是什么精度」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0006-quantization-deep.html)
-- **LLM 底层 · 第 7 课**（[蒸馏：小模型的本事从哪来](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation.html)）＋ [进阶版「抄什么、扣什么、怎么练」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0007-distillation-deep.html)
-- **LLM 底层 · 第 8 课**（[这件事到底是谁干的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0008-who-does-what.html)）＋ [进阶版「在哪配、怎么验、代价是什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0008-who-does-what-deep.html)
-- **LLM 底层 · 第 9 课**（[后训练的几种练法](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0009-post-training-recipes.html)）＋ [进阶版「七问：差在哪、谁在打分、算法在拧什么、窄领域会不会练坏、练完改得动什么」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0009-post-training-recipes-deep.html)
-
-基础课和进阶版算同一课，改过一课就算这一课 `completed`。剩下的课会接着往下标。
-
 ---
 
 ## 怎么用
@@ -90,9 +65,9 @@ python exercises/agent/0002-build-an-agent.py
 
 | 课    | 标题                                                                                                                                                          |
 | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0000 | [模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html) —— **先导课，先读这个**　<code>completed</code>               |
-| 0001 | [从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html) —— **基石课**　<code>completed</code> |
-| 0002 | [一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢　<code>completed</code> |
+| 0000 | [模型是怎么学出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0000-how-models-learn.html) —— **先导课，先读这个**               |
+| 0001 | [从「token」到「下一个 token」](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token.html) —— **基石课** |
+| 0002 | [一次请求的两段：prefill 与 decode](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode.html) —— 为什么读长文快、写长文慢 |
 | 0003 | [KV Cache 与「缓存命中」是两回事](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching.html)                                |
 | 0004 | [一趟装满的卡车](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching.html) —— 排队 ＋ 拼车：一张卡怎么同时服务几十上百个人                                |
 | 0005 | [它真的在思考吗？](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models.html) —— 屏幕上那段「思考」，是真在想还是演给你看 |
@@ -104,8 +79,8 @@ python exercises/agent/0002-build-an-agent.py
 
 | 课       | 标题                                                                                                                                    |
 | ------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 0001 进阶 | [十一个追问](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html)　<code>completed</code> |
-| 0002 进阶 | [里面到底在转什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html)　<code>completed</code> |
+| 0001 进阶 | [十一个追问](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0001-from-token-to-next-token-deep.html) |
+| 0002 进阶 | [里面到底在转什么](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0002-prefill-vs-decode-deep.html) |
 | 0003 进阶 | [三个绕人的细节](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)                  |
 | 0004 进阶 | [批从哪来、拐点、工业界的招](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0004-batching-deep.html)                        |
 | 0005 进阶 | [谁写的、怎么切的、谁收着、怎么练出来的](https://telecomshy.github.io/telecomshy-ai-lessons/lessons/llm/0005-reasoning-models-deep.html)                          |
@@ -170,14 +145,14 @@ python exercises/agent/0002-build-an-agent.py
 ```
 AGENTS.md               agent 入口：规矩在哪、目录怎么分
 MISSION.md              为什么做这个（这个仓库的一切都挂在它下面）
-NOTES.md                课程开发标准、约定与待办
+NOTES.md                学习者画像与教学偏好（teach 的便签本）
 RESOURCES.md            全部一手资料来源，注明「用来干什么」
 docs/                   对外文档（面向读者）——开发资料不在这层
 internal/               对内集中区：开发资料都在这层下面
-internal/standards/     写作标准：COURSE-STANDARD.md（全局）＋ tracks/（各轨）
+internal/standards/     标准与流程：PROCESS／COURSE-STANDARD／ARTICLE-STYLE／REVISION＋ tracks/（各轨）
 internal/agents/        agent 技能的仓库配置（工单 · 分诊标签 · 领域文档）
-internal/rules/         开发操作细节（联网取材 · 标 completed 的步骤），用到才读
-internal/history/       决策与教训存档（一节一篇），NOTES.md 第 5 节只有索引
+internal/playbooks/     操作手册（联网取材 · 改课件 · 学习审计），用到才读
+internal/history/       决策与教训存档（一节一篇），索引在 INDEX.md
 internal/learning-records/  学习者已掌握的证据（teach 技能用，算 ZPD）
 lessons/<轨道>/         课程本体（只含课件 HTML），自包含
 exercises/<轨道>/       配套脚本与实际产物
@@ -185,7 +160,7 @@ reference/              术语表与速查（贴墙清单）
 assets/                 共享样式表、测验组件、SVG 插图、演示动画（mp4 + poster）
 ```
 
-想了解这个仓库是怎么被「开发」出来的，[`NOTES.md`](NOTES.md) 记着每条教学规矩本身，[`internal/history/`](internal/history/) 记着它们背后的原因 —— 包括不少「我一开始写错了，后来改对」的反面案例。
+想了解这个仓库是怎么被「开发」出来的，[`internal/standards/`](internal/standards/) 记着现在的规矩与流程，[`internal/history/`](internal/history/) 记着它们背后的原因 —— 包括不少「我一开始写错了，后来改对」的反面案例。
 
 ---
 
@@ -219,7 +194,7 @@ assets/                 共享样式表、测验组件、SVG 插图、演示动�
 
 **2. 它不让 AI 凭记忆教学。** 参数化知识被当作不可信来源 —— 先去找高可信资料，记进 `RESOURCES.md`，然后在课里引用。这就是为什么这个仓库里的每个说法都能追到出处。
 
-`NOTES.md` 里的课程开发标准、编号规则和核验纪律（改完必须读回来、脚本必须真跑、SVG 必须渲染出来看一眼），是在 `teach` 的基础上按我女儿这个具体学习者的情况加的。
+`internal/standards/` 里的课程结构、文章体、编号规则和核验纪律（改完必须读回来、脚本必须真跑、SVG 必须渲染出来看一眼），是在 `teach` 的基础上按我女儿这个具体学习者的情况加的；`NOTES.md` 只留她的画像与教学偏好。
 
 如果你也想给自己的领域建一套这样的教程，`teach` 完全可以用在非编程领域 —— 它和数学、乐器、语言、考试、乃至给八岁小孩做一本可以打印的书，都配合得上。
 
@@ -227,7 +202,7 @@ assets/                 共享样式表、测验组件、SVG 插图、演示动�
 
 ## 参与
 
-欢迎，但有几件事请先读 [`NOTES.md`](NOTES.md) 的第 1 节 —— 那里面是硬规则，改之前先查。
+欢迎，但有几件事请先读 [`AGENTS.md`](AGENTS.md) 与 [`internal/standards/PROCESS.md`](internal/standards/PROCESS.md) —— 改课之前先查规矩。
 
 - **挑错**（最欢迎）：开 Issue，指出哪一课哪个说法不对。
 - **提改进**：某段太难懂了？某个类比不贴切？直接说。

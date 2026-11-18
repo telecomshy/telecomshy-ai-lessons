@@ -4,8 +4,8 @@
 
 ## 先读什么
 
-- `GLOSSARY.md`（仓库根目录，懒创建）：**仓库/课程开发领域的术语表**——轨道、课号、基础课/进阶版、别名、`completed` 这类词的口径。只放术语定义和 `_Avoid_`，不写实现细节、决策或不变量。mattpocock 的 `domain-modeling` 技能读取和更新它。
-- `internal/adr/`（懒创建）：架构与结构决策记录；带取舍的跨课决策、不变量写这里，或写进 `NOTES.md` 第 1 节。
+- `GLOSSARY.md`（仓库根目录，懒创建）：**仓库/课程开发领域的术语表**——轨道、课号、基础课/进阶版、别名这类词的口径。只放术语定义和 `_Avoid_`，不写实现细节、决策或不变量。mattpocock 的 `domain-modeling` 技能读取和更新它。
+- `internal/adr/`（懒创建）：架构与结构决策记录；带取舍的跨课决策、不变量写这里，或写进 `internal/standards/PROCESS.md` 的流程节。
 - [`reference/glossary.html`](../../reference/glossary.html)：**课程内容术语**（Agent、KV cache、prefill/decode 等），也是学习者看到的术语表；课里的术语链接都指向它。
 
 ## 两层怎么分工
@@ -18,7 +18,7 @@
 ## 边界
 
 - 学习者的掌握情况 → `internal/learning-records/`，不是领域文档。
-- 课程开发规矩 → `NOTES.md`，不是领域文档。
+- 课程开发规矩 → `internal/standards/PROCESS.md` 与 `COURSE-STANDARD.md`，不是领域文档。
 - 找不到 `GLOSSARY.md` / `internal/adr/` 就静默继续，别为了「齐全」先建空文件（setup 技能的懒创建约定）。
 
 > AI生成

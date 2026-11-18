@@ -1,6 +1,6 @@
-# 联网取材：代理与可达性（NOTES 1.1 的操作细节）
+# 联网取材：代理与可达性（PROCESS 第 1 节的操作细节）
 
-> 本文件只在**要上网抓一手资料、而某个站取不到**时读。规矩本身见 [NOTES.md](../../NOTES.md) 第 1.1 节；踩坑全过见存档 [5.04](../history/5.04-verification-and-editing.md)、[5.13.4](../history/5.13-0003-deep-rework-track-boundary.md)。
+> 本文件只在**要上网抓一手资料、而某个站取不到**时读。规矩本身见 [`PROCESS.md`](../standards/PROCESS.md) 第 1 节；踩坑全过见存档 [5.04](../history/5.04-verification-and-editing.md)、[5.13.4](../history/5.13-0003-deep-rework-track-boundary.md)。
 
 ## 哪些站直连不了
 

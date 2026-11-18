@@ -7,8 +7,6 @@
 
 【meta】目录 / Index
 
-目录 / Index
-
 一个 mission，四条轨道。各轨独立编号，可以分开翻。
 
 【选读框｜怎么读这个目录】
@@ -19,7 +17,7 @@
 
 四条轨道**各自从 0001 编号**，所以提课号时要说清轨道，例如「LLM 底层第 3 课」。轨道之间用超链接互相打通。
 
-课程是**AI 先生成、我再逐课修改**的，进度分三档：标题后带 （completed） 的是**已经改过一遍**的；普通卡片是**还在改**；虚线卡片标着「下一步开」的**还没写**。带标记的课可以直接照着读。
+课程是**AI 先生成、我再逐课修改**的。下面每张卡片是一门已经写出来的课；虚线卡片标着「下一步开」的**还没写**。
 
 ## LLM 底层
 
@@ -29,61 +27,61 @@
 
 【三柱框】
 
-**[0000 · 模型是怎么学出来的](../lessons/llm/0000-how-models-learn.html)（completed）**
+**[0000 · 模型是怎么学出来的](../lessons/llm/0000-how-models-learn.html)**
 
 **先导课，先读这个**：大模型作为程序为什么多一个训练阶段，那些数字是哪来的、怎么被调的，以及为什么它天生只会「接下一个字」。
 
 动手：`exercises/llm/0000-how-models-learn.py`
 
-**[0001 · 从「token」到「下一个 token」](../lessons/llm/0001-from-token-to-next-token.html)（completed）**
+**[0001 · 从「token」到「下一个 token」](../lessons/llm/0001-from-token-to-next-token.html)**
 
 **基石课**：文字 → token → 向量 → 注意力 → FFN → 采样，看懂全貌。
 
 动手：`exercises/llm/0001-tiny-attention.py` · `exercises/llm/0001-sampling-params.py`
 
-**[0002 · 一次请求的两段：prefill 与 decode](../lessons/llm/0002-prefill-vs-decode.html)（completed）**
+**[0002 · 一次请求的两段：prefill 与 decode](../lessons/llm/0002-prefill-vs-decode.html)**
 
 为什么「读长文」快、「写长文」慢，还把**一次请求 / 一轮 / 层**三个词分清。
 
 动手：`exercises/llm/0002-prefill-vs-decode.py`
 
-**[0003 · KV Cache 与「缓存命中」是两回事](../lessons/llm/0003-kv-cache-and-prompt-caching.html)（completed）**
+**[0003 · KV Cache 与「缓存命中」是两回事](../lessons/llm/0003-kv-cache-and-prompt-caching.html)**
 
 请求内算过的别重算，跨请求接着用。本课实测：**只改开头一处，成本差 3.7 倍**。
 
 动手：`exercises/llm/0003-cache-hit-simulator.py`
 
-**[0004 · 一趟装满的卡车](../lessons/llm/0004-batching.html)（completed）**
+**[0004 · 一趟装满的卡车](../lessons/llm/0004-batching.html)**
 
 排队 ＋ 拼车：一张卡怎么同时服务几百个人。用一点点延迟，换几十倍吞吐。
 
 动手：`exercises/llm/0004-batching.py`
 
-**[0005 · 它真的在思考吗？](../lessons/llm/0005-reasoning-models.html)（completed）**
+**[0005 · 它真的在思考吗？](../lessons/llm/0005-reasoning-models.html)**
 
 屏幕上那段「思考」，是真在想还是演给你看？**它确实在打草稿**——但草稿不是它的想法，还按字收钱。
 
 动手：`exercises/llm/0005-reasoning-cost.py`
 
-**[0006 · 量化：把模型压小，把字吐快](../lessons/llm/0006-quantization.html)（completed）**
+**[0006 · 量化：把模型压小，把字吐快](../lessons/llm/0006-quantization.html)**
 
 压小 = 吐字快，**但读长文一点不快**。附实测：同一台机器，只改存法。
 
 动手：`exercises/llm/0006-quantization.py`
 
-**[0007 · 蒸馏：小模型的本事从哪来](../lessons/llm/0007-distillation.html)（completed）**
+**[0007 · 蒸馏：小模型的本事从哪来](../lessons/llm/0007-distillation.html)**
 
 教小模型时**你给它什么**，它就只能学到什么。附实测：只搬答案是最差的一档。
 
 动手：`exercises/llm/0007-distillation.py`
 
-**[0008 · 这件事到底是谁干的](../lessons/llm/0008-who-does-what.html)（completed）**
+**[0008 · 这件事到底是谁干的](../lessons/llm/0008-who-does-what.html)**
 
 四层归属表：**哪些本事是引擎给的，不是模型的**。附四条 agent 侧的坑。
 
 动手：`exercises/llm/0008-who-does-what.py`
 
-**[0009 · 后训练的几种练法](../lessons/llm/0009-post-training-recipes.html)（completed）**
+**[0009 · 后训练的几种练法](../lessons/llm/0009-post-training-recipes.html)**
 
 SFT、RLHF、DPO、GRPO 是**同一条循环换扣分单**。附「微调为什么常常不灵」的正解。
 
@@ -93,39 +91,39 @@ SFT、RLHF、DPO、GRPO 是**同一条循环换扣分单**。附「微调为什�
 
 【三柱框】
 
-**[0001 进阶 · 十一个追问](../lessons/llm/0001-from-token-to-next-token-deep.html)（completed）**
+**[0001 进阶 · 十一个追问](../lessons/llm/0001-from-token-to-next-token-deep.html)**
 
 初学版讲「是什么」，这篇答「为什么 / 还有什么坑」。
 
-**[0002 进阶 · 里面到底在转什么](../lessons/llm/0002-prefill-vs-decode-deep.html)（completed）**
+**[0002 进阶 · 里面到底在转什么](../lessons/llm/0002-prefill-vs-decode-deep.html)**
 
 初学版讲「是什么」，这篇答「里面具体在转什么」。
 
-**[0003 进阶 · 三个绕人的细节](../lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)（completed）**
+**[0003 进阶 · 三个绕人的细节](../lessons/llm/0003-kv-cache-and-prompt-caching-deep.html)**
 
 初学版讲「两回事」，这篇答「具体到多轮、到工具、到断点，又是怎样」。
 
-**[0004 进阶 · 批从哪来、拐点、工业界的招](../lessons/llm/0004-batching-deep.html)（completed）**
+**[0004 进阶 · 批从哪来、拐点、工业界的招](../lessons/llm/0004-batching-deep.html)**
 
 初学版讲「怎么排队、怎么拼车」，这篇答「批从哪儿来、什么时候到头、工业界怎么绕过去」。
 
-**[0005 进阶 · 谁写的、怎么切的、谁收着、怎么练出来的](../lessons/llm/0005-reasoning-models-deep.html)（completed）**
+**[0005 进阶 · 谁写的、怎么切的、谁收着、怎么练出来的](../lessons/llm/0005-reasoning-models-deep.html)**
 
 初学版讲「那段思考是什么、值不值」，这篇答「那段字谁写的、边界谁切的、签名收着什么、它怎么练出来的」。
 
-**[0006 进阶 · 压法是什么、误差怎么救回来、KV 是什么精度](../lessons/llm/0006-quantization-deep.html)（completed）**
+**[0006 进阶 · 压法是什么、误差怎么救回来、KV 是什么精度](../lessons/llm/0006-quantization-deep.html)**
 
 初学版讲「量化是什么、会掉什么」，这篇答「压法是什么、4 bit 为什么还能用、int4 的模型 KV 存多少位」。
 
-**[0007 进阶 · 抄什么、扣什么、怎么练](../lessons/llm/0007-distillation-deep.html)（completed）**
+**[0007 进阶 · 抄什么、扣什么、怎么练](../lessons/llm/0007-distillation-deep.html)**
 
 初学版讲「小模型的本事从哪来」，这篇答「三种抄法差在哪、扣分扣的是什么、学生自己写老师逐字批在做什么、这笔账划不划算、工具调用能不能蒸」。
 
-**[0008 进阶 · 在哪配、怎么验、代价是什么](../lessons/llm/0008-who-does-what-deep.html)（completed）**
+**[0008 进阶 · 在哪配、怎么验、代价是什么](../lessons/llm/0008-who-does-what-deep.html)**
 
 初学版讲「结构化输出保证格式」，这篇答「为什么偶尔还是失败、在哪配怎么验真开着、代价有哪些、两招能同时开吗、为什么分四层不分成两块」。
 
-**[0009 进阶 · 七问：差在哪、谁在打分、算法在拧什么、窄领域会不会练坏、练完改得动什么](../lessons/llm/0009-post-training-recipes-deep.html)（completed）**
+**[0009 进阶 · 七问：差在哪、谁在打分、算法在拧什么、窄领域会不会练坏、练完改得动什么](../lessons/llm/0009-post-training-recipes-deep.html)**
 
 初学版讲「同一条循环换扣分单」，这篇答「预训练和后训练差在哪、后训练又动了多少权重、奖励模型打错了会怎样、PPO/GRPO 在拧什么、不先做 SFT 直接上 RL 行不行、什么时候用 DPO 什么时候还得 RLHF、窄领域猛练会不会把别处的本事练坏、一轮练完改得动什么」。
 

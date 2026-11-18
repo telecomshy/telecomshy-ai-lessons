@@ -11,8 +11,14 @@
 
 **两个用途**：
 
-1. **直改底稿**：直接在上面改文字，改完交回，由主代理逐段映射回 HTML 并跑核验（首发于 `agent/0003` 的 F5 流程，见 `internal/drafts/agent-0003-f5-markdown.md`）。
+1. **精修底稿**：直接在上面改文字，改完交回，由主代理逐段映射回 HTML 并跑核验。全库精修（2026-11-17 起）就走这条路。
 2. **文字版**：课件的可读文字版，结构干净（标题＋正文＋表格＋列表），后续可直接转 PPT。
+
+## 写作标准
+
+改稿前读 [`internal/standards/ARTICLE-STYLE.md`](../internal/standards/ARTICLE-STYLE.md)。正文按文章体写：段落推进、句子完整、遮住小标题仍能读出因果。改完自己读一遍。
+
+回写只做表现层映射，不改说法。流程与备份规则见 [`internal/standards/REVISION.md`](../internal/standards/REVISION.md)。
 
 ## 怎么改（约定）
 
@@ -29,6 +35,6 @@
 
 ## 维护
 
-- 本目录由 `tools/html2md.py` 从 `lessons/` **生成**：`python tools/html2md.py --check`（转换＋一致性校验：题数/✅数/图数/标记数/死链）。
-- ⚠ **重新生成会覆盖你未交回的修改**——改了一半的稿子先交回或另存，再重跑生成。
+- 本目录由 `tools/html2md.py` 从 `lessons/` **生成**：`python tools/html2md.py --check`（**只读**，不写 md，只校验现有文字稿的题数/✅数/图数/标记数/死链）。
+- ⚠ **不带 `--check` 的全量转换会覆盖你未交回的修改**——改了一半的稿子先交回或另存，再重跑生成。md 已经改过、HTML 还没回写时，`--check` 会因文字稿领先而报 FAIL，这是待回写，不是数据损坏。
 - 课件（`lessons/`）与文字稿（`lessons-md/`）目前不自动双向同步：回写由主代理逐段映射（保证节号、锚点、互链、核验全过）。

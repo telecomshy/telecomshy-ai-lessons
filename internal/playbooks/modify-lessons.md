@@ -1,6 +1,6 @@
-# 修改与重命名课件的操作细节（NOTES 1.7 的下沉）
+# 修改与重命名课件的操作细节（PROCESS 第 2 节的下沉）
 
-> 本文件只在**要改中文课件、改课号／对调顺序／改名**时读。规矩本身见 [NOTES.md](../../NOTES.md) 第 1.7 节；踩坑全过见存档 [5.04](../history/5.04-verification-and-editing.md)。
+> 本文件只在**要改中文课件、改课号／对调顺序／改名**时读。规矩本身见 [`PROCESS.md`](../standards/PROCESS.md) 第 2 节；踩坑全过见存档 [5.04](../history/5.04-verification-and-editing.md)。
 
 ## 改中文课件：用什么工具
 

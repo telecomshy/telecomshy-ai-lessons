@@ -1,6 +1,6 @@
 # RAG 轨 · 轨道标准
 
-> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md)，再读本文件。本文件只收 RAG 轨的分版与脚本分层；deep 页体例在全局 1.4。
+> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md) 与 [`../ARTICLE-STYLE.md`](../ARTICLE-STYLE.md)，再读本文件。本文件只收 RAG 轨的分版与脚本分层；本轨没有 deep 页，体例按 LLM 轨 [`llm.md`](llm.md) 同律另立。
 
 ## 分版（2026-11-03 学习者改定，v5；v4 的「理论｜实操」配对收回）
 

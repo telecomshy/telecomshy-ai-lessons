@@ -18,60 +18,60 @@
     <p>这个仓库只有<b>一个目标</b>：搞懂 AI Agent 的原理与工程。但课程分成四条轨道——</p>
     <p><b>LLM 底层</b>只讲"影响 agent 成本 / 延迟 / 设计"的机制，以及能力和失效的来源；<b>Agent 篇</b>直接服务这个目标（<b>理论</b>讲是什么、为什么，<b>实操</b>动手做出来、拆真实的壳）；<b>RAG</b>讲"怎么让模型用上手边没有的信息"，只讲机制与取舍。</p>
     <p>四条轨道<b>各自从 0001 编号</b>，所以提课号时要说清轨道，例如「LLM 底层第 3 课」。轨道之间用超链接互相打通。</p>
-    <p>课程是<b>AI 先生成、我再逐课修改</b>的，进度分三档：标题后带 <span class="badge">completed</span> 的是<b>已经改过一遍</b>的；普通卡片是<b>还在改</b>；虚线卡片标着「下一步开」的<b>还没写</b>。带标记的课可以直接照着读。</p>
+    <p>课程是<b>AI 先生成、我再逐课修改</b>的。下面每张卡片是一门已经写出来的课；虚线卡片标着「下一步开」的<b>还没写</b>。</p>
   </div>
 
   <h2>LLM 底层</h2>
   <p style="margin-top:0;color:var(--muted);font-size:0.95rem">只讲影响 agent 成本 / 延迟 / 设计的机制，<b>以及能力与失效的来源</b>。教材放在 <code>lessons/llm/</code>。<b>基础课给初学者和业务人员，进阶版给技术读者。</b></p>
   <p style="margin-top:1.4rem;color:var(--muted);font-size:0.95rem"><b>基础课</b> —— 给初学者和业务人员。给结论和直觉，<b>不给推导和算式</b>。</p>
   <div class="pillars">
-    <div class="pillar completed">
-      <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0000-how-models-learn.html">0000 · 模型是怎么学出来的</a></h3>
       <p><b>先导课，先读这个</b>：大模型作为程序为什么多一个训练阶段，那些数字是哪来的、怎么被调的，以及为什么它天生只会「接下一个字」。</p>
       <p>动手：<code>exercises/llm/0000-how-models-learn.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0001-from-token-to-next-token.html">0001 · 从「token」到「下一个 token」</a></h3>
       <p><b>基石课</b>：文字 → token → 向量 → 注意力 → FFN → 采样，看懂全貌。</p>
       <p>动手：<code>exercises/llm/0001-tiny-attention.py</code>　·　<code>exercises/llm/0001-sampling-params.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0002-prefill-vs-decode.html">0002 · 一次请求的两段：prefill 与 decode</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0002-prefill-vs-decode.html">0002 · 一次请求的两段：prefill 与 decode</a></h3>
       <p>为什么「读长文」快、「写长文」慢，还把<b>一次请求 / 一轮 / 层</b>三个词分清。</p>
       <p>动手：<code>exercises/llm/0002-prefill-vs-decode.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0003-kv-cache-and-prompt-caching.html">0003 · KV Cache 与「缓存命中」是两回事</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0003-kv-cache-and-prompt-caching.html">0003 · KV Cache 与「缓存命中」是两回事</a></h3>
       <p>请求内算过的别重算，跨请求接着用。本课实测：<b>只改开头一处，成本差 3.7 倍</b>。</p>
       <p>动手：<code>exercises/llm/0003-cache-hit-simulator.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0004-batching.html">0004 · 一趟装满的卡车</a></h3>
       <p>排队 ＋ 拼车：一张卡怎么同时服务几百个人。用一点点延迟，换几十倍吞吐。</p>
       <p>动手：<code>exercises/llm/0004-batching.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0005-reasoning-models.html">0005 · 它真的在思考吗？</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0005-reasoning-models.html">0005 · 它真的在思考吗？</a></h3>
       <p>屏幕上那段「思考」，是真在想还是演给你看？<b>它确实在打草稿</b>——但草稿不是它的想法，还按字收钱。</p>
       <p>动手：<code>exercises/llm/0005-reasoning-cost.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0006-quantization.html">0006 · 量化：把模型压小，把字吐快</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0006-quantization.html">0006 · 量化：把模型压小，把字吐快</a></h3>
       <p>压小 = 吐字快，<b>但读长文一点不快</b>。附实测：同一台机器，只改存法。</p>
       <p>动手：<code>exercises/llm/0006-quantization.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0007-distillation.html">0007 · 蒸馏：小模型的本事从哪来</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0007-distillation.html">0007 · 蒸馏：小模型的本事从哪来</a></h3>
       <p>教小模型时<b>你给它什么</b>，它就只能学到什么。附实测：只搬答案是最差的一档。</p>
       <p>动手：<code>exercises/llm/0007-distillation.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0008-who-does-what.html">0008 · 这件事到底是谁干的</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0008-who-does-what.html">0008 · 这件事到底是谁干的</a></h3>
       <p>四层归属表：<b>哪些本事是引擎给的，不是模型的</b>。附四条 agent 侧的坑。</p>
       <p>动手：<code>exercises/llm/0008-who-does-what.py</code></p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0009-post-training-recipes.html">0009 · 后训练的几种练法</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0009-post-training-recipes.html">0009 · 后训练的几种练法</a></h3>
       <p>SFT、RLHF、DPO、GRPO 是<b>同一条循环换扣分单</b>。附「微调为什么常常不灵」的正解。</p>
       <p>动手：<code>exercises/llm/0009-post-training-recipes.py</code></p>
     </div>
@@ -79,40 +79,40 @@
 
   <p style="margin-top:1.6rem;color:var(--muted);font-size:0.95rem"><b>进阶版</b> —— 给想动手验算的技术读者。装的是<b>基础课没讲的那部分理由</b>，不是加强版；按需跳读，读基础课遇到括号链接就能直达。</p>
   <div class="pillars">
-    <div class="pillar completed">
-      <h3><a href="llm/0001-from-token-to-next-token-deep.html">0001 进阶 · 十一个追问</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0001-from-token-to-next-token-deep.html">0001 进阶 · 十一个追问</a></h3>
       <p>初学版讲「是什么」，这篇答「为什么 / 还有什么坑」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0002-prefill-vs-decode-deep.html">0002 进阶 · 里面到底在转什么</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0002-prefill-vs-decode-deep.html">0002 进阶 · 里面到底在转什么</a></h3>
       <p>初学版讲「是什么」，这篇答「里面具体在转什么」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0003-kv-cache-and-prompt-caching-deep.html">0003 进阶 · 三个绕人的细节</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0003-kv-cache-and-prompt-caching-deep.html">0003 进阶 · 三个绕人的细节</a></h3>
       <p>初学版讲「两回事」，这篇答「具体到多轮、到工具、到断点，又是怎样」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0004-batching-deep.html">0004 进阶 · 批从哪来、拐点、工业界的招</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0004-batching-deep.html">0004 进阶 · 批从哪来、拐点、工业界的招</a></h3>
       <p>初学版讲「怎么排队、怎么拼车」，这篇答「批从哪儿来、什么时候到头、工业界怎么绕过去」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0005-reasoning-models-deep.html">0005 进阶 · 谁写的、怎么切的、谁收着、怎么练出来的</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0005-reasoning-models-deep.html">0005 进阶 · 谁写的、怎么切的、谁收着、怎么练出来的</a></h3>
       <p>初学版讲「那段思考是什么、值不值」，这篇答「那段字谁写的、边界谁切的、签名收着什么、它怎么练出来的」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0006-quantization-deep.html">0006 进阶 · 压法是什么、误差怎么救回来、KV 是什么精度</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0006-quantization-deep.html">0006 进阶 · 压法是什么、误差怎么救回来、KV 是什么精度</a></h3>
       <p>初学版讲「量化是什么、会掉什么」，这篇答「压法是什么、4 bit 为什么还能用、int4 的模型 KV 存多少位」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0007-distillation-deep.html">0007 进阶 · 抄什么、扣什么、怎么练</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0007-distillation-deep.html">0007 进阶 · 抄什么、扣什么、怎么练</a></h3>
       <p>初学版讲「小模型的本事从哪来」，这篇答「三种抄法差在哪、扣分扣的是什么、学生自己写老师逐字批在做什么、这笔账划不划算、工具调用能不能蒸」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0008-who-does-what-deep.html">0008 进阶 · 在哪配、怎么验、代价是什么</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0008-who-does-what-deep.html">0008 进阶 · 在哪配、怎么验、代价是什么</a></h3>
       <p>初学版讲「结构化输出保证格式」，这篇答「为什么偶尔还是失败、在哪配怎么验真开着、代价有哪些、两招能同时开吗、为什么分四层不分成两块」。</p>
     </div>
-    <div class="pillar completed">
-      <h3><a href="llm/0009-post-training-recipes-deep.html">0009 进阶 · 七问：差在哪、谁在打分、算法在拧什么、窄领域会不会练坏、练完改得动什么</a><span class="badge">completed</span></h3>
+    <div class="pillar">
+      <h3><a href="llm/0009-post-training-recipes-deep.html">0009 进阶 · 七问：差在哪、谁在打分、算法在拧什么、窄领域会不会练坏、练完改得动什么</a></h3>
       <p>初学版讲「同一条循环换扣分单」，这篇答「预训练和后训练差在哪、后训练又动了多少权重、奖励模型打错了会怎样、PPO/GRPO 在拧什么、不先做 SFT 直接上 RL 行不行、什么时候用 DPO 什么时候还得 RLHF、窄领域猛练会不会把别处的本事练坏、一轮练完改得动什么」。</p>
     </div>
   </div>

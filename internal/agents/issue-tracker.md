@@ -12,4 +12,4 @@
 ## 相关入口
 
 - 读者视角的「参与」说明：`README.md`。
-- 课程开发规矩：`NOTES.md` 第 1 节。
+- 课程开发规矩：`internal/standards/PROCESS.md`。

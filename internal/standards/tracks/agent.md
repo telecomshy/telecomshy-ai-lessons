@@ -1,6 +1,12 @@
 # Agent 篇 · 轨道标准
 
-> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md)，再读本文件。本文件只收 Agent 篇的分版、课型与脚本分层；本轨无 deep 页（全局 1.4 已改为下放说明）。
+> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md)、[`../ARTICLE-STYLE.md`](../ARTICLE-STYLE.md) 与 [`../PROCESS.md`](../PROCESS.md)，再读本文件。本文件只收 Agent 篇的分版、课型、受众与脚本分层；本轨无 deep 页（全局 1.4 已改为下放说明）。
+
+## 受众（2026-11-17 补）
+
+- 用现成 harness 产品的人，不是框架开发者：会装软件、点界面、照着文档配 key，不要求写代码。
+- 对 LLM 有初步了解（用过网页聊天、调过简单 prompt），没系统学过原理。
+- 每课按 20 到 30 分钟阅读量写；超出的细节进 `reference/` 或下一课，不塞正文。
 
 ## 分版（2026-10-21 学习者定）
 

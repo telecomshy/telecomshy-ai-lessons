@@ -1,42 +1,33 @@
 <#
-  progress.ps1 —— 课程进度三处落点的唯一执行入口
+  progress.ps1 —— 课程库只读审计
 
-  背景：标 completed 要改三个文件（见 NOTES 1.7 与 internal/rules/mark-completed.md），漏一处就会自相矛盾。
-        2026-10-03 主页那个「N 门已定稿」就是这么被漏掉的，而且错了三个提交
-        都没人发现 —— 因为没有任何东西会检查它。本脚本的 audit 模式就是补这个洞。
+  用途：课程库没有数据库，一致性只能靠脚本在「入口」处兜住。
+        本脚本检查：卡片链接、主页统计、RAG 三链、deep 别名与问数、
+        标准/历史文档的存在与体量、md 相对链接。
 
   用法：
-    pwsh tools/progress.ps1                                        # 只审计，不改文件（默认）
-    pwsh tools/progress.ps1 -Action audit
-    pwsh tools/progress.ps1 -Action mark   -Lesson llm/0003-kv-cache-and-prompt-caching.html
-    pwsh tools/progress.ps1 -Action unmark -Lesson llm/0003-kv-cache-and-prompt-caching.html
+    pwsh tools/progress.ps1            # 审计，不改任何文件
 
   退出码：0 全通过；1 有 FAIL（可直接当 CI 用）。
 
-  约定：completed 只能由学习者明确说才标（NOTES 1.7）。本脚本只执行，不判断。
-        进阶版的别名以页面上的 data-alias 为唯一落点（2026-10-05 加）：
-        目录页卡片、<title>、README 三处都从它派生，audit 的 E 段核一致性。
-        改别名只改 data-alias 一处 —— 以前三处各抄一遍，抄漏过（NOTES 存档 5.10）。
+  约定：课程不再维护 completed 标记，也不再维护「已定稿」计数。
+        进阶版别名以 data-alias 为唯一落点，卡片 / <title> / 审计核一致性。
 #>
 [CmdletBinding()]
 param(
-  [ValidateSet('audit','mark','unmark')] [string]$Action = 'audit',
-  [string]$Lesson = ''
+  [ValidateSet('audit')] [string]$Action = 'audit'
 )
 
 $ErrorActionPreference = 'Stop'
 $OutputEncoding = [Console]::OutputEncoding = [Text.Encoding]::UTF8
 $root = Split-Path $PSScriptRoot -Parent
-$utf8 = [Text.UTF8Encoding]::new($false)
 $script:fail = 0
 function Ok($m){ Write-Output "  [ok]   $m" }
 function No($m){ Write-Output "  [FAIL] $m"; $script:fail++ }
 function Note($m){ Write-Output "  [--]   $m" }
 function ReadText($rel){ [IO.File]::ReadAllText((Join-Path $root $rel), [Text.Encoding]::UTF8) }
-function WriteText($rel,$t){ [IO.File]::WriteAllText((Join-Path $root $rel), $t, $script:utf8) }
 
 # 进阶版的别名 = lesson-meta 上的 data-alias（唯一落点）。
-# 卡片标题、<title>、README 三处都该等于它，E 段负责核。
 function Get-Alias($rel){
   $p = Join-Path $root "lessons/$rel"
   if (-not (Test-Path $p)) { return $null }
@@ -60,89 +51,50 @@ function ConvertFrom-CnNum([string]$s){
   return $null
 }
 
-$TRACKS = @{ llm='LLM 底层'; agent='Agent 篇'; rag='RAG' }
-$SITE = 'https://telecomshy.github.io/telecomshy-ai-lessons/'
-$ANCHOR = '目前标为 `completed` 的是：'
-# 只认 /lessons/ 前面不是连字符的（域名 telecomshy-ai-lessons/ 里那个不算）
-$LESSONURL = '(?<![-\w])lessons/([a-z]+/[^\s)]+\.html)'
-# 清单块 = 锚点句 + 空行 + 连续的 "- " 行
-$RDPAT = '(?m)^' + [regex]::Escape($ANCHOR) + '\r?\n\r?\n(?<list>(?:[ \t]*-[^\r\n]*(?:\r\n|\n|\r))*)'
-
-# ---------- 采集（每次都重读，改完后复用） ----------
+# ---------- 采集（每次都重读） ----------
 function Load {
-  $script:idx    = ReadText 'lessons/index.html'
-  $script:rootI  = ReadText 'index.html'
-  $script:readme = ReadText 'README.md'
+  $script:idx   = ReadText 'lessons/index.html'
+  $script:rootI = ReadText 'index.html'
 
+  # 只采集「已经写出来的课」：普通 pillar 卡；planned 卡链接可空，不查。
   $script:cards = @()
   foreach ($m in [regex]::Matches($script:idx,
-      '(?s)<div class="pillar( completed)?">\s*<h3><a href="([^"]+)">([^<]*)</a>(.*?)</h3>')) {
-    $tail = $m.Groups[4].Value
-    $badge = ($tail -match '<span class="badge">completed</span>')
+      '(?s)<div class="pillar">\s*<h3><a href="([^"]+)">([^<]*)</a>')) {
     $script:cards += [pscustomobject]@{
-      href      = $m.Groups[2].Value
-      title     = $m.Groups[3].Value
-      completed = $badge
-      # 定稿卡的 h3 必须以 </a><span class="badge">completed</span></h3> 收尾；
-      # 徽章若落进 <a> 内部、或 div 上多出引号，这里会报出来
-      shapeOk   = if ($badge) {
-                    ($tail -match '^\s*<span class="badge">completed</span>\s*$') -and
-                    ($m.Value -notmatch '<a [^>]*>[^<]*<span class="badge">')
-                  } else { $tail -notmatch '<span class="badge">' }
+      href  = $m.Groups[1].Value
+      title = $m.Groups[2].Value
     }
   }
-  $script:doneCards = @($script:cards | Where-Object { $_.completed })
-  $script:doneHrefs = @($script:doneCards | ForEach-Object { $_.href })
   $script:ragCards = @($script:cards | Where-Object { $_.href -match '^rag/' })
-
-  # README 清单块：锚点句 → 空行 → 连续的 "- " 行（正则定位，不靠换行符假设）
-  # ⚠️ 本仓库换行符混用：README.md / lessons/index.html 是 CRLF，根 index.html 是 LF
-  $script:rdHrefs = @()
-  $script:rdMatch = [regex]::Match($script:readme, $script:RDPAT)
-  if ($script:rdMatch.Success) {
-    foreach ($m in [regex]::Matches($script:rdMatch.Groups['list'].Value, $LESSONURL)) {
-      $script:rdHrefs += $m.Groups[1].Value
-    }
-  }
-
-  $script:statDone = -1
-  $sm = [regex]::Match($script:rootI, '<b>(\d+)</b><span>门已定稿')
-  if ($sm.Success) { $script:statDone = [int]$sm.Groups[1].Value }
 }
 
-# 附录（appendix-*）不属于正式课程内容，不进「门课 / 脚本」主线计数（主页那几个数只数正式课）
-$lessonFiles = @(Get-ChildItem (Join-Path $root 'lessons') -Recurse -File -Filter *.html | Where-Object { $_.Name -ne 'index.html' -and $_.Name -notmatch '^appendix-' })
+$lessonFiles = @(Get-ChildItem (Join-Path $root 'lessons') -Recurse -File -Filter *.html |
+                 Where-Object { $_.Name -ne 'index.html' -and $_.Name -notmatch '^appendix-' })
 $nBasic   = @($lessonFiles | Where-Object { $_.Name -notmatch '-deep\.html$' }).Count
 $nDeep    = @($lessonFiles | Where-Object { $_.Name -match  '-deep\.html$' }).Count
-$nPy      = @(Get-ChildItem (Join-Path $root 'exercises') -Recurse -File -Filter *.py | Where-Object { $_.Name -notmatch '^appendix-' }).Count
+$nPy      = @(Get-ChildItem (Join-Path $root 'exercises') -Recurse -File -Filter *.py |
+              Where-Object { $_.Name -notmatch '^appendix-' }).Count
 $llmBasic = @($lessonFiles | Where-Object { $_.Name -notmatch '-deep' -and $_.Directory.Name -eq 'llm' }).Count
 $llmDeep  = @($lessonFiles | Where-Object { $_.Name -match  '-deep' -and $_.Directory.Name -eq 'llm' }).Count
 $ragFiles = @($lessonFiles | Where-Object { $_.Directory.Name -eq 'rag' })
 $ragPy    = @(Get-ChildItem (Join-Path $root 'exercises/rag') -File -Filter *.py)
 
 function Audit {
-  Write-Output "== A. 三处落点互相一致 =="
-  if ($script:statDone -eq $script:doneCards.Count) {
-    Ok "主页「$($script:statDone) 门已定稿」 == 目录页徽章 $($script:doneCards.Count) 张"
-  } else { No "主页写 $($script:statDone) 门已定稿，目录页有 $($script:doneCards.Count) 张徽章" }
-
-  $miss  = @($script:doneHrefs  | Where-Object { $script:rdHrefs -notcontains $_ })
-  $extra = @($script:rdHrefs   | Where-Object { $script:doneHrefs -notcontains $_ })
-  if ($script:rdHrefs.Count -eq 0) { No "README 清单一条都没解析到（锚点句或格式变了？）" }
-  if (-not $miss)  { Ok "README 没漏掉任何一张已标卡（$($script:doneHrefs.Count) 张）" } else { No "README 缺: $($miss -join ', ')" }
-  if (-not $extra) { Ok "README 没多出未标的课（$($script:rdHrefs.Count) 条链接）" }   else { No "README 多出: $($extra -join ', ')" }
-
-  Write-Output "== B. 卡片形状没走样 =="
-  foreach ($c in $script:doneCards) {
-    if ($c.shapeOk) { Ok "$($c.href)" } else { No "$($c.href) 标了 completed 但徽章形状不对" }
+  Write-Output "== A. 课程卡片指向真实文件 =="
+  if ($script:cards.Count -eq 0) {
+    No "目录页一张课程卡都没解析到（卡片形状变了？）"
+  } else {
+    foreach ($c in $script:cards) {
+      $full = [IO.Path]::GetFullPath((Join-Path (Join-Path $root 'lessons') $c.href))
+      if ($full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase) -and (Test-Path -LiteralPath $full)) {
+        Ok "$($c.href)"
+      } else {
+        No "死链 $($c.href)（目录页卡片指向不存在的文件）"
+      }
+    }
   }
 
-  Write-Output "== C. 链接指向真实文件 =="
-  foreach ($h in ($script:doneHrefs + $script:rdHrefs | Select-Object -Unique)) {
-    if (Test-Path (Join-Path $root "lessons/$h")) { Ok "lessons/$h" } else { No "死链 lessons/$h" }
-  }
-
-  Write-Output "== D. 主页 stats vs 实测 =="
+  Write-Output "== B. 主页 stats vs 实测 =="
   function ChkNum($name,$pat,$expect){
     $m = [regex]::Match($script:rootI, $pat)
     if (-not $m.Success) { No "主页找不到「$name」"; return }
@@ -156,8 +108,7 @@ function Audit {
   ChkNum 'stat 脚本'   '<b>(\d+)</b><span>个脚本'       $nPy
   ChkNum 'LLM 轨道'    "$llmBasic 门基础 · (\d+) 门进阶" $llmDeep
 
-  # RAG 轨覆盖（2026-11-06 收尾补）：卡片 ↔ 课文件 ↔ 脚本 三条链都要对上。
-  # 以前只有总盘计数，RAG 删一门或漏一张卡没人发现。
+  Write-Output "== C. RAG 轨：卡片 ↔ 课文件 ↔ 脚本 =="
   $ragFileHrefs = @($ragFiles | ForEach-Object { "rag/" + $_.Name })
   $ragCardHrefs = @($script:ragCards | ForEach-Object { $_.href })
   if ($script:ragCards.Count -eq $ragFiles.Count) {
@@ -176,7 +127,7 @@ function Audit {
     No "RAG 脚本没进目录页: $(($ragScriptOrphans | ForEach-Object { $_.Name }) -join ', ')"
   }
 
-  Write-Output "== E. 进阶版：别名三处一致 ＋ Q 编号连续 ＋ 问数对得上 =="
+  Write-Output "== D. 进阶版：别名三处一致 ＋ Q 编号连续 ＋ 问数对得上 =="
   $deepCards = @($script:cards | Where-Object { $_.href -match '-deep\.html$' })
   if ($deepCards.Count -eq 0) { Note "目录页里还没有进阶版卡片" }
   foreach ($c in $deepCards) {
@@ -187,7 +138,6 @@ function Audit {
 
     # (1) 三处一致：data-alias / 目录页卡片 / <title> 尾段
     if ($al) {
-      # 卡片标题形如「0001 进阶 · 十一个追问」——掐掉前缀拿别名
       $cardAlias = ($c.title -replace '^\s*\d+\s*进阶\s*[·・]\s*', '').Trim()
       if ($cardAlias -ne $al) { No "$($c.href) 卡片写「$cardAlias」，data-alias 是「$al」"; $bad++ }
       $tt = [regex]::Match($txt, '(?s)<title>(.*?)</title>')
@@ -195,14 +145,13 @@ function Audit {
       if ($tail -ne $al) { No "$($c.href) <title> 尾段是「$tail」，data-alias 是「$al」"; $bad++ }
     }
 
-    # (2) Q 编号必须连续 1..N —— 删过题就会留下断号，那是最难自己发现的残留
-    #     只数**带编号**的：「附 · 两个别误会」那种补丁块没有 Q 号，不算一问
+    # (2) Q 编号必须连续 1..N
     $nums = @([regex]::Matches($txt, '<h2 id="q[^"]*"[^>]*>\s*Q(\d+)') | ForEach-Object { [int]$_.Groups[1].Value })
     if ($nums.Count -gt 0 -and (Compare-Object (1..$nums.Count) $nums)) {
       No "$($c.href) 的 Q 编号断了：$($nums -join ',')（应为 1..$($nums.Count)）"; $bad++
     }
 
-    # (3) 别名以中文数字开头 = 按约定那个数字是「带编号的问」的个数
+    # (3) 别名以中文数字开头 = 带编号的问数
     if ($al) {
       $mn = [regex]::Match($al, '^([零〇一二两三四五六七八九十]+)')
       if ($mn.Success) {
@@ -214,11 +163,10 @@ function Audit {
         }
       }
     }
-
     if ($bad -eq 0) { Ok "$($c.href) = $al（带编号 Q $($nums.Count) 个）" }
   }
 
-  # deep 是 LLM 轨专属（COURSE-STANDARD 1.4）：RAG/Agent 出现 deep 页即 FAIL
+  # deep 是 LLM 轨专属
   $nonLlmDeep = @($lessonFiles | Where-Object { $_.Name -match '-deep\.html$' -and $_.Directory.Name -ne 'llm' })
   if ($nonLlmDeep.Count -eq 0) {
     Ok "deep 页只在 LLM 轨（RAG/Agent 无 deep）"
@@ -232,75 +180,84 @@ function Audit {
     No "目录页出现非 LLM 轨 deep 卡: $(($nonLlmDeepCards | ForEach-Object { $_.href }) -join ', ')"
   }
 
-  Write-Output "== F. NOTES 卫生：历史进 internal/history/，NOTES.md 只留规矩与索引 =="
-  $notes = ReadText 'NOTES.md'
-  $noteLines = @($notes -split '\r?\n')
-
-  # (1) 第 5 节只许是索引 —— 冒出 ### 5.x / #### 5.x.y 就是历史正文又写回 NOTES.md 了
-  $parts = $notes -split '(?m)^## 5\.'
-  if ($parts.Count -lt 2) {
-    No "NOTES.md 里找不到「## 5.」节"
+  Write-Output "== E. 文档卫生：标准/流程/历史各就各位 =="
+  # 1) completed 退役后不许回潮
+  if ($script:idx -match 'completed|class="badge"') {
+    No "lessons/index.html 仍有 completed 徽章或 badge 标记（2026-11-17 已退役）"
   } else {
-    $stray = @([regex]::Matches($parts[1], '(?m)^#{3,4}\s+5\.\d'))
-    if ($stray.Count -gt 0) {
-      No "NOTES.md 第 5 节里有 $($stray.Count) 个历史正文标题（如「$($stray[0].Value.Trim())」），挪去 internal/history/（NOTES 1.9）"
+    Ok "目录页没有完成徽章"
+  }
+  if ($script:rootI -match '门已定稿') {
+    No "根 index.html 仍有「门已定稿」计数（2026-11-17 已退役）"
+  } else {
+    Ok "主页没有「门已定稿」计数"
+  }
+  if (Test-Path (Join-Path $root 'internal/rules')) {
+    No "internal/rules/ 仍在（操作手册已迁 internal/playbooks/）"
+  } else {
+    Ok "旧 internal/rules/ 已清"
+  }
+
+  # 2) 核心文档存在与体量
+  $docs = @(
+    @{ rel='NOTES.md'; max=120; name='NOTES.md（学习者偏好）' },
+    @{ rel='internal/standards/PROCESS.md'; max=160; name='PROCESS.md（开发流程）' },
+    @{ rel='internal/standards/COURSE-STANDARD.md'; max=200; name='COURSE-STANDARD.md（课程标准）' },
+    @{ rel='internal/standards/ARTICLE-STYLE.md'; max=200; name='ARTICLE-STYLE.md（文章体）' },
+    @{ rel='internal/standards/REVISION.md'; max=140; name='REVISION.md（改课标准）' },
+    @{ rel='internal/history/INDEX.md'; max=200; name='history/INDEX.md（历史索引）' }
+  )
+  foreach ($d in $docs) {
+    $p = Join-Path $root $d.rel
+    if (-not (Test-Path $p)) {
+      No "$($d.name) 不存在"
     } else {
-      Ok "第 5 节只有索引，没有历史正文"
+      $lines = @((ReadText $d.rel) -split '\r?\n')
+      if ($lines.Count -gt $d.max) {
+        No "$($d.name) 已 $($lines.Count) 行（阈值 $($d.max)）：先把历史/细节挪出去，再加新规矩"
+      } else {
+        Ok "$($d.name) $($lines.Count) 行（阈值 $($d.max)）"
+      }
     }
   }
-
-  # (2) 索引 <-> internal/history/ 双向一致：新存档必须挂进索引，索引不许指空文件
-  $histDir = Join-Path $root 'internal/history'
-  if (-not (Test-Path $histDir)) {
-    No "internal/history/ 不存在（历史存档目录）"
-  } else {
-    $files  = @(Get-ChildItem $histDir -Filter '*.md' -Name | Sort-Object)
-    $linked = @([regex]::Matches($notes, '\((internal/history/[^)]+\.md)\)') | ForEach-Object { Split-Path $_.Groups[1].Value -Leaf })
-    foreach ($f in $files)  { if ($linked -notcontains $f) { No "internal/history/$f 存在，但 NOTES 第 5 节索引里没有它的链接" } }
-    foreach ($l in $linked) { if ($files -notcontains $l) { No "NOTES 第 5 节索引链到 internal/history/$l，文件不存在" } }
-    if ($files.Count -gt 0 -and $linked.Count -eq $files.Count) { Ok "索引与 internal/history/ 双向一致（$($files.Count) 篇）" }
-  }
-
-  # (3) 体量阈值 —— 再涨就该挪东西出去（历史→internal/history/、操作细节→internal/rules/）
-  if ($noteLines.Count -gt 400) {
-    No "NOTES.md 已 $($noteLines.Count) 行（阈值 400）：历史进 internal/history/、操作细节进 internal/rules/（NOTES 1.9）"
-  } else {
-    Ok "NOTES.md $($noteLines.Count) 行（阈值 400）"
-  }
-
-  # (4) COURSE-STANDARD.md 体量阈值 —— 写作标准同样防膨胀（2026-10-21 拆出，见存档 5.52）
-  $csPath = Join-Path $root 'internal/standards/COURSE-STANDARD.md'
-  if (-not (Test-Path $csPath)) {
-    No "internal/standards/COURSE-STANDARD.md 不存在（写作标准文件，拆自 NOTES 1.2～1.6，见存档 5.52）"
-  } else {
-    $csLines = @((ReadText 'internal/standards/COURSE-STANDARD.md') -split '\r?\n')
-    if ($csLines.Count -gt 200) {
-      No "internal/standards/COURSE-STANDARD.md 已 $($csLines.Count) 行（阈值 200）：新规矩先问是不是自查清单的一行，别再加正文段"
-    } else {
-      Ok "internal/standards/COURSE-STANDARD.md $($csLines.Count) 行（阈值 200）"
-    }
-  }
-
-  # (5) 各轨 TRACK-STANDARD.md 存在与体量 —— 轨道标准防丢失/防膨胀（2026-10-24 轨道细则下放，见存档 5.60）
   foreach ($t in 'agent','llm','rag') {
     $tp = Join-Path $root "internal/standards/tracks/$t.md"
     if (-not (Test-Path $tp)) {
-      No "lessons/$t/TRACK-STANDARD.md 不存在（轨道标准：分版/课型标识/受众/脚本分工，见存档 5.60）"
+      No "internal/standards/tracks/$t.md 不存在（轨道标准）"
     } else {
       $tl = @((ReadText "internal/standards/tracks/$t.md") -split '\r?\n')
       if ($tl.Count -gt 120) {
-        No "internal/standards/tracks/$t.md 已 $($tl.Count) 行（阈值 120）：轨道细则膨胀时先问哪条该回全局或进存档"
+        No "internal/standards/tracks/$t.md 已 $($tl.Count) 行（阈值 120）"
       } else {
         Ok "internal/standards/tracks/$t.md $($tl.Count) 行（阈值 120）"
       }
     }
   }
+  foreach ($pb in 'learner-audit.md','modify-lessons.md','network-and-sources.md') {
+    if (Test-Path (Join-Path $root "internal/playbooks/$pb")) { Ok "playbooks/$pb" } else { No "internal/playbooks/$pb 不存在" }
+  }
 
-  Write-Output "== G. md 链接断链扫描：根目录＋internal/＋docs/ 的相对链接指向真实文件 =="
-  # 盲区：C 段只核 lessons/ 课卡链接，根目录与 internal/ 子树 md 里的 markdown 链接一直没人查。
-  # 目录重组（5.61）时 audit 就指出过这块是盲区，这里补上（2026-10-25 加）。
-  $mdFiles = @(Get-ChildItem (Join-Path $root 'internal') -Recurse -File -Filter *.md) +
-             @(Get-ChildItem $root -File -Filter *.md)
+  # 3) 历史索引 <-> internal/history/ 双向一致（INDEX.md 自己不算一篇）
+  $histDir = Join-Path $root 'internal/history'
+  if (-not (Test-Path $histDir)) {
+    No "internal/history/ 不存在（历史存档目录）"
+  } else {
+    $files = @(Get-ChildItem $histDir -File -Filter '*.md' |
+               Where-Object { $_.Name -ne 'INDEX.md' } |
+               Select-Object -ExpandProperty Name | Sort-Object)
+    $indexTxt = ReadText 'internal/history/INDEX.md'
+    $linked = @([regex]::Matches($indexTxt, '\]\((5\.\d{2}-[^)]+\.md)\)') |
+                ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    foreach ($f in $files)  { if ($linked -notcontains $f) { No "internal/history/$f 存在，但 INDEX.md 里没有它的链接" } }
+    foreach ($l in $linked) { if ($files -notcontains $l) { No "INDEX.md 链到 internal/history/$l，文件不存在" } }
+    if ($files.Count -gt 0 -and $linked.Count -eq $files.Count) { Ok "INDEX 与 internal/history/ 双向一致（$($files.Count) 篇）" }
+  }
+
+  Write-Output "== F. md 链接断链扫描 =="
+  $draftsDir = Join-Path $root 'internal/drafts'
+  $mdFiles = @(Get-ChildItem (Join-Path $root 'internal') -Recurse -File -Filter *.md |
+               Where-Object { -not $_.FullName.StartsWith($draftsDir, [StringComparison]::OrdinalIgnoreCase) }) +
+              @(Get-ChildItem $root -File -Filter *.md)
   if (Test-Path (Join-Path $root 'docs')) {
     $mdFiles += @(Get-ChildItem (Join-Path $root 'docs') -File -Filter *.md)
   }
@@ -308,166 +265,32 @@ function Audit {
   foreach ($md in $mdFiles) {
     $rel = $md.FullName.Substring($root.Length + 1).Replace('\', '/')
     $txt = ReadText $rel
-    # 挖掉 fenced code block 与行内代码：避免把 `[x](y)` 样例当链接（README/存档里有真命令）
     $txt = [regex]::Replace($txt, '(?s)```.*?```', '```CODE```')
     $txt = [regex]::Replace($txt, '`[^`]*`', '')
     $baseDir = $md.DirectoryName
     foreach ($m in [regex]::Matches($txt, '!?\[[^\]\n]*\]\(([^)\n]+)\)')) {
       $url = $m.Groups[1].Value.Trim()
-      # 绝对 URL / mailto / 站内锚点 / 空目标 跳过；本地相对链接才核
       if ($url -match '^(https?://|mailto:|tel:|#)') { continue }
       $path = ($url -split '#')[0]
       if ($path -eq '') { continue }
       $path = [Uri]::UnescapeDataString($path)
       $full = [IO.Path]::GetFullPath((Join-Path $baseDir $path))
-      # 相对链接逃逸出仓库根 = 死链（仓库内 md 不该引用仓库外）。
-      # 2026-10-25 首跑抓到 41 处：internal/history/ 从 docs/history/ 平移到 internal/history/ 后
-      # 返回链接仍是「../../../NOTES.md」，解析出仓库根指向不存在的文件 —— 逃逸不是该跳过的合法外部引用。
       if (-not $full.StartsWith($root, [StringComparison]::OrdinalIgnoreCase)) {
         No "死链: $($md.Name) -> $path（$rel）逃逸出仓库根（解析到 $full）"; $gBad++; continue
       }
       $gChecked++
-      if (Test-Path -LiteralPath $full) { } else { No "死链: $($md.Name) -> $path（$rel）"; $gBad++ }
+      if (-not (Test-Path -LiteralPath $full)) { No "死链: $($md.Name) -> $path（$rel）"; $gBad++ }
     }
   }
   if ($gChecked -eq 0) {
-    No "G 段一条 md 相对链接都没扫到（文件列表或正则变了？）"
+    No "F 段一条 md 相对链接都没扫到（文件列表或正则变了？）"
   } elseif ($gBad -eq 0) {
-    Ok "G 段 $gChecked 条 md 相对链接全部指向真实文件"
+    Ok "F 段 $gChecked 条 md 相对链接全部指向真实文件"
   }
 }
 
 Load
-if ($Action -eq 'audit') {
-  Audit
-} else {
-  if (-not $Lesson) { No "-Action $Action 需要 -Lesson <相对 lessons/ 的路径>"; exit 1 }
-  $card = $script:cards | Where-Object { $_.href -eq $Lesson }
-  if (-not $card) { No "目录页里找不到卡片 href=$Lesson（应形如 llm/0003-xxx.html）"; exit 1 }
-
-  Write-Output "== 动手前先审计（状态已经不一致时不许再叠加改动）=="
-  Audit
-  if ($script:fail -gt 0) { No "审计没过，先修上面问题再标 completed（别在坏状态上叠改）"; exit 1 }
-
-  if ($Action -eq 'mark'   -and $card.completed) { Ok "$Lesson 已是 completed，无需改动"; exit 0 }
-  if ($Action -eq 'unmark' -and -not $card.completed) { Ok "$Lesson 本来就没标，无需改动"; exit 0 }
-
-  $esc = [regex]::Escape($Lesson)
-  Write-Output ""
-  Write-Output "== 改 1/3  lessons/index.html =="
-  # 分组：$1='<div class="pillar'  $2=可选的 ' completed'  $3='">' 换行 <h3><a href="目标">  $4=标题  $5='</a>'
-  # 徽章必须落在 </a> 之后（对照已定稿的卡：</a><span class="badge">completed</span></h3>）
-  if ($Action -eq 'mark') {
-    $pat = '(<div class="pillar)( completed)?(">\s*<h3><a href="' + $esc + '">)([^<]*)(</a>)'
-    $rep = '$1 completed$3$4$5<span class="badge">completed</span>'
-  } else {
-    $pat = '(<div class="pillar) completed(">\s*<h3><a href="' + $esc + '">)([^<]*)(</a>)\s*<span class="badge">completed</span>'
-    $rep = '$1$2$3$4'
-  }
-  $new = [regex]::Replace($script:idx, $pat, $rep)
-  if ($new -eq $script:idx) { No "目录页替换没生效（卡片形状可能变了，先看 lessons/index.html）"; exit 1 }
-  WriteText 'lessons/index.html' $new; Ok "已写入"
-
-  Write-Output "== 改 2/3  index.html（已定稿计数）=="
-  $delta = if ($Action -eq 'mark') { 1 } else { -1 }
-  $newR = [regex]::Replace($script:rootI, '<b>\d+</b><span>门已定稿',
-          ('<b>' + ($script:doneCards.Count + $delta) + '</b><span>门已定稿'))
-  if ($newR -eq $script:rootI) { No "主页计数替换没生效"; exit 1 }
-  WriteText 'index.html' $newR; Ok "已写入：$($script:doneCards.Count + $delta) 门已定稿"
-
-  Write-Output "== 改 3/3  README.md =="
-  if (-not $script:rdMatch.Success) { No "README 里定位不到清单块（锚点句或格式变了？）"; exit 1 }
-  $lst  = $script:rdMatch.Groups['list'].Value
-  $at   = $script:rdMatch.Groups['list'].Index
-  $tail = $script:readme.Substring($at + $lst.Length)
-  $head = $script:readme.Substring(0, $at)
-  $nl   = if ($lst.EndsWith("`r`n")) { "`r`n" } elseif ($lst.EndsWith("`n")) { "`n" } else { "`r`n" }
-  # 每行连同自己的换行符一起切出来。
-  # ⚠️ 不要用 Split($lst,'(?<=\r\n|\n|\r)') —— 那个 lookbehind 是「或」关系，
-  #    会在 \r 后和 \n 后各切一次，把每行劈成「内容+\r」和「单独一个 \n」两半。
-  #    后果：删某行时连 \r 一起删掉，剩下孤立的 \n（行数对、字节不对）。
-  #    用捕获组切再手工配对，行为唯一。
-  $parts = [regex]::Split($lst, '(\r\n|\n|\r)')
-  $rows  = @()
-  for ($i = 0; $i -lt ($parts.Count - 1); $i += 2) {
-    if ($parts[$i] -ne '') { $rows += ($parts[$i] + $parts[$i+1]) }
-  }
-  $url  = "$SITE" + "lessons/$Lesson"
-  $changed = 0
-
-  $trackDir = $Lesson.Split('/')[0]
-  $num4     = [regex]::Match($Lesson, '(\d{4})').Groups[1].Value   # 保留前导零，用来定位文件
-
-  if ($Action -eq 'mark' -and $Lesson -notmatch '-deep\.html$') {
-    # 基础课：清单里追加一整行
-    if (-not $TRACKS.ContainsKey($trackDir)) { No "不认识的轨道目录「$trackDir」"; exit 1 }
-    $name = ($card.title -split '·', 2)[1].Trim()
-    $line = "- **$($TRACKS[$trackDir]) · 第 $([int]$num4) 课**（[$name]($url)）"
-    $already = @($rows | Where-Object { $_.Contains($url) }).Count
-    if ($already -gt 0) { Note "README 已有这条（$already 处），跳过插入" }
-    else { $rows += ($line + $nl); $changed = 1 }   # 必须自带换行，否则会粘在上一行尾巴上
-
-  } elseif ($Action -eq 'mark') {
-    # 进阶版：条目挂在**基础课那一行末尾**（README 约定两课并排一行）
-    $alias = Get-Alias $Lesson
-    if (-not $alias) { No "这一课没有 data-alias，别名无从取；先在 lesson-meta 上补一个"; exit 1 }
-    $basicFile = Get-ChildItem (Join-Path $root "lessons/$trackDir") -File -Filter "$num4-*.html" |
-                 Where-Object { $_.Name -notmatch '-deep\.html$' } | Select-Object -First 1
-    if (-not $basicFile) { No "找不到 $trackDir 第 $num4 课的基础课文件，进阶版的条目无处可挂"; exit 1 }
-    $anchorHref = "$SITE" + "lessons/$trackDir/$($basicFile.Name)"
-    $hit = -1
-    for ($i = 0; $i -lt $rows.Count; $i++) { if ($rows[$i].Contains($anchorHref)) { $hit = $i; break } }
-    if ($hit -lt 0) {
-      No "README 清单里找不到基础课那一行（$anchorHref）"
-      No "进阶版的条目必须跟在基础课后面 —— 先标基础课，或手写这一行"
-      exit 1
-    }
-    $frag = '＋ [进阶版「' + $alias + '」](' + $url + ')'
-    if ($rows[$hit].Contains($url)) { Note "README 已有这条，跳过插入" }
-    else {
-      # ⚠️ 每个 row 都自带自己的换行符，直接 + 会把片段甩到**下一行**去，
-      #    而 audit 的清单块只认「- 」开头的行 —— 于是链接存在却被判「README 缺」。
-      #    所以要把行尾换行符摘下来，插完再放回去。
-      $r  = $rows[$hit]; $eol = ''
-      if ($r -match '(\r\n|\n|\r)$') { $eol = $Matches[1]; $r = $r.Substring(0, $r.Length - $eol.Length) }
-      $rows[$hit] = $r + $frag + $eol
-      $changed = 1; $line = $frag
-    }
-
-  } else {
-    # unmark：两种都只是「把指向本课的那个链接摘掉」
-    $keep = @()
-    foreach ($r in $rows) {
-      if (-not $r.Contains($url)) { $keep += $r; continue }
-      $links = ([regex]::Matches($r, [regex]::Escape($SITE) + 'lessons/[^\s)]+\.html')).Count
-      if ($links -le 1) { $changed++; continue }
-      $r2 = [regex]::Replace($r, '(＋\s*)?\[[^\]]*\]\(' + [regex]::Escape($url) + '\)', '')
-      $r2 = $r2 -replace '（\s*）\s*$', ''          # 摘完别留空括号
-      if ($r2 -notmatch [regex]::Escape($SITE)) { $changed++; continue }   # 整行没链接了 -> 删
-      $keep += $r2; $changed++
-    }
-    $rows = $keep
-  }
-
-  if ($changed -eq 0) { No "README 清单没有可改动的行（$($rows.Count) 行清单，格式可能变了，先看 README.md）"; exit 1 }
-  $newM = $head + ($rows -join '') + $tail
-  WriteText 'README.md' $newM
-  if ($Action -eq 'mark') { Ok "已写入：$line" } else { Ok "已摘掉本课那条" }
-
-  Write-Output ""
-  Write-Output "== 写完读回来核验（NOTES 1.7）=="
-  foreach ($f in 'lessons/index.html','index.html','README.md') {
-    $b = [IO.File]::ReadAllBytes((Join-Path $root $f))
-    $bom = ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF)
-    $txt = [IO.File]::ReadAllText((Join-Path $root $f), [Text.Encoding]::UTF8)
-    if ($bom) { No "$f 被写出 BOM" } else { Ok "$f 无 BOM" }
-    if ($txt -match '�') { No "$f 出现替换字符 U+FFFD（中文写坏了）" } else { Ok "$f 无乱码字符" }
-  }
-  Load
-  Write-Output ""
-  Write-Output "== 改后重新审计 =="
-  Audit
-}
+Audit
 
 Write-Output ""
 if ($script:fail -gt 0) { Write-Output "==== 失败 $script:fail 项 ===="; exit 1 } else { Write-Output "==== 全部通过 ====" }

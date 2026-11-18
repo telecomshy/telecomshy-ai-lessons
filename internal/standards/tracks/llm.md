@@ -1,6 +1,6 @@
 # LLM 轨 · 轨道标准
 
-> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md)，再读本文件。本文件收 LLM 轨的分版、受众、数量关系深读层映射、编号特例，以及 **deep 页体例**（2026-11-05 从全局 1.4 下放至此——deep 是 LLM 轨专属，Agent 篇与 RAG 轨都没有 deep）。
+> 写／改本轨任何课前，先读全局 [`../COURSE-STANDARD.md`](../COURSE-STANDARD.md) 与 [`../ARTICLE-STYLE.md`](../ARTICLE-STYLE.md)，再读本文件。本文件收 LLM 轨的分版、受众、数量关系深读层映射、编号特例，以及 **deep 页体例**（2026-11-05 从全局 1.4 下放至此——deep 是 LLM 轨专属，Agent 篇与 RAG 轨都没有 deep）。
 
 ## 分版与受众（2026-09-30 定）
 
