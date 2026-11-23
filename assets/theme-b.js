@@ -174,22 +174,55 @@
       });
     });
 
-    /* 5. 目录联动 */
-    if ("IntersectionObserver" in window && nav.children.length) {
-      var links = Array.prototype.slice.call(nav.children);
-      var obs = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          links.forEach(function (link) {
-            link.classList.toggle("active", link.getAttribute("href") === "#" + entry.target.id);
-          });
-        });
-      }, { rootMargin: "-16% 0px -72% 0px" });
-      headings.forEach(function (h2) { obs.observe(h2); });
+    /* 5. 目录联动：点亮当前小节。按滚动位置算，点击锚点后也能立刻对上 */
+    var links = Array.prototype.slice.call(nav.children);
+    var activeIndex = -1;
+
+    function setActive(index) {
+      if (index === activeIndex) return;
+      activeIndex = index;
+      links.forEach(function (link, i) {
+        link.classList.toggle("active", i === index);
+      });
     }
+
+    function syncActive() {
+      if (!links.length) return;
+      var index = 0;
+      var line = window.innerHeight * 0.25;
+      headings.forEach(function (h2, i) {
+        if (h2.getBoundingClientRect().top <= line) index = i;
+      });
+      /* 滚到底时最后一节的标题到不了这条线，直接点亮它 */
+      if (document.documentElement.scrollHeight > window.innerHeight + 8 &&
+          window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4) {
+        index = links.length - 1;
+      }
+      setActive(index);
+    }
+
+    var ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(function () {
+        ticking = false;
+        syncActive();
+      });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    window.addEventListener("load", syncActive);
+    nav.addEventListener("click", function (e) {
+      var link = e.target.closest("a");
+      var i = link ? links.indexOf(link) : -1;
+      if (i >= 0) setActive(i);
+    });
 
     /* 6. 最后才开主题，脚本失败时页面仍停在 base.css 单栏 */
     body.classList.add("theme-b");
+    syncActive();
   }
 
   if (document.readyState === "loading") {
